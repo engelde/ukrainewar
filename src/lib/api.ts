@@ -3,6 +3,8 @@ import type {
   CasualtyData,
   WarSpottingStats,
   WarSpottingLossesResponse,
+  TerritoryResponse,
+  EquipmentMarker,
 } from "./types";
 
 const WARSPOTTING_HEADERS = {
@@ -46,4 +48,35 @@ export async function fetchCasualties(): Promise<CasualtyData> {
   }
 
   return res.json();
+}
+
+export async function fetchTerritory(): Promise<TerritoryResponse> {
+  const res = await fetch("/api/territory");
+
+  if (!res.ok) {
+    throw new Error(`Territory API failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export function parseEquipmentMarkers(
+  losses: WarSpottingLossesResponse
+): EquipmentMarker[] {
+  return losses.losses
+    .filter((loss) => loss.geo && loss.geo.includes(","))
+    .map((loss) => {
+      const [lat, lng] = loss.geo!.split(",").map(Number);
+      return {
+        id: loss.id,
+        type: loss.type,
+        model: loss.model,
+        status: loss.status,
+        date: loss.date,
+        location: loss.nearest_location,
+        lat,
+        lng,
+      };
+    })
+    .filter((m) => !isNaN(m.lat) && !isNaN(m.lng));
 }

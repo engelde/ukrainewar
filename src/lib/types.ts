@@ -60,3 +60,27 @@ export interface StatItem {
   total: number;
   icon: string;
 }
+
+export interface TerritoryResponse {
+  date: string;
+  geojson: GeoJSON.FeatureCollection;
+}
+
+export interface EquipmentMarker {
+  id: number;
+  type: string;
+  model: string;
+  status: "destroyed" | "damaged" | "captured" | "abandoned" | string;
+  date: string;
+  location: string | null;
+  lng: number;
+  lat: number;
+}
+
+export interface MapLayers {
+  territory: boolean;
+  equipment: boolean;
+  frontline: boolean;
+}
+
+export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";
