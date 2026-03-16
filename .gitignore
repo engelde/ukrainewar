@@ -20,6 +20,9 @@
 # production
 /build
 
+# cloudflare
+/.open-next/
+
 # misc
 .DS_Store
 *.pem

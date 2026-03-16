@@ -1,0 +1,27 @@
+{
+  "site": {
+    "title": "Ukraine War Tracker",
+    "description": "Real-time interactive tracker of the Russo-Ukrainian war"
+  },
+  "stats": {
+    "title": "Russian Losses",
+    "day": "Day {day}",
+    "personnel": "Personnel",
+    "tanks": "Tanks",
+    "armoredVehicles": "Armored Vehicles",
+    "artillery": "Artillery",
+    "mlrs": "MLRS",
+    "uavs": "UAVs",
+    "airDefense": "Air Defense",
+    "jets": "Jets",
+    "helicopters": "Helicopters",
+    "vehicles": "Vehicles",
+    "ships": "Ships"
+  },
+  "map": {
+    "loading": "Loading map..."
+  },
+  "footer": {
+    "sources": "Sources"
+  }
+}
