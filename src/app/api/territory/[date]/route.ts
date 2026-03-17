@@ -10,10 +10,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
 
   // Validate date format (YYYYMMDD)
   if (!/^\d{8}$/.test(date)) {
-    return NextResponse.json(
-      { error: "Invalid date format. Use YYYYMMDD." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid date format. Use YYYYMMDD." }, { status: 400 });
   }
 
   try {
@@ -24,10 +21,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
     });
 
     if (!res.ok) {
-      return NextResponse.json(
-        { error: `No territory data for ${date}` },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: `No territory data for ${date}` }, { status: 404 });
     }
 
     const geojson = await res.json();
@@ -36,15 +30,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
       { date, geojson },
       {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=604800, stale-while-revalidate=86400",
+          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
         },
-      }
+      },
     );
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch territory data" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch territory data" }, { status: 500 });
   }
 }

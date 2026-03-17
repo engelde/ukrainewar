@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { WARSPOTTING_API } from "@/lib/constants";
 
 const headers = {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json(
       { error: "date parameter required in YYYY-MM-DD format" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -27,22 +27,18 @@ export async function GET(request: NextRequest) {
     if (cached && now - cached.cachedAt < CACHE_TTL) {
       return NextResponse.json(cached.data, {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=86400, stale-while-revalidate=3600",
+          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
           "X-Data-Source": "cache",
         },
       });
     }
 
-    const res = await fetch(
-      `${WARSPOTTING_API}/losses/russia/${date}/`,
-      { headers }
-    );
+    const res = await fetch(`${WARSPOTTING_API}/losses/russia/${date}/`, { headers });
 
     if (!res.ok) {
       return NextResponse.json(
         { error: `WarSpotting API returned ${res.status}` },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
@@ -60,14 +56,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control":
-          "public, s-maxage=86400, stale-while-revalidate=3600",
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch historical losses" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch historical losses" }, { status: 500 });
   }
 }

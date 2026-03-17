@@ -9,7 +9,7 @@
  */
 
 import { writeFileSync } from "fs";
-import { join, dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import XLSX from "xlsx";
 
@@ -19,7 +19,7 @@ const OUTPUT = join(__dirname, "..", "public", "data", "kiel-spending.json");
 const KIEL_XLSX_URL =
   "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/62a94ad1-2d28-401e-afd0-8a8089b48f2a-Ukraine_Support_Tracker_Release_27.xlsx";
 
-const MONTH_NAMES = [
+const _MONTH_NAMES = [
   "January",
   "February",
   "March",
@@ -44,20 +44,13 @@ async function main() {
   const wb = XLSX.read(buf, { type: "array" });
 
   // --- Main data ---
-  const mainData = XLSX.utils.sheet_to_json(
-    wb.Sheets["Bilateral Assistance, MAIN DATA"]
-  );
+  const mainData = XLSX.utils.sheet_to_json(wb.Sheets["Bilateral Assistance, MAIN DATA"]);
 
   // --- Country Summary ---
-  const summarySheet = XLSX.utils.sheet_to_json(
-    wb.Sheets["Country Summary (€)"],
-    { header: 1 }
-  );
+  const summarySheet = XLSX.utils.sheet_to_json(wb.Sheets["Country Summary (€)"], { header: 1 });
   // Find header row (contains "Country")
-  const headerIdx = summarySheet.findIndex(
-    (r) => r && r[0] === "Country"
-  );
-  const summaryHeaders = summarySheet[headerIdx];
+  const headerIdx = summarySheet.findIndex((r) => r && r[0] === "Country");
+  const _summaryHeaders = summarySheet[headerIdx];
 
   const byCountry = [];
   for (let i = headerIdx + 2; i < summarySheet.length; i++) {
@@ -75,10 +68,9 @@ async function main() {
   byCountry.sort((a, b) => b.total - a.total);
 
   // --- Monthly allocations ---
-  const allocSheet = XLSX.utils.sheet_to_json(
-    wb.Sheets["Allocations by type and month"],
-    { header: 1 }
-  );
+  const allocSheet = XLSX.utils.sheet_to_json(wb.Sheets["Allocations by type and month"], {
+    header: 1,
+  });
   const byMonth = [];
   for (const row of allocSheet) {
     if (!row || typeof row[1] !== "number" || row[1] < 40000) continue;
@@ -107,12 +99,7 @@ async function main() {
   // --- Top weapons delivered ---
   const weaponCounts = {};
   for (const r of mainData) {
-    if (
-      (r.aid_type_general || "").trim() !== "Military" ||
-      !r.item ||
-      !r.item_numb_deliv
-    )
-      continue;
+    if ((r.aid_type_general || "").trim() !== "Military" || !r.item || !r.item_numb_deliv) continue;
     const item = r.item_type || r.item || "Other";
     weaponCounts[item] = (weaponCounts[item] || 0) + (r.item_numb_deliv || 0);
   }
@@ -172,7 +159,7 @@ async function main() {
   const sizeKB = (JSON.stringify(output).length / 1024).toFixed(1);
   console.log(`Written ${OUTPUT} (${sizeKB} KB)`);
   console.log(
-    `  ${byCountry.length} donors, ${byMonth.length} months, €${output.totals.total}B total`
+    `  ${byCountry.length} donors, ${byMonth.length} months, €${output.totals.total}B total`,
   );
 }
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * VIINA Territory Control Data Processor
  *
@@ -13,11 +14,10 @@
  * Usage: node scripts/process-viina.mjs
  */
 
-import fs from "fs";
-import path from "path";
-import { createReadStream } from "fs";
-import { createInterface } from "readline";
 import { execSync } from "child_process";
+import fs, { createReadStream } from "fs";
+import path from "path";
+import { createInterface } from "readline";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,8 +26,7 @@ const OUTPUT_DIR = path.join(PROJECT_ROOT, "public", "data", "viina");
 const CACHE_DIR = path.join(PROJECT_ROOT, ".cache", "viina");
 
 const YEARS = ["2022", "2023", "2024", "2025", "2026"];
-const VIINA_BASE =
-  "https://github.com/zhukovyuri/VIINA/raw/main/Data";
+const VIINA_BASE = "https://github.com/zhukovyuri/VIINA/raw/main/Data";
 const TESSELLATION_URL = `${VIINA_BASE}/gn_UA_tess.geojson`;
 
 // Sample every N days for snapshots (7 = weekly)
@@ -126,7 +125,7 @@ async function processYearCSV(year) {
   }
 
   console.log(
-    `    ${lineCount.toLocaleString()} rows, ${dateEntries.size} unique dates, ${nonUAIds.size} non-UA places`
+    `    ${lineCount.toLocaleString()} rows, ${dateEntries.size} unique dates, ${nonUAIds.size} non-UA places`,
   );
 
   return { dateEntries, nonUAIds };
@@ -178,9 +177,7 @@ async function main() {
 
   // Control snapshots: sample every SAMPLE_INTERVAL days
   const sortedDates = [...allDateEntries.keys()].sort();
-  console.log(
-    `  Date range: ${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`
-  );
+  console.log(`  Date range: ${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`);
   console.log(`  Total dates with data: ${sortedDates.length}`);
 
   const snapshots = [];

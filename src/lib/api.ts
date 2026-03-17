@@ -1,10 +1,10 @@
-import { WARSPOTTING_API, CASUALTIES_API } from "./constants";
+import { CASUALTIES_API, WARSPOTTING_API } from "./constants";
 import type {
   CasualtyData,
-  WarSpottingStats,
-  WarSpottingLossesResponse,
-  TerritoryResponse,
   EquipmentMarker,
+  TerritoryResponse,
+  WarSpottingLossesResponse,
+  WarSpottingStats,
 } from "./types";
 
 const WARSPOTTING_HEADERS = {
@@ -60,11 +60,9 @@ export async function fetchTerritory(): Promise<TerritoryResponse> {
   return res.json();
 }
 
-export function parseEquipmentMarkers(
-  losses: WarSpottingLossesResponse
-): EquipmentMarker[] {
+export function parseEquipmentMarkers(losses: WarSpottingLossesResponse): EquipmentMarker[] {
   return losses.losses
-    .filter((loss) => loss.geo && loss.geo.includes(","))
+    .filter((loss) => loss.geo?.includes(","))
     .map((loss) => {
       const [lat, lng] = loss.geo!.split(",").map(Number);
       return {
@@ -78,5 +76,5 @@ export function parseEquipmentMarkers(
         lng,
       };
     })
-    .filter((m) => !isNaN(m.lat) && !isNaN(m.lng));
+    .filter((m) => !Number.isNaN(m.lat) && !Number.isNaN(m.lng));
 }

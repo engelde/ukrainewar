@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-const GITHUB_API =
-  "https://api.github.com/repos/cyterat/deepstate-map-data/contents/data";
+const GITHUB_API = "https://api.github.com/repos/cyterat/deepstate-map-data/contents/data";
 
 export async function GET() {
   try {
@@ -17,7 +16,7 @@ export async function GET() {
     if (!res.ok) {
       return NextResponse.json(
         { error: "Failed to fetch dates from GitHub" },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
@@ -37,15 +36,11 @@ export async function GET() {
       { dates, count: dates.length },
       {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=86400, stale-while-revalidate=3600",
+          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
         },
-      }
+      },
     );
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch territory dates" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch territory dates" }, { status: 500 });
   }
 }

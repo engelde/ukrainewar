@@ -33,25 +33,18 @@ export async function GET() {
     }
 
     if (!geojson) {
-      return NextResponse.json(
-        { error: "No territory data available" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "No territory data available" }, { status: 404 });
     }
 
     return NextResponse.json(
       { date: dateUsed, geojson },
       {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=43200, stale-while-revalidate=7200",
+          "Cache-Control": "public, s-maxage=43200, stale-while-revalidate=7200",
         },
-      }
+      },
     );
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch territory data" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch territory data" }, { status: 500 });
   }
 }

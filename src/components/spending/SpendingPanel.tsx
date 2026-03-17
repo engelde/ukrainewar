@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 import {
-  TbCurrencyEuro,
-  TbShieldCheckered,
   TbBuildingBank,
-  TbHeartHandshake,
   TbChevronDown,
   TbChevronUp,
+  TbCurrencyEuro,
+  TbHeartHandshake,
+  TbShieldCheckered,
 } from "react-icons/tb";
 import { AnimatedCounter } from "@/components/stats/AnimatedCounter";
+import { cn } from "@/lib/utils";
 
 interface SpendingData {
   lastUpdated: string;
@@ -64,11 +64,7 @@ interface SpendingPanelProps {
   timelineDate?: string;
 }
 
-export default function SpendingPanel({
-  isOpen,
-  onToggle,
-  timelineDate,
-}: SpendingPanelProps) {
+export default function SpendingPanel({ isOpen, onToggle, timelineDate }: SpendingPanelProps) {
   const [data, setData] = useState<SpendingData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("trend");
   const [loading, setLoading] = useState(true);
@@ -80,9 +76,10 @@ export default function SpendingPanel({
         const r = await fetch("/api/spending", { signal: controller.signal });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const d = await r.json();
-        if (d && d.byMonth && d.cumulative) setData(d);
+        if (d?.byMonth && d.cumulative) setData(d);
       } catch (e) {
-        if (e instanceof Error && e.name !== 'AbortError') console.error('Spending fetch error:', e);
+        if (e instanceof Error && e.name !== "AbortError")
+          console.error("Spending fetch error:", e);
       } finally {
         setLoading(false);
       }
@@ -115,7 +112,7 @@ export default function SpendingPanel({
           "flex items-center rounded-lg",
           "bg-background/80 backdrop-blur-xl",
           "border border-border/50",
-          "overflow-hidden"
+          "overflow-hidden",
         )}
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
@@ -144,7 +141,7 @@ export default function SpendingPanel({
         "bg-background/85 backdrop-blur-xl",
         "border border-border/50",
         "shadow-xl shadow-black/30",
-        "scrollbar-thin scrollbar-thumb-border/30"
+        "scrollbar-thin scrollbar-thumb-border/30",
       )}
     >
       {/* Header */}
@@ -165,9 +162,7 @@ export default function SpendingPanel({
 
       {loading || !data ? (
         <div className="p-3 text-center">
-          <div className="text-[10px] text-muted-foreground animate-pulse">
-            Loading aid data...
-          </div>
+          <div className="text-[10px] text-muted-foreground animate-pulse">Loading aid data...</div>
         </div>
       ) : (
         <div className="p-2.5 space-y-2.5">
@@ -218,11 +213,7 @@ export default function SpendingPanel({
           {/* Top Donors (expandable) */}
           <div>
             <button
-              onClick={() =>
-                setExpandedSection(
-                  expandedSection === "donors" ? null : "donors"
-                )
-              }
+              onClick={() => setExpandedSection(expandedSection === "donors" ? null : "donors")}
               className="flex items-center gap-1 w-full text-left"
             >
               {expandedSection === "donors" ? (
@@ -262,11 +253,7 @@ export default function SpendingPanel({
           {data.byMonth.length > 0 && (
             <div>
               <button
-                onClick={() =>
-                  setExpandedSection(
-                    expandedSection === "trend" ? null : "trend"
-                  )
-                }
+                onClick={() => setExpandedSection(expandedSection === "trend" ? null : "trend")}
                 className="flex items-center gap-1 w-full text-left"
               >
                 {expandedSection === "trend" ? (
@@ -293,7 +280,12 @@ export default function SpendingPanel({
         <div className="px-3 py-1.5 border-t border-border/30">
           <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
             <span>Source:</span>
-            <a href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/" target="_blank" rel="noopener noreferrer" className="hover:text-ua-blue transition-colors">
+            <a
+              href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-ua-blue transition-colors"
+            >
               {data.source.name}
             </a>
           </div>
@@ -329,10 +321,7 @@ function AidTypeRow({
         </div>
         <div className="h-1.5 bg-surface-elevated/50 rounded-full overflow-hidden">
           <div
-            className={cn(
-              "h-full rounded-full transition-all duration-700",
-              color
-            )}
+            className={cn("h-full rounded-full transition-all duration-700", color)}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -366,22 +355,11 @@ function MiniBarChart({ months }: { months: SpendingData["byMonth"] }) {
             title={`${m.date}: ${formatEUR(m.total)}`}
           >
             {milH >= 1 && (
-              <div
-                className="bg-destruction rounded-t-sm"
-                style={{ height: `${milH}px` }}
-              />
+              <div className="bg-destruction rounded-t-sm" style={{ height: `${milH}px` }} />
             )}
-            {finH >= 1 && (
-              <div
-                className="bg-ua-blue-light"
-                style={{ height: `${finH}px` }}
-              />
-            )}
+            {finH >= 1 && <div className="bg-ua-blue-light" style={{ height: `${finH}px` }} />}
             {humH >= 1 && (
-              <div
-                className="bg-capture rounded-b-sm"
-                style={{ height: `${humH}px` }}
-              />
+              <div className="bg-capture rounded-b-sm" style={{ height: `${humH}px` }} />
             )}
           </div>
         );

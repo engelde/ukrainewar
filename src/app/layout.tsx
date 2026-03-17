@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, DM_Mono } from "next/font/google";
+import { DM_Mono, DM_Sans } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -137,12 +137,11 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body
-        className={`${dmSans.variable} ${dmMono.variable} antialiased overflow-hidden`}
-      >
-        <NuqsAdapter><TooltipProvider>{children}</TooltipProvider></NuqsAdapter>
+      <body className={`${dmSans.variable} ${dmMono.variable} antialiased overflow-hidden`}>
+        <NuqsAdapter>
+          <TooltipProvider>{children}</TooltipProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );
 }
-

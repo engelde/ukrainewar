@@ -4,7 +4,7 @@ const UNHCR_API = "https://api.unhcr.org/population/v1/population";
 
 function toNum(v: unknown): number {
   if (typeof v === "number") return v;
-  if (typeof v === "string" && v !== "-") return parseInt(v) || 0;
+  if (typeof v === "string" && v !== "-") return parseInt(v, 10) || 0;
   return 0;
 }
 
@@ -33,16 +33,10 @@ export async function GET() {
     ]);
 
     if (!yearlyRes.ok || !countryRes.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch UNHCR data" },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "Failed to fetch UNHCR data" }, { status: 502 });
     }
 
-    const [yearlyData, countryData] = await Promise.all([
-      yearlyRes.json(),
-      countryRes.json(),
-    ]);
+    const [yearlyData, countryData] = await Promise.all([yearlyRes.json(), countryRes.json()]);
 
     const yearly = (yearlyData.items || [])
       .filter((item: UNHCRItem) => item.year)
@@ -60,10 +54,7 @@ export async function GET() {
 
     const countries = (countryData.items || [])
       .filter(
-        (item: UNHCRItem) =>
-          item.coa_name &&
-          item.coa_name !== "-" &&
-          toNum(item.refugees) > 0
+        (item: UNHCRItem) => item.coa_name && item.coa_name !== "-" && toNum(item.refugees) > 0,
       )
       .map((item: UNHCRItem) => ({
         country: item.coa_name,
@@ -71,15 +62,12 @@ export async function GET() {
         refugees: toNum(item.refugees),
         asylum_seekers: toNum(item.asylum_seekers),
       }))
-      .sort(
-        (a: { refugees: number }, b: { refugees: number }) =>
-          b.refugees - a.refugees
-      );
+      .sort((a: { refugees: number }, b: { refugees: number }) => b.refugees - a.refugees);
 
     const latest = yearly[yearly.length - 1] || {};
     const totalRefugees = countries.reduce(
       (sum: number, c: { refugees: number }) => sum + c.refugees,
-      0
+      0,
     );
 
     return NextResponse.json({
@@ -96,9 +84,6 @@ export async function GET() {
     });
   } catch (err) {
     console.error("UNHCR API error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

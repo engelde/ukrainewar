@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { WARSPOTTING_API } from "@/lib/constants";
 
 const WS_HEADERS = {
@@ -7,10 +7,7 @@ const WS_HEADERS = {
 };
 
 // In-memory cache keyed by month (YYYY-MM)
-const monthCache = new Map<
-  string,
-  { losses: Record<string, unknown>[]; cachedAt: number }
->();
+const monthCache = new Map<string, { losses: Record<string, unknown>[]; cachedAt: number }>();
 const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
 
 function getDaysInMonth(year: number, month: number): number {
@@ -34,12 +31,10 @@ async function fetchDay(date: string): Promise<Record<string, unknown>[]> {
  * Fetches all WarSpotting losses for a given month.
  * Parallelizes requests (5 concurrent) to stay within reasonable rate limits.
  */
-async function fetchMonth(
-  yearMonth: string
-): Promise<Record<string, unknown>[]> {
+async function fetchMonth(yearMonth: string): Promise<Record<string, unknown>[]> {
   const [yearStr, monthStr] = yearMonth.split("-");
-  const year = parseInt(yearStr);
-  const month = parseInt(monthStr);
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
   const daysInMonth = getDaysInMonth(year, month);
 
   const allLosses: Record<string, unknown>[] = [];
@@ -47,11 +42,7 @@ async function fetchMonth(
 
   for (let start = 1; start <= daysInMonth; start += batchSize) {
     const batch: Promise<Record<string, unknown>[]>[] = [];
-    for (
-      let day = start;
-      day < start + batchSize && day <= daysInMonth;
-      day++
-    ) {
+    for (let day = start; day < start + batchSize && day <= daysInMonth; day++) {
       const date = `${yearStr}-${monthStr}-${String(day).padStart(2, "0")}`;
       batch.push(fetchDay(date));
     }
@@ -71,16 +62,13 @@ export async function GET(request: NextRequest) {
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return NextResponse.json(
       { error: "month parameter required in YYYY-MM format" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   // Validate month is within war range
   if (month < "2022-02" || month > new Date().toISOString().slice(0, 7)) {
-    return NextResponse.json(
-      { error: "Month out of range (2022-02 to present)" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Month out of range (2022-02 to present)" }, { status: 400 });
   }
 
   try {
@@ -91,11 +79,10 @@ export async function GET(request: NextRequest) {
         { month, count: cached.losses.length, losses: cached.losses },
         {
           headers: {
-            "Cache-Control":
-              "public, s-maxage=43200, stale-while-revalidate=3600",
+            "Cache-Control": "public, s-maxage=43200, stale-while-revalidate=3600",
             "X-Data-Source": "cache",
           },
-        }
+        },
       );
     }
 
@@ -105,9 +92,7 @@ export async function GET(request: NextRequest) {
 
     // Evict oldest entries if cache grows too large (keep 12 months)
     if (monthCache.size > 12) {
-      const entries = [...monthCache.entries()].sort(
-        (a, b) => a[1].cachedAt - b[1].cachedAt
-      );
+      const entries = [...monthCache.entries()].sort((a, b) => a[1].cachedAt - b[1].cachedAt);
       for (let i = 0; i < entries.length - 12; i++) {
         monthCache.delete(entries[i][0]);
       }
@@ -117,11 +102,10 @@ export async function GET(request: NextRequest) {
       { month, count: losses.length, losses },
       {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=43200, stale-while-revalidate=3600",
+          "Cache-Control": "public, s-maxage=43200, stale-while-revalidate=3600",
           "X-Data-Source": "fresh",
         },
-      }
+      },
     );
   } catch (error) {
     const cached = monthCache.get(month);
@@ -133,7 +117,7 @@ export async function GET(request: NextRequest) {
             "Cache-Control": "public, s-maxage=3600",
             "X-Data-Source": "stale-cache",
           },
-        }
+        },
       );
     }
 
@@ -142,7 +126,7 @@ export async function GET(request: NextRequest) {
         error: "Failed to fetch monthly losses",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

@@ -48,7 +48,8 @@ function findByDate(data: OrcLossEntry[], targetDate: string): OrcLossEntry | nu
   const formatted = `${targetDate.slice(0, 4)}-${targetDate.slice(4, 6)}-${targetDate.slice(6, 8)}`;
 
   // Binary search
-  let lo = 0, hi = data.length - 1;
+  let lo = 0,
+    hi = data.length - 1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
     if (data[mid].date === formatted) return data[mid];
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
   if (!date || !/^\d{8}$/.test(date)) {
     return NextResponse.json(
       { error: "Missing or invalid 'date' parameter (YYYYMMDD)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -96,15 +97,36 @@ export async function GET(request: Request) {
     const response = {
       day: warDay,
       date: entry.date,
-      militaryPersonnel: [delta(entry.personnel, prevEntry?.personnel), v(entry.personnel)] as [number, number],
+      militaryPersonnel: [delta(entry.personnel, prevEntry?.personnel), v(entry.personnel)] as [
+        number,
+        number,
+      ],
       tank: [delta(entry.tanks, prevEntry?.tanks), v(entry.tanks)] as [number, number],
       armoredCombatVehicle: [delta(entry.afvs, prevEntry?.afvs), v(entry.afvs)] as [number, number],
-      artillerySystem: [delta(entry.artillery, prevEntry?.artillery), v(entry.artillery)] as [number, number],
-      airDefenceSystem: [delta(entry.airDefense, prevEntry?.airDefense), v(entry.airDefense)] as [number, number],
-      mlrs: [delta(entry.rocketSystems, prevEntry?.rocketSystems), v(entry.rocketSystems)] as [number, number],
-      supplyVehicle: [delta(entry.unarmoredVehicles, prevEntry?.unarmoredVehicles), v(entry.unarmoredVehicles)] as [number, number],
-      jet: [delta(entry.fixedWingAircraft, prevEntry?.fixedWingAircraft), v(entry.fixedWingAircraft)] as [number, number],
-      copter: [delta(entry.rotaryWingAircraft, prevEntry?.rotaryWingAircraft), v(entry.rotaryWingAircraft)] as [number, number],
+      artillerySystem: [delta(entry.artillery, prevEntry?.artillery), v(entry.artillery)] as [
+        number,
+        number,
+      ],
+      airDefenceSystem: [delta(entry.airDefense, prevEntry?.airDefense), v(entry.airDefense)] as [
+        number,
+        number,
+      ],
+      mlrs: [delta(entry.rocketSystems, prevEntry?.rocketSystems), v(entry.rocketSystems)] as [
+        number,
+        number,
+      ],
+      supplyVehicle: [
+        delta(entry.unarmoredVehicles, prevEntry?.unarmoredVehicles),
+        v(entry.unarmoredVehicles),
+      ] as [number, number],
+      jet: [
+        delta(entry.fixedWingAircraft, prevEntry?.fixedWingAircraft),
+        v(entry.fixedWingAircraft),
+      ] as [number, number],
+      copter: [
+        delta(entry.rotaryWingAircraft, prevEntry?.rotaryWingAircraft),
+        v(entry.rotaryWingAircraft),
+      ] as [number, number],
       uav: [delta(entry.uavs, prevEntry?.uavs), v(entry.uavs)] as [number, number],
       ship: [delta(entry.ships, prevEntry?.ships), v(entry.ships)] as [number, number],
     };

@@ -34,7 +34,7 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<void> {
-    const baseUrl = env.APP_URL || "https://uawar.app";
+    const baseUrl = env.APP_URL || "https://ukrainewar.app";
     const results: { endpoint: string; status: number | string; ms: number }[] =
       [];
 
@@ -73,7 +73,7 @@ export default {
   async fetch(): Promise<Response> {
     return new Response(
       JSON.stringify({
-        name: "uawar-data-refresh",
+        name: "ukrainewar-data-refresh",
         description: "Daily cron worker for warming data caches",
         endpoints: ENDPOINTS,
         schedule: "0 6 * * * (daily at 06:00 UTC)",

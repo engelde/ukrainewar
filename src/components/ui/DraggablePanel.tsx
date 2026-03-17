@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
-import type { ReactNode, MouseEvent, TouchEvent } from "react";
+import type { MouseEvent, ReactNode, TouchEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface DraggablePanelProps {
   children: ReactNode;
@@ -24,27 +24,30 @@ export default function DraggablePanel({
     offsetY: number;
   }>({ isDragging: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0 });
 
-  const clampOffset = useCallback((x: number, y: number) => {
-    if (!panelRef.current) return { x, y };
-    const rect = panelRef.current.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const pad = 4;
+  const clampOffset = useCallback(
+    (x: number, y: number) => {
+      if (!panelRef.current) return { x, y };
+      const rect = panelRef.current.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const pad = 4;
 
-    // Keep entire panel visible on screen (with padding from edges)
-    const naturalLeft = rect.left - offset.x;
-    const naturalTop = rect.top - offset.y;
+      // Keep entire panel visible on screen (with padding from edges)
+      const naturalLeft = rect.left - offset.x;
+      const naturalTop = rect.top - offset.y;
 
-    const minX = -naturalLeft + pad;
-    const maxX = vw - naturalLeft - rect.width - pad;
-    const minY = -naturalTop + pad;
-    const maxY = vh - naturalTop - rect.height - pad;
+      const minX = -naturalLeft + pad;
+      const maxX = vw - naturalLeft - rect.width - pad;
+      const minY = -naturalTop + pad;
+      const maxY = vh - naturalTop - rect.height - pad;
 
-    return {
-      x: Math.max(minX, Math.min(maxX, x)),
-      y: Math.max(minY, Math.min(maxY, y)),
-    };
-  }, [offset]);
+      return {
+        x: Math.max(minX, Math.min(maxX, x)),
+        y: Math.max(minY, Math.min(maxY, y)),
+      };
+    },
+    [offset],
+  );
 
   const handlePointerDown = useCallback(
     (e: MouseEvent | TouchEvent) => {
@@ -64,7 +67,7 @@ export default function DraggablePanel({
         offsetY: offset.y,
       };
     },
-    [offset, dragHandleClassName]
+    [offset, dragHandleClassName],
   );
 
   useEffect(() => {
@@ -72,17 +75,12 @@ export default function DraggablePanel({
       if (!dragState.current.isDragging) return;
       e.preventDefault();
 
-      const clientX =
-        "touches" in e ? e.touches[0].clientX : e.clientX;
-      const clientY =
-        "touches" in e ? e.touches[0].clientY : e.clientY;
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
       const dx = clientX - dragState.current.startX;
       const dy = clientY - dragState.current.startY;
-      const newOffset = clampOffset(
-        dragState.current.offsetX + dx,
-        dragState.current.offsetY + dy
-      );
+      const newOffset = clampOffset(dragState.current.offsetX + dx, dragState.current.offsetY + dy);
       setOffset(newOffset);
     };
 

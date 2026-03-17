@@ -8,9 +8,7 @@ export default function NotFound() {
         <div className="flex justify-center mb-8">
           <TbMap2 className="h-24 w-24 text-white" />
         </div>
-        <h1 className="text-7xl font-bold tracking-tight text-white font-mono mb-10">
-          404
-        </h1>
+        <h1 className="text-7xl font-bold tracking-tight text-white font-mono mb-10">404</h1>
         <Link
           href="/"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"

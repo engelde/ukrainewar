@@ -9,7 +9,7 @@
  */
 
 import { writeFileSync } from "fs";
-import { join, dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import XLSX from "xlsx";
 
@@ -52,7 +52,7 @@ async function downloadXLSX(url) {
   if (!res.ok) throw new Error(`Download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
-  return XLSX.utils.sheet_to_json(wb.Sheets["Data"]);
+  return XLSX.utils.sheet_to_json(wb.Sheets.Data);
 }
 
 async function main() {
@@ -174,7 +174,7 @@ async function main() {
             .filter(([key]) => key >= "2022")
             .map(([date, d]) => ({ date, ...d })),
         },
-      ])
+      ]),
     ),
     timeline,
     yearlyTotals: Object.entries(yearlyTotals)
@@ -184,19 +184,16 @@ async function main() {
     source: {
       name: "ACLED via HDX",
       url: "https://data.humdata.org/dataset/ukraine-acled-conflict-data",
-      attribution:
-        "ACLED (Armed Conflict Location & Event Data Project). Licensed under CC-BY.",
+      attribution: "ACLED (Armed Conflict Location & Event Data Project). Licensed under CC-BY.",
     },
   };
 
   writeFileSync(OUTPUT, JSON.stringify(output));
   const sizeKB = (JSON.stringify(output).length / 1024).toFixed(1);
   console.log(`Written ${OUTPUT} (${sizeKB} KB)`);
+  console.log(`  ${oblastSummaries.length} oblasts, ${timeline.length} months`);
   console.log(
-    `  ${oblastSummaries.length} oblasts, ${timeline.length} months`
-  );
-  console.log(
-    `  Top oblast: ${oblastSummaries[0].name} (${oblastSummaries[0].totalEvents.toLocaleString()} events)`
+    `  Top oblast: ${oblastSummaries[0].name} (${oblastSummaries[0].totalEvents.toLocaleString()} events)`,
   );
 }
 

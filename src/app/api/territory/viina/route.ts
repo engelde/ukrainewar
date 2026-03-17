@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 interface Place {
   lat: number;
@@ -29,15 +29,11 @@ async function loadData(origin: string) {
   return { places: placesCache!, control: controlCache! };
 }
 
-function findClosestSnapshot(
-  snapshots: Snapshot[],
-  targetDate: string
-): Snapshot | null {
+function findClosestSnapshot(snapshots: Snapshot[], targetDate: string): Snapshot | null {
   if (snapshots.length === 0) return null;
 
   if (targetDate <= snapshots[0].d) return snapshots[0];
-  if (targetDate >= snapshots[snapshots.length - 1].d)
-    return snapshots[snapshots.length - 1];
+  if (targetDate >= snapshots[snapshots.length - 1].d) return snapshots[snapshots.length - 1];
 
   let lo = 0;
   let hi = snapshots.length - 1;
@@ -56,10 +52,7 @@ export async function GET(request: NextRequest) {
   const date = request.nextUrl.searchParams.get("date");
 
   if (!date || !/^\d{8}$/.test(date)) {
-    return NextResponse.json(
-      { error: "date parameter required (YYYYMMDD)" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "date parameter required (YYYYMMDD)" }, { status: 400 });
   }
 
   try {
@@ -67,10 +60,7 @@ export async function GET(request: NextRequest) {
     const snapshot = findClosestSnapshot(control, date);
 
     if (!snapshot) {
-      return NextResponse.json(
-        { error: "No VIINA data available" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "No VIINA data available" }, { status: 404 });
     }
 
     const features: GeoJSON.Feature[] = [];
@@ -126,15 +116,11 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=604800, stale-while-revalidate=86400",
+          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
         },
-      }
+      },
     );
   } catch {
-    return NextResponse.json(
-      { error: "Failed to load VIINA territory data" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to load VIINA territory data" }, { status: 500 });
   }
 }

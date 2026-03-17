@@ -10,8 +10,7 @@ export async function GET(request: Request) {
     if (cachedData && now - cachedAt < CACHE_TTL) {
       return NextResponse.json(cachedData, {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=86400, stale-while-revalidate=3600",
+          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
           "X-Data-Source": "cache",
         },
       });
@@ -27,8 +26,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control":
-          "public, s-maxage=86400, stale-while-revalidate=3600",
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
         "X-Data-Source": "fresh",
       },
     });
@@ -47,7 +45,7 @@ export async function GET(request: Request) {
         error: "Failed to load civilian casualties data",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -29,17 +29,14 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
 
   // Main data
   const mainData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-    wb.Sheets["Bilateral Assistance, MAIN DATA"]
+    wb.Sheets["Bilateral Assistance, MAIN DATA"],
   );
 
   // Country summary
-  const summarySheet = XLSX.utils.sheet_to_json<unknown[]>(
-    wb.Sheets["Country Summary (€)"],
-    { header: 1 }
-  );
-  const headerIdx = (summarySheet as unknown[][]).findIndex(
-    (r) => r && r[0] === "Country"
-  );
+  const summarySheet = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets["Country Summary (€)"], {
+    header: 1,
+  });
+  const headerIdx = (summarySheet as unknown[][]).findIndex((r) => r && r[0] === "Country");
 
   const byCountry: Record<string, unknown>[] = [];
   for (let i = headerIdx + 2; i < summarySheet.length; i++) {
@@ -54,20 +51,15 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
       total: round(row[6] as number),
     });
   }
-  byCountry.sort(
-    (a, b) => (b.total as number) - (a.total as number)
-  );
+  byCountry.sort((a, b) => (b.total as number) - (a.total as number));
 
   // Monthly allocations — try dedicated sheet first, fall back to aggregating main data
-  const allocSheetName = Object.keys(wb.Sheets).find((s) =>
-    s.toLowerCase().includes("allocation")
-  );
+  const allocSheetName = Object.keys(wb.Sheets).find((s) => s.toLowerCase().includes("allocation"));
   let byMonth: Record<string, unknown>[] = [];
   if (allocSheetName) {
-    const allocSheet = XLSX.utils.sheet_to_json<unknown[]>(
-      wb.Sheets[allocSheetName],
-      { header: 1 }
-    );
+    const allocSheet = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[allocSheetName], {
+      header: 1,
+    });
     for (const row of allocSheet as unknown[][]) {
       if (!row || !row[1]) continue;
 
@@ -83,7 +75,8 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
       const military = typeof row[2] === "number" ? round(row[2]) : 0;
       const humanitarian = typeof row[3] === "number" ? round(row[3]) : 0;
       const financial = typeof row[4] === "number" ? round(row[4]) : 0;
-      const total = typeof row[5] === "number" ? round(row[5]) : military + humanitarian + financial;
+      const total =
+        typeof row[5] === "number" ? round(row[5]) : military + humanitarian + financial;
 
       if (military + humanitarian + financial > 0) {
         byMonth.push({ date, military, humanitarian, financial, total });
@@ -93,7 +86,10 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
 
   // Fallback: aggregate monthly from main data if sheet wasn't found or produced no results
   if (byMonth.length === 0) {
-    const monthBuckets: Record<string, { military: number; humanitarian: number; financial: number }> = {};
+    const monthBuckets: Record<
+      string,
+      { military: number; humanitarian: number; financial: number }
+    > = {};
     for (const r of mainData) {
       const val = (r.tot_sub_activity_value_EUR as number) || 0;
       if (val <= 0) continue;
@@ -144,9 +140,8 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
       !r.item_numb_deliv
     )
       continue;
-    const item = ((r.item_type as string) || (r.item as string) || "Other");
-    weaponCounts[item] =
-      (weaponCounts[item] || 0) + ((r.item_numb_deliv as number) || 0);
+    const item = (r.item_type as string) || (r.item as string) || "Other";
+    weaponCounts[item] = (weaponCounts[item] || 0) + ((r.item_numb_deliv as number) || 0);
   }
   const topWeapons = Object.entries(weaponCounts)
     .map(([name, count]) => ({ name, count: Math.round(count) }))
@@ -201,8 +196,7 @@ export async function GET() {
     if (cachedData && now - cachedAt < CACHE_TTL) {
       return NextResponse.json(cachedData, {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=604800, stale-while-revalidate=86400",
+          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
           "X-Data-Source": "cache",
         },
       });
@@ -214,8 +208,7 @@ export async function GET() {
 
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control":
-          "public, s-maxage=604800, stale-while-revalidate=86400",
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
         "X-Data-Source": "fresh",
       },
     });
@@ -235,7 +228,7 @@ export async function GET() {
         error: "Failed to fetch spending data",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

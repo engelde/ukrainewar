@@ -55,10 +55,7 @@ export default function Sparkline({
           <stop offset="100%" stopColor={fill} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path
-        d={fillPath}
-        fill={`url(#sparkFill-${color.replace("#", "")})`}
-      />
+      <path d={fillPath} fill={`url(#sparkFill-${color.replace("#", "")})`} />
       {/* Line */}
       <path
         d={linePath}

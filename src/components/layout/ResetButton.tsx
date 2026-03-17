@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { TbRefresh } from "react-icons/tb";
+import { cn } from "@/lib/utils";
 
 interface ResetButtonProps {
   onReset: () => void;
@@ -19,7 +19,7 @@ export default function ResetButton({ onReset, warDay, isHistorical }: ResetButt
             "bg-background/70 backdrop-blur-xl",
             "border border-border/40",
             "text-[10px] font-semibold uppercase tracking-wider font-mono",
-            "text-ua-yellow"
+            "text-ua-yellow",
           )}
         >
           Day {warDay.toLocaleString()}
@@ -34,7 +34,7 @@ export default function ResetButton({ onReset, warDay, isHistorical }: ResetButt
             "border border-border/40",
             "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
             "hover:text-foreground hover:border-border/60 transition-colors",
-            "group"
+            "group",
           )}
           title="Reset timeline, map, and panels"
         >

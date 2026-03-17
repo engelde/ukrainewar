@@ -1,22 +1,18 @@
 "use client";
 
-import type { EquipmentMarker } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { TbX, TbExternalLink } from "react-icons/tb";
+import { GiBattleship, GiHelicopter, GiRocket, GiTank } from "react-icons/gi";
 import {
-  GiTank,
-  GiRocket,
-  GiHelicopter,
-  GiBattleship,
-} from "react-icons/gi";
-import {
-  TbPlane,
-  TbTruck,
+  TbBomb,
   TbDrone,
+  TbExternalLink,
+  TbPlane,
   TbRadar,
   TbShieldChevron,
-  TbBomb,
+  TbTruck,
+  TbX,
 } from "react-icons/tb";
+import type { EquipmentMarker } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, { color: string; bg: string; label: string }> = {
   destroyed: { color: "text-destruction", bg: "bg-destruction/15", label: "Destroyed" },
@@ -69,13 +65,19 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
         "bg-background/90 backdrop-blur-xl",
         "border border-border/50",
         "shadow-xl shadow-black/40",
-        "animate-in slide-in-from-bottom-4 fade-in duration-200"
+        "animate-in slide-in-from-bottom-4 fade-in duration-200",
       )}
     >
       {/* Header with type icon and model */}
       <div className="flex items-start justify-between gap-3 border-b border-border/30 px-3 py-2.5">
         <div className="flex items-center gap-2.5">
-          <div className={cn("flex items-center justify-center h-9 w-9 rounded-lg", statusStyle.bg, statusStyle.color)}>
+          <div
+            className={cn(
+              "flex items-center justify-center h-9 w-9 rounded-lg",
+              statusStyle.bg,
+              statusStyle.color,
+            )}
+          >
             {getTypeIcon(marker.type)}
           </div>
           <div className="flex flex-col gap-0.5 min-w-0">
@@ -109,12 +111,16 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
         </div>
         {marker.location && (
           <div className="col-span-2">
-            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Location</span>
+            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              Location
+            </span>
             <div className="text-xs text-foreground">{marker.location}</div>
           </div>
         )}
         <div className="col-span-2">
-          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Coordinates</span>
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+            Coordinates
+          </span>
           <div className="text-[11px] font-mono text-muted-foreground">
             {marker.lat.toFixed(4)}, {marker.lng.toFixed(4)}
           </div>

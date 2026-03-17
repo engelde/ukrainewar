@@ -1,18 +1,18 @@
 "use client";
 
-import type { MapLayers } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { IconType } from "react-icons";
 import {
-  TbMapPin,
-  TbSwords,
   TbBomb,
   TbBorderAll,
   TbChevronDown,
-  TbStack2,
   TbFlame,
   TbMap,
+  TbMapPin,
+  TbStack2,
+  TbSwords,
 } from "react-icons/tb";
-import type { IconType } from "react-icons";
+import type { MapLayers } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface LayerControlsProps {
   layers: MapLayers;
@@ -87,7 +87,6 @@ export default function LayerControls({
   onCollapse,
   onExpand,
 }: LayerControlsProps) {
-
   if (collapsed) {
     return (
       <div
@@ -95,7 +94,7 @@ export default function LayerControls({
           "flex items-center rounded-lg",
           "bg-background/80 backdrop-blur-xl",
           "border border-border/50",
-          "overflow-hidden"
+          "overflow-hidden",
         )}
       >
         <div className="flex items-center gap-2 px-3 py-2 flex-1">
@@ -121,7 +120,7 @@ export default function LayerControls({
         "bg-background/80 backdrop-blur-xl",
         "border border-border/50",
         "overflow-hidden",
-        "max-h-[calc(100vh-10rem)]"
+        "max-h-[calc(100vh-10rem)]",
       )}
     >
       <div className="flex items-center border-b border-border/30">
@@ -148,15 +147,13 @@ export default function LayerControls({
               "border-b border-border/20",
               i % 2 === 0 && "border-r border-r-border/20",
               "hover:bg-surface-elevated/50 transition-colors",
-              "text-left"
+              "text-left",
             )}
           >
             <div
               className={cn(
                 "flex h-4 w-4 items-center justify-center rounded border border-border/50 transition-colors flex-shrink-0",
-                layers[layer.key]
-                  ? "bg-ua-blue/20 border-ua-blue/50"
-                  : "bg-transparent"
+                layers[layer.key] ? "bg-ua-blue/20 border-ua-blue/50" : "bg-transparent",
               )}
             >
               {layers[layer.key] && (
@@ -167,11 +164,7 @@ export default function LayerControls({
                   stroke="currentColor"
                   strokeWidth={3}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
             </div>
@@ -179,9 +172,7 @@ export default function LayerControls({
               <layer.Icon
                 className={cn(
                   "h-3 w-3 flex-shrink-0",
-                  layers[layer.key]
-                    ? "text-foreground"
-                    : "text-muted-foreground"
+                  layers[layer.key] ? "text-foreground" : "text-muted-foreground",
                 )}
               />
               <span className="text-xs text-foreground truncate">{layer.label}</span>

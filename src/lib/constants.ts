@@ -1,11 +1,9 @@
 export const WARSPOTTING_API = "https://ukr.warspotting.net/api";
-export const CASUALTIES_API =
-  "https://russia-casualties-ukraine-war-parser.vercel.app/api";
+export const CASUALTIES_API = "https://russia-casualties-ukraine-war-parser.vercel.app/api";
 
 export const MAP_CENTER: [number, number] = [34.5, 48.2];
 export const MAP_ZOOM = 6;
-export const MAP_STYLE =
-  "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+export const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 export const DEEPSTATE_DATA_BASE =
   "https://raw.githubusercontent.com/cyterat/deepstate-map-data/main/data";

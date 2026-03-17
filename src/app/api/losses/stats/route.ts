@@ -16,7 +16,7 @@ export async function GET() {
     if (!res.ok) {
       return NextResponse.json(
         { error: "Failed to fetch equipment stats" },
-        { status: res.status }
+        { status: res.status },
       );
     }
 
@@ -28,9 +28,6 @@ export async function GET() {
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

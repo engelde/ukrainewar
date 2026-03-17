@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import AnimatedCounter from "./AnimatedCounter";
-import Sparkline from "./Sparkline";
+import { useEffect, useState } from "react";
+import { GiBattleship, GiHelicopter, GiRocket, GiTank } from "react-icons/gi";
+import {
+  TbBomb,
+  TbChevronDown,
+  TbDrone,
+  TbPlane,
+  TbRadar,
+  TbShieldChevron,
+  TbSkull,
+  TbTruck,
+  TbUsers,
+} from "react-icons/tb";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { GiTank, GiRocket, GiHelicopter, GiBattleship } from "react-icons/gi";
-import { TbUsers, TbBomb, TbDrone, TbRadar, TbPlane, TbTruck, TbShieldChevron, TbChevronDown, TbSkull } from "react-icons/tb";
+import AnimatedCounter from "./AnimatedCounter";
+import Sparkline from "./Sparkline";
 
 interface StatsEntry {
   key: string;
@@ -139,7 +149,13 @@ interface StatsOverlayProps {
   onExpand?: () => void;
 }
 
-export default function StatsOverlay({ data, isHistorical, collapsed = false, onCollapse, onExpand }: StatsOverlayProps) {
+export default function StatsOverlay({
+  data,
+  isHistorical,
+  collapsed = false,
+  onCollapse,
+  onExpand,
+}: StatsOverlayProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
   const stats = mapCasualtyData(data);
@@ -179,12 +195,7 @@ export default function StatsOverlay({ data, isHistorical, collapsed = false, on
   };
 
   return (
-    <div
-      className={cn(
-        "flex flex-col transition-all duration-300",
-        collapsed && "w-auto"
-      )}
-    >
+    <div className={cn("flex flex-col transition-all duration-300", collapsed && "w-auto")}>
       {/* Collapsed state — compact bar with expand indicator */}
       {collapsed && (
         <div
@@ -192,7 +203,7 @@ export default function StatsOverlay({ data, isHistorical, collapsed = false, on
             "flex items-center rounded-lg",
             "bg-background/80 backdrop-blur-xl",
             "border border-border/50",
-            "overflow-hidden"
+            "overflow-hidden",
           )}
         >
           <div className="flex items-center gap-2 px-3 py-2 flex-1">
@@ -219,14 +230,16 @@ export default function StatsOverlay({ data, isHistorical, collapsed = false, on
               "flex items-center rounded-t-lg",
               "bg-background/80 backdrop-blur-xl",
               "border border-b-0 border-border/50",
-              "overflow-hidden"
+              "overflow-hidden",
             )}
           >
-            <div className={cn(
-              "drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1",
-              "text-xs font-semibold uppercase tracking-wider",
-              "text-destruction"
-            )}>
+            <div
+              className={cn(
+                "drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1",
+                "text-xs font-semibold uppercase tracking-wider",
+                "text-destruction",
+              )}
+            >
               <TbSkull className="h-3.5 w-3.5" />
               <span>Russian Losses</span>
             </div>
@@ -244,92 +257,98 @@ export default function StatsOverlay({ data, isHistorical, collapsed = false, on
               "flex flex-col rounded-b-lg",
               "bg-background/80 backdrop-blur-xl",
               "border border-t-0 border-border/50",
-              "overflow-hidden"
+              "overflow-hidden",
             )}
           >
-          {stats.map((stat) => {
-            const isExpanded = expandedKey === stat.key;
-            const trendValues = getTrendValues(stat.trendKey);
-            const hasTrend = trendValues.length > 2;
-            const dates = getTrendDates();
+            {stats.map((stat) => {
+              const isExpanded = expandedKey === stat.key;
+              const trendValues = getTrendValues(stat.trendKey);
+              const hasTrend = trendValues.length > 2;
+              const dates = getTrendDates();
 
-            return (
-              <div key={stat.key}>
-                <button
-                  onClick={() =>
-                    setExpandedKey(isExpanded ? null : stat.key)
-                  }
-                  className={cn(
-                    "group flex w-full items-center gap-2 px-3 py-1.5",
-                    "border-b border-border/30 last:border-b-0",
-                    "hover:bg-surface-elevated/50 transition-colors",
-                    isExpanded && "bg-surface-elevated/30"
-                  )}
-                >
-                  <span className="flex w-5 items-center justify-center text-muted-foreground">
-                    {stat.icon}
-                  </span>
-                  <span className="min-w-[85px] text-left text-xs text-muted-foreground sm:min-w-[100px]">
-                    {stat.label}
-                  </span>
-                  <span className="ml-auto flex items-center gap-1.5">
-                    {stat.daily > 0 && (
-                      <span className="text-[10px] font-medium text-destruction">
-                        +{stat.daily.toLocaleString()}
-                      </span>
-                    )}
-                    <AnimatedCounter
-                      value={stat.total}
-                      className="text-sm font-bold text-foreground tabular-nums text-right"
-                    />
-                  </span>
-                </button>
-                {/* Expanded sparkline */}
-                {isExpanded && (
-                  <div
+              return (
+                <div key={stat.key}>
+                  <button
+                    onClick={() => setExpandedKey(isExpanded ? null : stat.key)}
                     className={cn(
-                      "border-b border-border/30 bg-surface/40 px-3 py-2",
-                      "animate-in slide-in-from-top-2 fade-in duration-200"
+                      "group flex w-full items-center gap-2 px-3 py-1.5",
+                      "border-b border-border/30 last:border-b-0",
+                      "hover:bg-surface-elevated/50 transition-colors",
+                      isExpanded && "bg-surface-elevated/30",
                     )}
                   >
-                    {hasTrend ? (
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">
-                            Confirmed losses · last {dates.length} days
-                          </span>
-                          <span className="text-[10px] font-medium" style={{ color: TREND_COLORS[stat.trendKey] || "#3d8fd6" }}>
-                            {trendValues.reduce((a, b) => a + b, 0)} total
-                          </span>
+                    <span className="flex w-5 items-center justify-center text-muted-foreground">
+                      {stat.icon}
+                    </span>
+                    <span className="min-w-[85px] text-left text-xs text-muted-foreground sm:min-w-[100px]">
+                      {stat.label}
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5">
+                      {stat.daily > 0 && (
+                        <span className="text-[10px] font-medium text-destruction">
+                          +{stat.daily.toLocaleString()}
+                        </span>
+                      )}
+                      <AnimatedCounter
+                        value={stat.total}
+                        className="text-sm font-bold text-foreground tabular-nums text-right"
+                      />
+                    </span>
+                  </button>
+                  {/* Expanded sparkline */}
+                  {isExpanded && (
+                    <div
+                      className={cn(
+                        "border-b border-border/30 bg-surface/40 px-3 py-2",
+                        "animate-in slide-in-from-top-2 fade-in duration-200",
+                      )}
+                    >
+                      {hasTrend ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground">
+                              Confirmed losses · last {dates.length} days
+                            </span>
+                            <span
+                              className="text-[10px] font-medium"
+                              style={{ color: TREND_COLORS[stat.trendKey] || "#3d8fd6" }}
+                            >
+                              {trendValues.reduce((a, b) => a + b, 0)} total
+                            </span>
+                          </div>
+                          <Sparkline
+                            data={trendValues}
+                            width={200}
+                            height={32}
+                            color={TREND_COLORS[stat.trendKey] || "#3d8fd6"}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                            <span>{dates[0]?.slice(5)}</span>
+                            <span>{dates[dates.length - 1]?.slice(5)}</span>
+                          </div>
                         </div>
-                        <Sparkline
-                          data={trendValues}
-                          width={200}
-                          height={32}
-                          color={TREND_COLORS[stat.trendKey] || "#3d8fd6"}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-[9px] text-muted-foreground/60">
-                          <span>{dates[0]?.slice(5)}</span>
-                          <span>{dates[dates.length - 1]?.slice(5)}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">
-                        No trend data available
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">
+                          No trend data available
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             <div className="px-3 py-1.5 border-t border-border/30">
-              <a href="https://www.mil.gov.ua" target="_blank" rel="noopener noreferrer" className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors">
+              <a
+                href="https://www.mil.gov.ua"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors"
+              >
                 Source: Ukrainian Ministry of Defence
               </a>
             </div>
-        </div>
+          </div>
         </>
       )}
     </div>

@@ -44,10 +44,7 @@ interface AcledRow {
 
 interface OblastData {
   pcode: string;
-  months: Record<
-    string,
-    { events: number; fatalities: number; civilian: number; demos: number }
-  >;
+  months: Record<string, { events: number; fatalities: number; civilian: number; demos: number }>;
 }
 
 async function downloadXLSX(url: string): Promise<AcledRow[]> {
@@ -55,7 +52,7 @@ async function downloadXLSX(url: string): Promise<AcledRow[]> {
   if (!res.ok) throw new Error(`HDX download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
-  return XLSX.utils.sheet_to_json<AcledRow>(wb.Sheets["Data"]);
+  return XLSX.utils.sheet_to_json<AcledRow>(wb.Sheets.Data);
 }
 
 function processRows(
@@ -69,7 +66,7 @@ function processRows(
   yearlyTotals: Record<
     string,
     { events: number; fatalities: number; civilian: number; demos: number }
-  >
+  >,
 ) {
   for (const row of rows) {
     const oblast = row.Admin1;
@@ -81,8 +78,7 @@ function processRows(
     const events = row.Events || 0;
     const fatalities = row.Fatalities || 0;
 
-    if (!oblasts[oblast])
-      oblasts[oblast] = { pcode: row["Admin1 Pcode"] || "", months: {} };
+    if (!oblasts[oblast]) oblasts[oblast] = { pcode: row["Admin1 Pcode"] || "", months: {} };
     if (!oblasts[oblast].months[key])
       oblasts[oblast].months[key] = {
         events: 0,
@@ -168,10 +164,24 @@ async function processAcledData(): Promise<Record<string, unknown>> {
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([date, d]) => {
             const [y, m] = date.split("-");
-            const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const monthNames = [
+              "",
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
             return {
-              month: monthNames[parseInt(m)] || date,
-              year: parseInt(y),
+              month: monthNames[parseInt(m, 10)] || date,
+              year: parseInt(y, 10),
               events: d.events,
               fatalities: d.fatalities,
             };
@@ -205,7 +215,7 @@ async function processAcledData(): Promise<Record<string, unknown>> {
             .filter(([key]) => key >= "2022")
             .map(([date, d]) => ({ date, ...d })),
         },
-      ])
+      ]),
     ),
     timeline,
     yearlyTotals: Object.entries(yearlyTotals)
@@ -215,8 +225,7 @@ async function processAcledData(): Promise<Record<string, unknown>> {
     source: {
       name: "ACLED via HDX",
       url: "https://data.humdata.org/dataset/ukraine-acled-conflict-data",
-      attribution:
-        "ACLED (Armed Conflict Location & Event Data Project). Licensed under CC-BY.",
+      attribution: "ACLED (Armed Conflict Location & Event Data Project). Licensed under CC-BY.",
     },
   };
 }
@@ -227,8 +236,7 @@ export async function GET() {
     if (cachedData && now - cachedAt < CACHE_TTL) {
       return NextResponse.json(cachedData, {
         headers: {
-          "Cache-Control":
-            "public, s-maxage=86400, stale-while-revalidate=3600",
+          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
           "X-Data-Source": "cache",
         },
       });
@@ -240,8 +248,7 @@ export async function GET() {
 
     return NextResponse.json(data, {
       headers: {
-        "Cache-Control":
-          "public, s-maxage=86400, stale-while-revalidate=3600",
+        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
         "X-Data-Source": "fresh",
       },
     });
@@ -260,7 +267,7 @@ export async function GET() {
         error: "Failed to fetch ACLED regional data",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

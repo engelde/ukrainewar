@@ -42,16 +42,14 @@ export function AnimatedCounter({
       }
 
       const startTime = frameTime;
-      const multiplier = Math.pow(10, decimals);
+      const multiplier = 10 ** decimals;
 
       function animate(currentTime: number) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
+        const eased = 1 - (1 - progress) ** 3;
         const current =
-          Math.round(
-            (startValue + (targetValue - startValue) * eased) * multiplier
-          ) / multiplier;
+          Math.round((startValue + (targetValue - startValue) * eased) * multiplier) / multiplier;
         setDisplayValue(current);
 
         if (progress < 1) {

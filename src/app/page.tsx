@@ -12,4 +12,3 @@ export default async function Home() {
 
   return <AppShell casualtyData={casualtyData} />;
 }
-

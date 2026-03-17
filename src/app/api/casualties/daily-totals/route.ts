@@ -60,8 +60,11 @@ export async function GET() {
       });
     }
     return NextResponse.json(
-      { error: "Failed to fetch daily totals", details: error instanceof Error ? error.message : "Unknown" },
-      { status: 502 }
+      {
+        error: "Failed to fetch daily totals",
+        details: error instanceof Error ? error.message : "Unknown",
+      },
+      { status: 502 },
     );
   }
 }

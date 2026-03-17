@@ -97,7 +97,7 @@ async function fetchAllPages(): Promise<AcledEvent[]> {
     for (const row of rows) {
       const lat = parseFloat(row.latitude);
       const lng = parseFloat(row.longitude);
-      if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) continue;
+      if (Number.isNaN(lat) || Number.isNaN(lng) || (lat === 0 && lng === 0)) continue;
 
       events.push({
         event_id: row.event_id_cnty,
@@ -109,7 +109,7 @@ async function fetchAllPages(): Promise<AcledEvent[]> {
         location: row.location || "",
         latitude: lat,
         longitude: lng,
-        fatalities: parseInt(row.fatalities) || 0,
+        fatalities: parseInt(row.fatalities, 10) || 0,
         notes: row.notes || "",
         admin1: row.admin1 || "",
       });
@@ -156,8 +156,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to fetch ACLED data";
+    const message = error instanceof Error ? error.message : "Failed to fetch ACLED data";
     console.error("ACLED API error:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

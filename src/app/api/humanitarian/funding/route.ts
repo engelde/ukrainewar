@@ -18,14 +18,11 @@ export async function GET() {
   try {
     const res = await fetch(
       `${HDX_HAPI}/coordination-context/funding?location_code=UKR&app_identifier=${APP_ID}&output_format=json&limit=50`,
-      { next: { revalidate: 86400 } }
+      { next: { revalidate: 86400 } },
     );
 
     if (!res.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch HDX funding data" },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "Failed to fetch HDX funding data" }, { status: 502 });
     }
 
     const data = await res.json();
@@ -38,7 +35,7 @@ export async function GET() {
           !item.appeal_name.startsWith("Not specified") &&
           item.reference_period_start >= "2022" &&
           ((item.requirements_usd && item.requirements_usd > 0) ||
-            (item.funding_usd && item.funding_usd > 0))
+            (item.funding_usd && item.funding_usd > 0)),
       )
       .map((item: FundingItem) => ({
         code: item.appeal_code,
@@ -47,30 +44,25 @@ export async function GET() {
         requirements_usd: item.requirements_usd || 0,
         funding_usd: item.funding_usd || 0,
         funding_pct: item.funding_pct || 0,
-        year: parseInt(item.reference_period_start.slice(0, 4)),
+        year: parseInt(item.reference_period_start.slice(0, 4), 10),
       }))
-      .sort(
-        (a: { year: number }, b: { year: number }) => a.year - b.year
-      );
+      .sort((a: { year: number }, b: { year: number }) => a.year - b.year);
 
     // Calculate totals
     const totalRequired = appeals.reduce(
-      (sum: number, a: { requirements_usd: number }) =>
-        sum + a.requirements_usd,
-      0
+      (sum: number, a: { requirements_usd: number }) => sum + a.requirements_usd,
+      0,
     );
     const totalFunded = appeals.reduce(
       (sum: number, a: { funding_usd: number }) => sum + a.funding_usd,
-      0
+      0,
     );
 
     return NextResponse.json({
       summary: {
         total_required_usd: totalRequired,
         total_funded_usd: totalFunded,
-        overall_pct: totalRequired > 0
-          ? Math.round((totalFunded / totalRequired) * 100)
-          : 0,
+        overall_pct: totalRequired > 0 ? Math.round((totalFunded / totalRequired) * 100) : 0,
         appeal_count: appeals.length,
       },
       appeals,
@@ -79,9 +71,6 @@ export async function GET() {
     });
   } catch (err) {
     console.error("HDX Funding API error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
