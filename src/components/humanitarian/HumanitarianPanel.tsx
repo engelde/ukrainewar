@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import {
   TbUsers,
@@ -126,30 +126,58 @@ function FundingBar({
   );
 }
 
+interface CivilianCasualtiesData {
+  cumulativeTotal: { killed: number; injured: number; total: number };
+  cumulativeAsOfDate: string;
+  monthly: { month: string; killed: number; injured: number }[];
+}
+
 interface HumanitarianPanelProps {
   isOpen: boolean;
   onToggle: () => void;
+  timelineDate?: string; // YYYYMMDD format
+}
+
+function getCumulativeCasualties(
+  data: CivilianCasualtiesData,
+  timelineDate?: string
+): { killed: number; injured: number } {
+  if (!timelineDate) return data.cumulativeTotal;
+  const year = timelineDate.slice(0, 4);
+  const month = timelineDate.slice(4, 6);
+  const targetMonth = `${year}-${month}`;
+  let killed = 0;
+  let injured = 0;
+  for (const m of data.monthly) {
+    if (m.month > targetMonth) break;
+    killed += m.killed;
+    injured += m.injured;
+  }
+  return { killed, injured };
 }
 
 export default function HumanitarianPanel({
   isOpen,
   onToggle,
+  timelineDate,
 }: HumanitarianPanelProps) {
   const [refugees, setRefugees] = useState<RefugeeData | null>(null);
   const [funding, setFunding] = useState<FundingData | null>(null);
+  const [casualties, setCasualties] = useState<CivilianCasualtiesData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data on mount (always, since panel defaults to open)
   useEffect(() => {
     async function fetchData() {
       try {
-        const [refRes, fundRes] = await Promise.all([
+        const [refRes, fundRes, casRes] = await Promise.all([
           fetch("/api/humanitarian/refugees"),
           fetch("/api/humanitarian/funding"),
+          fetch("/data/civilian-casualties.json"),
         ]);
         if (refRes.ok) setRefugees(await refRes.json());
         if (fundRes.ok) setFunding(await fundRes.json());
+        if (casRes.ok) setCasualties(await casRes.json());
       } catch {
         // Data loads silently on error
       } finally {
@@ -158,6 +186,14 @@ export default function HumanitarianPanel({
     }
     fetchData();
   }, []);
+
+  const today = new Date().toISOString().replace(/-/g, "").slice(0, 8);
+  const isHistorical = !!timelineDate && timelineDate !== today;
+
+  const currentCasualties = useMemo(() => {
+    if (!casualties) return { killed: 13883, injured: 41378 };
+    return getCumulativeCasualties(casualties, isHistorical ? timelineDate : undefined);
+  }, [casualties, timelineDate, isHistorical]);
 
   if (!isOpen) {
     return (
@@ -347,12 +383,17 @@ export default function HumanitarianPanel({
         <div className="flex items-center gap-2 px-3 py-2">
           <TbUsers className="h-3.5 w-3.5 text-destruction" />
           <div>
-            <div className="text-xs text-foreground">Civilian Casualties</div>
+            <div className="text-xs text-foreground">
+              Civilian Casualties
+              {isHistorical && (
+                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
+              )}
+            </div>
             <div className="text-[9px] text-muted-foreground">
-              11,743+ killed · 25,970+ injured
+              {currentCasualties.killed.toLocaleString()}+ killed · {currentCasualties.injured.toLocaleString()}+ injured
             </div>
             <div className="text-[9px] text-muted-foreground/60">
-              Source: OHCHR (as of Dec 2024)
+              Source: OHCHR{casualties ? ` (as of ${casualties.cumulativeAsOfDate.slice(0, 7)})` : ""}
             </div>
           </div>
         </div>

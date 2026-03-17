@@ -351,6 +351,11 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             );
           })}
         </div>
+          <div className="px-3 py-1 border-t border-border/30">
+            <div className="text-[8px] text-muted-foreground/50">
+              Source: Ukrainian Ministry of Defence
+            </div>
+          </div>
         </>
       )}
     </div>

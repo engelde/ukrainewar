@@ -209,6 +209,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         <HumanitarianPanel
           isOpen={humanitarianOpen}
           onToggle={handleToggleHumanitarian}
+          timelineDate={territoryDate ?? undefined}
         />
       </DraggablePanel>
       <DraggablePanel className="fixed right-4 top-[280px] z-30 sm:right-6 sm:top-[300px] max-w-[calc(100vw-2rem)] sm:max-w-xs">
