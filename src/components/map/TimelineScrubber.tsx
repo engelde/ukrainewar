@@ -90,8 +90,8 @@ function generateDateRange(): string[] {
   return dates;
 }
 
-// DeepState territory data availability range
 const TERRITORY_DATA_START = "20240708";
+const PIXELS_PER_DAY = 5;
 
 export default function TimelineScrubber({
   onDateChange,
@@ -103,6 +103,8 @@ export default function TimelineScrubber({
   const [isPlaying, setIsPlaying] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isInitialScroll = useRef(true);
 
   // Notify parent when index changes
   useEffect(() => {
@@ -137,14 +139,29 @@ export default function TimelineScrubber({
     };
   }, [isPlaying, dates.length]);
 
-  const handleSliderChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const idx = parseInt(e.target.value);
-      setCurrentIndex(idx);
+  const handleTimelineClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button")) return;
+
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left + container.scrollLeft;
+      const idx = Math.round(x / PIXELS_PER_DAY);
+      setCurrentIndex(Math.max(0, Math.min(dates.length - 1, idx)));
       setIsPlaying(false);
     },
-    []
+    [dates.length]
   );
+
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollLeft += e.deltaY;
+    }
+  }, []);
 
   const handleJumpToEvent = useCallback(
     (eventDate: string) => {
@@ -167,47 +184,74 @@ export default function TimelineScrubber({
     setIsPlaying(false);
   }, [dates.length]);
 
+  // Auto-scroll to keep playhead visible
+  useEffect(() => {
+    if (collapsed) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const pos = currentIndex * PIXELS_PER_DAY;
+    const viewWidth = container.clientWidth;
+
+    if (isInitialScroll.current) {
+      container.scrollLeft = pos - viewWidth * 0.7;
+      isInitialScroll.current = false;
+      return;
+    }
+
+    const scrollLeft = container.scrollLeft;
+    const padding = 80;
+    if (pos < scrollLeft + padding || pos > scrollLeft + viewWidth - padding) {
+      if (isPlaying) {
+        container.scrollLeft = pos - viewWidth / 3;
+      } else {
+        container.scrollTo({
+          left: pos - viewWidth / 2,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [currentIndex, collapsed, isPlaying]);
+
   if (dates.length === 0) return null;
 
   const currentDate = dates[currentIndex] || dates[dates.length - 1];
+  const totalWidth = dates.length * PIXELS_PER_DAY;
 
-  // Calculate key event positions as percentages
-  const eventPositions = KEY_EVENTS.map((event) => {
+  // Event positions in pixels
+  const eventPositionsPx = KEY_EVENTS.map((event) => {
     const idx = dates.findIndex((d) => d >= event.date);
     return {
       ...event,
-      position: idx >= 0 ? (idx / (dates.length - 1)) * 100 : -1,
+      px: idx >= 0 ? idx * PIXELS_PER_DAY : -1,
       index: idx,
     };
-  }).filter((e) => e.position >= 0);
+  }).filter((e) => e.px >= 0);
 
-  // Calculate which event labels to show (collision-free, alternating rows)
-  const visibleEventLabels = (() => {
-    const MIN_GAP = 8; // minimum 8% gap between any adjacent labels
-    const result: { date: string; label: string; position: number; row: number }[] = [];
-    let lastPos = -MIN_GAP;
+  // All labels with two-row collision-free layout
+  const labelRows = (() => {
+    const MIN_LABEL_GAP = 85;
+    const rows: { date: string; label: string; px: number; row: number }[] = [];
+    let lastRow0 = -MIN_LABEL_GAP;
+    let lastRow1 = -MIN_LABEL_GAP;
 
-    for (const event of eventPositions) {
-      if (event.position - lastPos >= MIN_GAP) {
-        result.push({
-          date: event.date,
-          label: event.label,
-          position: event.position,
-          row: result.length % 2, // alternate rows for visual separation
-        });
-        lastPos = event.position;
+    for (const event of eventPositionsPx) {
+      if (event.px - lastRow0 >= MIN_LABEL_GAP) {
+        rows.push({ date: event.date, label: event.label, px: event.px, row: 0 });
+        lastRow0 = event.px;
+      } else if (event.px - lastRow1 >= MIN_LABEL_GAP) {
+        rows.push({ date: event.date, label: event.label, px: event.px, row: 1 });
+        lastRow1 = event.px;
       }
     }
-    return result;
+    return rows;
   })();
 
-  // Find the closest active event (within 5 days of current date)
-  const activeEvent = eventPositions.find((event) => {
-    const eventIdx = event.index;
-    return Math.abs(currentIndex - eventIdx) <= 5;
+  // Closest active event (within 5 days)
+  const activeEvent = eventPositionsPx.find((event) => {
+    return Math.abs(currentIndex - event.index) <= 5;
   });
 
-  // Calculate war day for current date
   const warStart = new Date("2022-02-24");
   const currentDateObj = new Date(
     `${currentDate.slice(0, 4)}-${currentDate.slice(4, 6)}-${currentDate.slice(6, 8)}`
@@ -216,16 +260,20 @@ export default function TimelineScrubber({
     (currentDateObj.getTime() - warStart.getTime()) / 86400000
   ) + 1;
 
-  // Year boundaries for tick marks
-  const yearTicks = ["2023", "2024", "2025", "2026"]
+  // Year boundaries in pixels
+  const yearTicksPx = ["2022", "2023", "2024", "2025", "2026"]
     .map((y) => {
+      if (y === "2022") return { year: y, px: 0 };
       const idx = dates.indexOf(`${y}0101`);
-      return idx >= 0 ? { year: y, position: (idx / (dates.length - 1)) * 100 } : null;
+      return idx >= 0 ? { year: y, px: idx * PIXELS_PER_DAY } : null;
     })
-    .filter(Boolean) as { year: string; position: number }[];
+    .filter(Boolean) as { year: string; px: number }[];
 
-  // Whether territory data is available for current date
   const hasTerritoryData = currentDate >= TERRITORY_DATA_START;
+  const territoryStartPx = (() => {
+    const idx = dates.indexOf(TERRITORY_DATA_START);
+    return idx >= 0 ? idx * PIXELS_PER_DAY : -1;
+  })();
 
   return (
     <div
@@ -284,197 +332,202 @@ export default function TimelineScrubber({
               </div>
             )}
 
-            {/* Main timeline bar */}
-            <div className="px-3 pt-2 pb-10 sm:pb-12">
-              <div className="flex items-center gap-3">
-                {/* Left: Date info */}
-                <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[140px]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
-                      Timeline
+            {/* Controls row */}
+            <div className="flex items-center gap-3 px-3 pt-2">
+              {/* Date info */}
+              <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[140px]">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
+                    Timeline
+                  </span>
+                  {!hasTerritoryData && (
+                    <span className="text-[8px] px-1 py-0.5 rounded bg-surface-elevated text-muted-foreground">
+                      No map data
                     </span>
-                    {!hasTerritoryData && (
-                      <span className="text-[8px] px-1 py-0.5 rounded bg-surface-elevated text-muted-foreground">
-                        No map data
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono text-foreground font-medium">
-                      {formatDateDisplay(currentDate)}
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-mono text-foreground font-medium">
+                    {formatDateDisplay(currentDate)}
+                  </span>
+                  {currentIndex < dates.length - 1 && (
+                    <span className="text-[9px] text-ua-yellow/70 font-mono">
+                      Day {warDay}
                     </span>
-                    {currentIndex < dates.length - 1 && (
-                      <span className="text-[9px] text-ua-yellow/70 font-mono">
-                        Day {warDay}
-                      </span>
-                    )}
-                    {currentIndex === dates.length - 1 && (
-                      <span className="text-[9px] text-capture font-mono">
-                        Today
-                      </span>
-                    )}
-                  </div>
+                  )}
+                  {currentIndex === dates.length - 1 && (
+                    <span className="text-[9px] text-capture font-mono">
+                      Today
+                    </span>
+                  )}
                 </div>
+              </div>
 
-                {/* Transport controls */}
-                <div className="flex items-center gap-0.5">
-                  <button
-                    onClick={handleStepBack}
-                    disabled={currentIndex <= 0}
-                    className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  >
-                    <TbChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={togglePlay}
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
-                      isPlaying
-                        ? "bg-ua-blue/20 text-ua-blue"
-                        : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {isPlaying ? (
-                      <TbPlayerPauseFilled className="h-4 w-4" />
-                    ) : (
-                      <TbPlayerPlayFilled className="h-4 w-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={handleStepForward}
-                    disabled={currentIndex >= dates.length - 1}
-                    className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  >
-                    <TbChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Slider area */}
-                <div className="relative flex-1">
-                  {/* Year tick marks */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {yearTicks.map((tick) => (
-                      <div
-                        key={tick.year}
-                        className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center"
-                        style={{ left: `${tick.position}%` }}
-                      >
-                        <div className="w-px h-4 bg-border/60" />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Event markers on slider */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {eventPositions.map((event) => (
-                      <button
-                        key={event.date}
-                        onClick={() => handleJumpToEvent(event.date)}
-                        className={cn(
-                          "absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-auto transition-all",
-                          activeEvent?.date === event.date
-                            ? "w-2 h-4 bg-ua-yellow"
-                            : "w-1.5 h-3 bg-ua-yellow/50 hover:bg-ua-yellow hover:h-4"
-                        )}
-                        style={{ left: `${event.position}%` }}
-                        title={`${event.label}: ${event.description} (${formatDateShort(event.date)})`}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Territory data range indicator */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {(() => {
-                      const startIdx = dates.indexOf(TERRITORY_DATA_START);
-                      if (startIdx < 0) return null;
-                      const startPct = (startIdx / (dates.length - 1)) * 100;
-                      return (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-ua-blue/10 rounded-full"
-                          style={{ left: `${startPct}%`, right: "0%" }}
-                        />
-                      );
-                    })()}
-                  </div>
-
-                  <input
-                    type="range"
-                    min={0}
-                    max={dates.length - 1}
-                    value={currentIndex}
-                    onChange={handleSliderChange}
-                    className="timeline-slider w-full h-2 rounded-full appearance-none cursor-pointer"
-                  />
-
-                  {/* Year labels below slider */}
-                  <div className="absolute -bottom-3.5 left-0 right-0 pointer-events-none">
-                    <span className="absolute left-0 text-[9px] text-muted-foreground/60">2022</span>
-                    {yearTicks.map((tick) => (
-                      <span
-                        key={tick.year}
-                        className="absolute text-[9px] text-muted-foreground/60 -translate-x-1/2"
-                        style={{ left: `${tick.position}%` }}
-                      >
-                        {tick.year}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Event labels positioned at actual timeline locations */}
-                  <div
-                    className="absolute left-0 right-0 pointer-events-none hidden sm:block"
-                    style={{ top: "calc(100% + 22px)" }}
-                  >
-                    {visibleEventLabels.map((labelInfo) => {
-                      const isLabelActive = activeEvent?.date === labelInfo.date;
-                      return (
-                        <div
-                          key={labelInfo.date}
-                          className="absolute pointer-events-auto"
-                          style={{
-                            left: `${labelInfo.position}%`,
-                          }}
-                        >
-                          <div className="flex flex-col items-center -translate-x-1/2">
-                            <div
-                              className={cn(
-                                "w-px",
-                                labelInfo.row === 0 ? "h-2" : "h-5",
-                                isLabelActive
-                                  ? "bg-ua-yellow/50"
-                                  : "bg-border/40"
-                              )}
-                            />
-                            <button
-                              onClick={() =>
-                                handleJumpToEvent(labelInfo.date)
-                              }
-                              className={cn(
-                                "text-[7px] whitespace-nowrap leading-none mt-0.5",
-                                "transition-colors",
-                                isLabelActive
-                                  ? "text-ua-yellow font-semibold"
-                                  : "text-muted-foreground/50 hover:text-muted-foreground"
-                              )}
-                            >
-                              {labelInfo.label}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Collapse button */}
+              {/* Transport controls */}
+              <div className="flex items-center gap-0.5">
                 <button
-                  onClick={() => setCollapsed(true)}
-                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground ml-1"
+                  onClick={handleStepBack}
+                  disabled={currentIndex <= 0}
+                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
-                  <TbChevronDown className="h-4 w-4" />
+                  <TbChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={togglePlay}
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                    isPlaying
+                      ? "bg-ua-blue/20 text-ua-blue"
+                      : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {isPlaying ? (
+                    <TbPlayerPauseFilled className="h-4 w-4" />
+                  ) : (
+                    <TbPlayerPlayFilled className="h-4 w-4" />
+                  )}
+                </button>
+                <button
+                  onClick={handleStepForward}
+                  disabled={currentIndex >= dates.length - 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+                >
+                  <TbChevronRight className="h-4 w-4" />
                 </button>
               </div>
 
+              <div className="flex-1" />
+
+              {/* Collapse button */}
+              <button
+                onClick={() => setCollapsed(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+              >
+                <TbChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Scrollable timeline */}
+            <div
+              ref={scrollContainerRef}
+              className="overflow-x-auto overflow-y-hidden scrollbar-none mx-3 mb-3 mt-1.5"
+              onWheel={handleWheel}
+            >
+              <div
+                className="relative cursor-crosshair"
+                style={{ width: `${totalWidth}px`, height: "55px" }}
+                onClick={handleTimelineClick}
+              >
+                {/* Track line */}
+                <div className="absolute top-3 left-0 right-0 h-0.5 bg-border/30 rounded-full" />
+
+                {/* Territory data availability range */}
+                {territoryStartPx >= 0 && (
+                  <div
+                    className="absolute top-2 h-2 bg-ua-blue/8 rounded-full"
+                    style={{
+                      left: `${territoryStartPx}px`,
+                      width: `${totalWidth - territoryStartPx}px`,
+                    }}
+                  />
+                )}
+
+                {/* Year tick marks + labels */}
+                {yearTicksPx.map((tick) => (
+                  <div
+                    key={tick.year}
+                    className="absolute top-0"
+                    style={{ left: `${tick.px}px` }}
+                  >
+                    <div className="w-px h-6 bg-border/40" />
+                    <span className="absolute top-7 -translate-x-1/2 text-[8px] text-muted-foreground/50 whitespace-nowrap">
+                      {tick.year}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Event marker dots */}
+                {eventPositionsPx.map((event) => (
+                  <button
+                    key={event.date}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleJumpToEvent(event.date);
+                    }}
+                    className={cn(
+                      "absolute top-1.5 -translate-x-1/2 rounded-full transition-all z-10",
+                      activeEvent?.date === event.date
+                        ? "w-2 h-3 bg-ua-yellow"
+                        : "w-1.5 h-2.5 bg-ua-yellow/50 hover:bg-ua-yellow hover:h-3"
+                    )}
+                    style={{ left: `${event.px}px` }}
+                    title={`${event.label}: ${event.description} (${formatDateShort(event.date)})`}
+                  />
+                ))}
+
+                {/* Playhead (current date indicator) */}
+                <div
+                  className="absolute top-0 w-0.5 bg-ua-blue rounded-full pointer-events-none z-20"
+                  style={{
+                    left: `${currentIndex * PIXELS_PER_DAY}px`,
+                    height: "24px",
+                  }}
+                />
+                <div
+                  className="absolute pointer-events-none z-20"
+                  style={{
+                    left: `${currentIndex * PIXELS_PER_DAY}px`,
+                    top: "24px",
+                  }}
+                >
+                  <div className="w-1.5 h-1.5 bg-ua-blue rounded-full -translate-x-[2.5px]" />
+                </div>
+
+                {/* Event labels below timeline */}
+                <div
+                  className="absolute left-0 right-0 pointer-events-none"
+                  style={{ top: "28px" }}
+                >
+                  {labelRows.map((labelInfo) => {
+                    const isLabelActive =
+                      activeEvent?.date === labelInfo.date;
+                    return (
+                      <div
+                        key={labelInfo.date}
+                        className="absolute pointer-events-auto"
+                        style={{ left: `${labelInfo.px}px` }}
+                      >
+                        <div className="flex flex-col items-center -translate-x-1/2">
+                          <div
+                            className={cn(
+                              "w-px",
+                              labelInfo.row === 0 ? "h-1.5" : "h-4",
+                              isLabelActive
+                                ? "bg-ua-yellow/50"
+                                : "bg-border/40"
+                            )}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleJumpToEvent(labelInfo.date);
+                            }}
+                            className={cn(
+                              "text-[7px] whitespace-nowrap leading-none mt-0.5",
+                              "transition-colors",
+                              isLabelActive
+                                ? "text-ua-yellow font-semibold"
+                                : "text-muted-foreground/60 hover:text-muted-foreground"
+                            )}
+                          >
+                            {labelInfo.label}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
           </>

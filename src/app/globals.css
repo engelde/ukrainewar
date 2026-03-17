@@ -169,58 +169,6 @@
   animation: slide-in-from-left 0.2s ease-out;
 }
 
-/* Timeline slider */
-.timeline-slider {
-  background: oklch(0.22 0.015 270);
-}
-
-.timeline-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: oklch(0.48 0.18 250);
-  border: 2px solid oklch(0.62 0.15 250);
-  cursor: pointer;
-  box-shadow: 0 0 6px oklch(0.48 0.18 250 / 0.5);
-  position: relative;
-  z-index: 2;
-}
-
-.timeline-slider::-webkit-slider-thumb:hover {
-  background: oklch(0.55 0.18 250);
-  box-shadow: 0 0 10px oklch(0.48 0.18 250 / 0.7);
-}
-
-.timeline-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: oklch(0.48 0.18 250);
-  border: 2px solid oklch(0.62 0.15 250);
-  cursor: pointer;
-  box-shadow: 0 0 6px oklch(0.48 0.18 250 / 0.5);
-}
-
-.timeline-slider::-moz-range-track {
-  background: oklch(0.22 0.015 270);
-  height: 6px;
-  border-radius: 3px;
-}
-
-@media (max-width: 640px) {
-  .timeline-slider::-webkit-slider-thumb {
-    width: 18px;
-    height: 18px;
-  }
-
-  .timeline-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-  }
-}
-
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -251,12 +199,12 @@
 
 /* Push bottom-right map controls above the timeline */
 .maplibregl-ctrl-bottom-right {
-  bottom: 160px !important;
+  bottom: 175px !important;
   right: 16px !important;
 }
 @media (min-width: 640px) {
   .maplibregl-ctrl-bottom-right {
-    bottom: 175px !important;
+    bottom: 190px !important;
     right: 24px !important;
   }
 }

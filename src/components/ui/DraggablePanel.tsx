@@ -29,12 +29,16 @@ export default function DraggablePanel({
     const rect = panelRef.current.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    const pad = 4;
 
-    // Keep at least 40px visible on each edge
-    const minX = -(rect.left - offset.x + rect.width - 40);
-    const maxX = vw - (rect.left - offset.x) - 40;
-    const minY = -(rect.top - offset.y + rect.height - 40);
-    const maxY = vh - (rect.top - offset.y) - 40;
+    // Keep entire panel visible on screen (with padding from edges)
+    const naturalLeft = rect.left - offset.x;
+    const naturalTop = rect.top - offset.y;
+
+    const minX = -naturalLeft + pad;
+    const maxX = vw - naturalLeft - rect.width - pad;
+    const minY = -naturalTop + pad;
+    const maxY = vh - naturalTop - rect.height - pad;
 
     return {
       x: Math.max(minX, Math.min(maxX, x)),

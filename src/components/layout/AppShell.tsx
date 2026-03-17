@@ -134,7 +134,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />
         </DraggablePanel>
       )}
-      <DraggablePanel className="fixed left-4 bottom-[155px] z-30 sm:left-6 sm:bottom-[170px]">
+      <DraggablePanel className="fixed left-4 bottom-[175px] z-30 sm:left-6 sm:bottom-[185px]">
         <LayerControls
           layers={layers}
           onToggle={handleToggleLayer}
@@ -152,7 +152,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       <TimelineScrubber
         onDateChange={handleTimelineDateChange}
       />
-      <DraggablePanel className="fixed left-4 bottom-[120px] z-40 sm:left-6 sm:bottom-[130px]">
+      <DraggablePanel className="fixed left-4 bottom-[140px] z-40 sm:left-6 sm:bottom-[150px]">
         <DataSourcesPanel />
       </DraggablePanel>
       <Footer />
