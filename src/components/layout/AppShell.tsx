@@ -17,6 +17,7 @@ import { MAJOR_BATTLES } from "@/data/battles";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import ResetButton from "@/components/layout/ResetButton";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -35,6 +36,7 @@ interface AppShellProps {
 }
 
 export default function AppShell({ casualtyData }: AppShellProps) {
+  const isMobile = useIsMobile();
   const [urlDate, setUrlDate] = useQueryState("t", parseAsString.withOptions({ shallow: true, throttleMs: 500 }));
   const [urlLng, setUrlLng] = useQueryState("lng", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
   const [urlLat, setUrlLat] = useQueryState("lat", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
@@ -52,13 +54,21 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
-  const [humanitarianOpen, setHumanitarianOpen] = useState(true);
-  const [spendingOpen, setSpendingOpen] = useState(true);
+  const [humanitarianOpen, setHumanitarianOpen] = useState(false);
+  const [spendingOpen, setSpendingOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Open panels on desktop after first render
+  useEffect(() => {
+    if (!isMobile) {
+      setHumanitarianOpen(true);
+      setSpendingOpen(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
   const fetchControllerRef = useRef<AbortController | null>(null);
@@ -155,6 +165,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     handleTimelineDateChange(date);
   }, [handleTimelineDateChange]);
 
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
   const handleReset = useCallback(() => {
     setTerritoryDate(null);
     setUrlDate(null);
@@ -214,7 +228,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
 
         {displayData && !statsCollapsed && (
-          <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-xs">
             <StatsOverlay
               data={displayData}
               isHistorical={isViewingPast && !!historicalData}
@@ -237,7 +251,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
         )}
         {humanitarianOpen && (
-          <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-xs">
             <HumanitarianPanel
               isOpen={true}
               onToggle={handleToggleHumanitarian}
@@ -246,7 +260,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           </DraggablePanel>
         )}
         {spendingOpen && (
-          <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[303px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[303px] sm:top-16 max-w-xs">
             <SpendingPanel
               isOpen={true}
               onToggle={handleToggleSpending}
@@ -259,6 +273,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           key={timelineKey}
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}
+          eventsOpen={sidebarOpen}
+          onToggleEvents={handleToggleSidebar}
           dockSlot={
             (statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed) ? (
               <>

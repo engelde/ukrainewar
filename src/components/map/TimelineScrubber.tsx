@@ -11,6 +11,7 @@ import {
   TbPlayerSkipBackFilled,
   TbPlayerSkipForwardFilled,
   TbTimeline,
+  TbCalendarEvent,
 } from "react-icons/tb";
 import { KEY_EVENTS } from "@/data/events";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,6 +20,8 @@ interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
   initialDate?: string | null;
   dockSlot?: React.ReactNode;
+  eventsOpen?: boolean;
+  onToggleEvents?: () => void;
 }
 
 
@@ -69,6 +72,8 @@ export default function TimelineScrubber({
   onDateChange,
   initialDate,
   dockSlot,
+  eventsOpen,
+  onToggleEvents,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -399,16 +404,16 @@ export default function TimelineScrubber({
   // All labels with two-row collision-free layout
   const labelRows = (() => {
     const MIN_LABEL_GAP = 55;
-    const rows: { date: string; label: string; px: number; row: number }[] = [];
+    const rows: { date: string; label: string; description: string; px: number; row: number }[] = [];
     let lastRow0 = -MIN_LABEL_GAP;
     let lastRow1 = -MIN_LABEL_GAP;
 
     for (const event of eventPositionsPx) {
       if (event.px - lastRow0 >= MIN_LABEL_GAP) {
-        rows.push({ date: event.date, label: event.label, px: event.px, row: 0 });
+        rows.push({ date: event.date, label: event.label, description: event.description, px: event.px, row: 0 });
         lastRow0 = event.px;
       } else if (event.px - lastRow1 >= MIN_LABEL_GAP) {
-        rows.push({ date: event.date, label: event.label, px: event.px, row: 1 });
+        rows.push({ date: event.date, label: event.label, description: event.description, px: event.px, row: 1 });
         lastRow1 = event.px;
       }
     }
@@ -591,6 +596,23 @@ export default function TimelineScrubber({
                   </button>
                 ))}
               </div>
+
+              {/* All Events toggle */}
+              {onToggleEvents && (
+                <button
+                  onClick={onToggleEvents}
+                  className={cn(
+                    "flex h-7 items-center gap-1 rounded-md px-2 ml-1 transition-colors",
+                    "text-[10px] font-semibold uppercase tracking-wider",
+                    eventsOpen
+                      ? "bg-ua-yellow/15 text-ua-yellow"
+                      : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
+                  )}
+                >
+                  <TbCalendarEvent className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">All Events</span>
+                </button>
+              )}
             </div>
 
             {/* Scrollable timeline */}
@@ -697,38 +719,57 @@ export default function TimelineScrubber({
                     const isLabelActive =
                       activeEvent?.date === labelInfo.date;
                     return (
-                      <div
-                        key={labelInfo.date}
-                        className="absolute pointer-events-auto"
-                        style={{ left: `${labelInfo.px}px` }}
-                      >
-                        <div className="flex flex-col items-center -translate-x-1/2">
-                          <div
-                            className={cn(
-                              "w-px",
-                              labelInfo.row === 0 ? "h-2" : "h-5",
-                              isLabelActive
-                                ? "bg-ua-yellow/50"
-                                : "bg-border/40"
-                            )}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleJumpToEvent(labelInfo.date);
-                            }}
-                            className={cn(
-                              "text-[12px] whitespace-nowrap leading-none mt-0.5",
-                              "transition-colors",
-                              isLabelActive
-                                ? "text-ua-yellow font-semibold"
-                                : "text-muted-foreground/70 hover:text-muted-foreground"
-                            )}
-                          >
-                            {labelInfo.date.slice(4, 6)}.{labelInfo.date.slice(6, 8)}
-                          </button>
-                        </div>
-                      </div>
+                      <Tooltip key={labelInfo.date}>
+                        <TooltipTrigger
+                          render={
+                            <div
+                              className="absolute pointer-events-auto cursor-pointer"
+                              style={{ left: `${labelInfo.px}px` }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleJumpToEvent(labelInfo.date);
+                              }}
+                            />
+                          }
+                        >
+                          <div className="flex flex-col items-center -translate-x-1/2">
+                            <div
+                              className={cn(
+                                "w-px",
+                                labelInfo.row === 0 ? "h-2" : "h-5",
+                                isLabelActive
+                                  ? "bg-ua-yellow/50"
+                                  : "bg-border/40"
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "text-[12px] whitespace-nowrap leading-none mt-0.5",
+                                "transition-colors",
+                                isLabelActive
+                                  ? "text-ua-yellow font-semibold"
+                                  : "text-muted-foreground/70 hover:text-muted-foreground"
+                              )}
+                            >
+                              {labelInfo.date.slice(4, 6)}.{labelInfo.date.slice(6, 8)}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="max-w-[280px] bg-background/95 backdrop-blur-lg border border-border/60 text-foreground px-3 py-2"
+                        >
+                          <p className="text-[11px] font-semibold text-ua-yellow mb-0.5">
+                            {labelInfo.label}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground leading-snug">
+                            {labelInfo.description}
+                          </p>
+                          <p className="text-[9px] text-muted-foreground/60 mt-1">
+                            {formatDateShort(labelInfo.date)}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   })}
                 </div>
