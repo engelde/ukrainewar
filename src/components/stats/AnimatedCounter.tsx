@@ -14,32 +14,55 @@ export default function AnimatedCounter({
   duration = 2000,
   className,
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const previousValue = useRef(0);
+  const [displayValue, setDisplayValue] = useState(value);
+  const previousValue = useRef(value);
   const animationRef = useRef<number | null>(null);
+  const lastChangeTime = useRef(0);
 
   useEffect(() => {
-    const startValue = previousValue.current;
-    const startTime = performance.now();
-
-    function animate(currentTime: number) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(startValue + (value - startValue) * eased);
-
-      setDisplayValue(current);
-
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        previousValue.current = value;
-      }
+    // Cancel any running animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
 
-    animationRef.current = requestAnimationFrame(animate);
+    const targetValue = value;
+    const startValue = previousValue.current;
+
+    // Use a single rAF to check timing and decide behavior
+    animationRef.current = requestAnimationFrame((frameTime) => {
+      const timeSinceLastChange = frameTime - lastChangeTime.current;
+      lastChangeTime.current = frameTime;
+      const isRapid = timeSinceLastChange < 500;
+
+      if (isRapid) {
+        // Rapid changes — snap immediately
+        previousValue.current = targetValue;
+        setDisplayValue(targetValue);
+        return;
+      }
+
+      // Normal animation
+      const startTime = frameTime;
+
+      function animate(currentTime: number) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(
+          startValue + (targetValue - startValue) * eased
+        );
+        setDisplayValue(current);
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          previousValue.current = targetValue;
+        }
+      }
+
+      animate(frameTime);
+    });
 
     return () => {
       if (animationRef.current) {

@@ -435,7 +435,7 @@ export default function MapView({
 
     map.current.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
-      "bottom-left"
+      "bottom-right"
     );
 
     map.current.addControl(

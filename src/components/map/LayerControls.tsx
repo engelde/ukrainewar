@@ -64,8 +64,6 @@ export default function LayerControls({
   return (
     <div
       className={cn(
-        "fixed left-3 bottom-24 z-30",
-        "sm:left-4 sm:bottom-28",
         "flex flex-col rounded-lg",
         "bg-background/80 backdrop-blur-xl",
         "border border-border/50",
@@ -75,7 +73,7 @@ export default function LayerControls({
     >
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center gap-2 px-3 py-2 border-b border-border/30 hover:bg-surface-elevated/50 transition-colors"
+        className="drag-handle flex items-center gap-2 px-3 py-2 border-b border-border/30 hover:bg-surface-elevated/50 transition-colors cursor-grab active:cursor-grabbing"
       >
         <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

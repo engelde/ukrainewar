@@ -9,6 +9,7 @@ import LayerControls from "@/components/map/LayerControls";
 import DetailPanel from "@/components/map/DetailPanel";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
+import DraggablePanel from "@/components/ui/DraggablePanel";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -38,7 +39,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     null
   );
 
-  const [timelineOpen, setTimelineOpen] = useState(true);
   const [territoryDate, setTerritoryDate] = useState<string | null>(null);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
 
@@ -110,16 +110,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     };
   }, [territoryDate]);
 
-  const handleTimelineClose = useCallback(() => {
-    setTimelineOpen(false);
-    setTerritoryDate(null);
-    lastFetchedDate.current = null;
-  }, []);
-
-  const handleTimelineOpen = useCallback(() => {
-    setTimelineOpen(true);
-  }, []);
-
   const handleToggleHumanitarian = useCallback(() => {
     setHumanitarianOpen((prev) => !prev);
   }, []);
@@ -138,32 +128,29 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         territoryDate={territoryDate}
       />
       <Header />
-      {displayData && <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />}
-      <LayerControls
-        layers={layers}
-        onToggle={handleToggleLayer}
-      />
+      {displayData && (
+        <DraggablePanel className="fixed right-3 top-14 z-30 sm:right-4 sm:top-16 max-w-[calc(100vw-1.5rem)] sm:max-w-xs">
+          <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />
+        </DraggablePanel>
+      )}
+      <DraggablePanel className="fixed left-3 bottom-44 z-30 sm:left-4 sm:bottom-52">
+        <LayerControls
+          layers={layers}
+          onToggle={handleToggleLayer}
+        />
+      </DraggablePanel>
       {selectedMarker && (
         <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
       )}
-      <HumanitarianPanel
-        isOpen={humanitarianOpen}
-        onToggle={handleToggleHumanitarian}
-      />
-      {timelineOpen && (
-        <TimelineScrubber
-          onDateChange={handleTimelineDateChange}
-          onClose={handleTimelineClose}
+      <DraggablePanel className="fixed left-3 top-14 z-30 sm:left-4 sm:top-16 max-w-[calc(100vw-1.5rem)] sm:max-w-xs">
+        <HumanitarianPanel
+          isOpen={humanitarianOpen}
+          onToggle={handleToggleHumanitarian}
         />
-      )}
-      {!timelineOpen && (
-        <button
-          onClick={handleTimelineOpen}
-          className="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-lg bg-background/80 backdrop-blur-xl border border-border/50 text-xs text-muted-foreground hover:text-foreground hover:bg-background/90 transition-colors"
-        >
-          Show Timeline
-        </button>
-      )}
+      </DraggablePanel>
+      <TimelineScrubber
+        onDateChange={handleTimelineDateChange}
+      />
       <Footer />
     </main>
   );

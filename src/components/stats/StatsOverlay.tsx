@@ -180,17 +180,15 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
   return (
     <div
       className={cn(
-        "fixed right-3 top-14 z-30 flex flex-col transition-all duration-300",
-        "sm:right-4 sm:top-16",
-        "max-w-[calc(100vw-1.5rem)] sm:max-w-xs",
+        "flex flex-col transition-all duration-300",
         collapsed && "w-auto"
       )}
     >
-      {/* Header */}
+      {/* Header — also serves as drag handle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         className={cn(
-          "flex items-center gap-2 rounded-t-lg px-3 py-2",
+          "drag-handle flex items-center gap-2 rounded-t-lg px-3 py-2 cursor-grab active:cursor-grabbing",
           "bg-background/80 backdrop-blur-xl",
           "border border-b-0 border-border/50",
           "text-xs font-semibold uppercase tracking-wider",

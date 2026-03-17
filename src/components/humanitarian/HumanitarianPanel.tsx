@@ -165,9 +165,7 @@ export default function HumanitarianPanel({
       <button
         onClick={onToggle}
         className={cn(
-          "fixed left-3 top-14 z-30",
-          "sm:left-4 sm:top-16",
-          "flex items-center gap-1.5 px-2.5 py-1.5",
+          "drag-handle flex items-center gap-1.5 px-2.5 py-1.5 cursor-grab active:cursor-grabbing",
           "rounded-lg",
           "bg-background/80 backdrop-blur-xl",
           "border border-border/50",
@@ -186,8 +184,6 @@ export default function HumanitarianPanel({
   return (
     <div
       className={cn(
-        "fixed left-3 top-14 z-30",
-        "sm:left-4 sm:top-16",
         "w-[calc(100vw-1.5rem)] sm:w-64",
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
@@ -198,8 +194,8 @@ export default function HumanitarianPanel({
         "scrollbar-thin scrollbar-thumb-border/30"
       )}
     >
-      {/* Header */}
-      <div className="sticky top-0 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between">
+      {/* Header — also serves as drag handle */}
+      <div className="drag-handle sticky top-0 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-yellow">

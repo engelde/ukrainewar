@@ -248,3 +248,34 @@
 .maplibregl-ctrl-attrib-button:hover {
   opacity: 0.7 !important;
 }
+
+/* Push bottom-right map controls above the timeline */
+.maplibregl-ctrl-bottom-right {
+  bottom: 170px !important;
+  right: 12px !important;
+}
+@media (min-width: 640px) {
+  .maplibregl-ctrl-bottom-right {
+    bottom: 190px !important;
+    right: 16px !important;
+  }
+}
+
+/* Style map navigation controls to match dark theme */
+.maplibregl-ctrl-group {
+  background: oklch(0.12 0.008 270 / 0.8) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.22 0.015 270 / 0.5) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+  border-color: oklch(0.22 0.015 270 / 0.3) !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background: oklch(0.18 0.01 270) !important;
+}
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.85);
+}
