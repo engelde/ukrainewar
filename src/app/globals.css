@@ -221,12 +221,12 @@
 
 /* Push bottom-right map controls above the timeline */
 .maplibregl-ctrl-bottom-right {
-  bottom: 160px !important;
+  bottom: 200px !important;
   right: 16px !important;
 }
 @media (min-width: 640px) {
   .maplibregl-ctrl-bottom-right {
-    bottom: 175px !important;
+    bottom: 215px !important;
     right: 24px !important;
   }
 }

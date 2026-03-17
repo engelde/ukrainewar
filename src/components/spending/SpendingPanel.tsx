@@ -70,7 +70,7 @@ export default function SpendingPanel({
   timelineDate,
 }: SpendingPanelProps) {
   const [data, setData] = useState<SpendingData | null>(null);
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>("trend");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -332,31 +332,39 @@ function AidTypeRow({
 }
 
 function MiniBarChart({ months }: { months: SpendingData["byMonth"] }) {
+  if (!months || months.length === 0) return null;
   const maxVal = Math.max(...months.map((m) => m.total));
+  if (maxVal === 0) return null;
   return (
     <div className="flex items-end gap-px h-16">
       {months.map((m) => {
-        const milH = maxVal > 0 ? (m.military / maxVal) * 100 : 0;
-        const finH = maxVal > 0 ? (m.financial / maxVal) * 100 : 0;
-        const humH = maxVal > 0 ? (m.humanitarian / maxVal) * 100 : 0;
+        const milH = (m.military / maxVal) * 100;
+        const finH = (m.financial / maxVal) * 100;
+        const humH = (m.humanitarian / maxVal) * 100;
         return (
           <div
             key={m.date}
             className="flex-1 flex flex-col justify-end gap-px min-w-0 group relative"
             title={`${m.date}: ${formatEUR(m.total)}`}
           >
-            <div
-              className="bg-destruction/50 rounded-t-sm min-h-0"
-              style={{ height: `${milH}%` }}
-            />
-            <div
-              className="bg-ua-blue/50 min-h-0"
-              style={{ height: `${finH}%` }}
-            />
-            <div
-              className="bg-capture/50 rounded-b-sm min-h-0"
-              style={{ height: `${humH}%` }}
-            />
+            {milH > 0 && (
+              <div
+                className="bg-destruction/50 rounded-t-sm"
+                style={{ height: `${Math.max(milH, 2)}%` }}
+              />
+            )}
+            {finH > 0 && (
+              <div
+                className="bg-ua-blue/50"
+                style={{ height: `${Math.max(finH, 2)}%` }}
+              />
+            )}
+            {humH > 0 && (
+              <div
+                className="bg-capture/50 rounded-b-sm"
+                style={{ height: `${Math.max(humH, 2)}%` }}
+              />
+            )}
           </div>
         );
       })}

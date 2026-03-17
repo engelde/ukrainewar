@@ -71,7 +71,7 @@ function createEquipmentIcon(
   symbol: string,
   statusColor: string,
   size: number
-): ImageData {
+): { width: number; height: number; data: Uint8ClampedArray } {
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
@@ -96,7 +96,8 @@ function createEquipmentIcon(
   ctx.textBaseline = "middle";
   ctx.fillText(symbol, size / 2, size / 2 + 1);
 
-  return ctx.getImageData(0, 0, size, size);
+  const imgData = ctx.getImageData(0, 0, size, size);
+  return { width: size, height: size, data: imgData.data };
 }
 
 function loadEquipmentIcons(mapInstance: maplibregl.Map) {
