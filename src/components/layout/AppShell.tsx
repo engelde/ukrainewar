@@ -8,6 +8,7 @@ import Header, { Footer } from "@/components/layout/Header";
 import LayerControls from "@/components/map/LayerControls";
 import DetailPanel from "@/components/map/DetailPanel";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
+import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -39,6 +40,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const [timelineOpen, setTimelineOpen] = useState(true);
   const [territoryDate, setTerritoryDate] = useState<string | null>(null);
+  const [humanitarianOpen, setHumanitarianOpen] = useState(false);
 
   const handleToggleLayer = useCallback((layer: keyof MapLayers) => {
     setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
@@ -65,6 +67,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setTimelineOpen(true);
   }, []);
 
+  const handleToggleHumanitarian = useCallback(() => {
+    setHumanitarianOpen((prev) => !prev);
+  }, []);
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <MapView
@@ -83,6 +89,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       {selectedMarker && (
         <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
       )}
+      <HumanitarianPanel
+        isOpen={humanitarianOpen}
+        onToggle={handleToggleHumanitarian}
+      />
       {timelineOpen && (
         <TimelineScrubber
           onDateChange={handleTimelineDateChange}
