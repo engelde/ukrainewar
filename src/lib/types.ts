@@ -81,6 +81,7 @@ export interface MapLayers {
   territory: boolean;
   equipment: boolean;
   frontline: boolean;
+  border: boolean;
 }
 
 export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";

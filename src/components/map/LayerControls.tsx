@@ -2,6 +2,14 @@
 
 import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {
+  TbMapPin,
+  TbSwords,
+  TbBomb,
+  TbBorderAll,
+  TbClock,
+} from "react-icons/tb";
+import type { IconType } from "react-icons";
 
 interface LayerControlsProps {
   layers: MapLayers;
@@ -15,24 +23,35 @@ const LAYER_CONFIG: {
   label: string;
   color: string;
   description: string;
+  Icon: IconType;
 }[] = [
   {
     key: "territory",
     label: "Territory Control",
     color: "bg-occupation",
     description: "Russian-occupied areas",
+    Icon: TbMapPin,
   },
   {
     key: "frontline",
     label: "Frontline",
     color: "bg-destruction",
     description: "Current front lines",
+    Icon: TbSwords,
   },
   {
     key: "equipment",
     label: "Equipment Losses",
     color: "bg-damage",
     description: "Confirmed loss locations",
+    Icon: TbBomb,
+  },
+  {
+    key: "border",
+    label: "Ukraine Border",
+    color: "bg-ua-blue",
+    description: "National boundary highlight",
+    Icon: TbBorderAll,
   },
 ];
 
@@ -116,22 +135,12 @@ export default function LayerControls({
           timelineOpen && "bg-ua-blue/10"
         )}
       >
-        <svg
+        <TbClock
           className={cn(
             "h-4 w-4",
             timelineOpen ? "text-ua-blue" : "text-muted-foreground"
           )}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        />
         <div className="flex flex-col">
           <span
             className={cn(

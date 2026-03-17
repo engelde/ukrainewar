@@ -30,13 +30,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     territory: true,
     equipment: true,
     frontline: true,
+    border: true,
   });
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(
     null
   );
 
-  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(true);
   const [territoryDate, setTerritoryDate] = useState<string | null>(null);
 
   const handleToggleLayer = useCallback((layer: keyof MapLayers) => {

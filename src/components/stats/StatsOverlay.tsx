@@ -1,17 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import AnimatedCounter from "./AnimatedCounter";
 import Sparkline from "./Sparkline";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { GiTank, GiRocket, GiHelicopter, GiBattleship } from "react-icons/gi";
+import { TbUsers, TbBomb, TbDrone, TbRadar, TbPlane, TbTruck, TbShieldChevron } from "react-icons/tb";
 
 interface StatsEntry {
   key: string;
   label: string;
   daily: number;
   total: number;
-  icon: string;
+  icon: ReactNode;
   trendKey: string;
 }
 
@@ -21,13 +24,14 @@ interface TrendData {
 }
 
 function mapCasualtyData(data: CasualtyData): StatsEntry[] {
+  const iconClass = "h-4 w-4";
   return [
     {
       key: "personnel",
       label: "Personnel",
       daily: data.militaryPersonnel[0],
       total: data.militaryPersonnel[1],
-      icon: "👤",
+      icon: <TbUsers className={iconClass} />,
       trendKey: "_total",
     },
     {
@@ -35,7 +39,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Tanks",
       daily: data.tank[0],
       total: data.tank[1],
-      icon: "🛡",
+      icon: <GiTank className={iconClass} />,
       trendKey: "tanks",
     },
     {
@@ -43,7 +47,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Armored Vehicles",
       daily: data.armoredCombatVehicle[0],
       total: data.armoredCombatVehicle[1],
-      icon: "🚛",
+      icon: <TbShieldChevron className={iconClass} />,
       trendKey: "ifv",
     },
     {
@@ -51,7 +55,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Artillery",
       daily: data.artillerySystem[0],
       total: data.artillerySystem[1],
-      icon: "💥",
+      icon: <TbBomb className={iconClass} />,
       trendKey: "artillery",
     },
     {
@@ -59,7 +63,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "MLRS",
       daily: data.mlrs[0],
       total: data.mlrs[1],
-      icon: "🚀",
+      icon: <GiRocket className={iconClass} />,
       trendKey: "mlrs",
     },
     {
@@ -67,7 +71,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "UAVs",
       daily: data.uav[0],
       total: data.uav[1],
-      icon: "✈",
+      icon: <TbDrone className={iconClass} />,
       trendKey: "uav",
     },
     {
@@ -75,7 +79,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Air Defense",
       daily: data.airDefenceSystem[0],
       total: data.airDefenceSystem[1],
-      icon: "🎯",
+      icon: <TbRadar className={iconClass} />,
       trendKey: "airDefense",
     },
     {
@@ -83,7 +87,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Jets",
       daily: data.jet[0],
       total: data.jet[1],
-      icon: "✈",
+      icon: <TbPlane className={iconClass} />,
       trendKey: "jets",
     },
     {
@@ -91,7 +95,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Helicopters",
       daily: data.copter[0],
       total: data.copter[1],
-      icon: "🚁",
+      icon: <GiHelicopter className={iconClass} />,
       trendKey: "helicopters",
     },
     {
@@ -99,7 +103,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Vehicles",
       daily: data.supplyVehicle[0],
       total: data.supplyVehicle[1],
-      icon: "🚚",
+      icon: <TbTruck className={iconClass} />,
       trendKey: "vehicles",
     },
     {
@@ -107,7 +111,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       label: "Ships",
       daily: data.ship[0],
       total: data.ship[1],
-      icon: "🚢",
+      icon: <GiBattleship className={iconClass} />,
       trendKey: "ships",
     },
   ];
@@ -247,7 +251,9 @@ export default function StatsOverlay({ data }: StatsOverlayProps) {
                     isExpanded && "bg-surface-elevated/30"
                   )}
                 >
-                  <span className="w-5 text-center text-sm">{stat.icon}</span>
+                  <span className="flex w-5 items-center justify-center text-muted-foreground">
+                    {stat.icon}
+                  </span>
                   <span className="min-w-[85px] text-left text-xs text-muted-foreground sm:min-w-[100px]">
                     {stat.label}
                   </span>

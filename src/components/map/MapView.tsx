@@ -479,7 +479,24 @@ export default function MapView({
         );
       }
     });
-  }, [loaded, layers.territory, layers.equipment]);
+
+    const borderLayers = [
+      "ukraine-mask-fill",
+      "ukraine-inner-glow",
+      "ukraine-border-glow",
+      "ukraine-border-line",
+    ];
+
+    borderLayers.forEach((layer) => {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(
+          layer,
+          "visibility",
+          layers.border ? "visible" : "none"
+        );
+      }
+    });
+  }, [loaded, layers.territory, layers.equipment, layers.border]);
 
   // Update territory when timeline date changes
   useEffect(() => {
