@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🇺🇦 Russo-Ukrainian War Tracker
+<img src="public/icon.png" alt="Russo-Ukrainian War Tracker" width="80" />
+
+# Russo-Ukrainian War Tracker
 
 ### [ukrainewar.app](https://ukrainewar.app)
 
