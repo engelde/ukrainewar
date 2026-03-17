@@ -133,9 +133,10 @@ const TREND_COLORS: Record<string, string> = {
 
 interface StatsOverlayProps {
   data: CasualtyData;
+  isHistorical?: boolean;
 }
 
-export default function StatsOverlay({ data }: StatsOverlayProps) {
+export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
@@ -192,15 +193,23 @@ export default function StatsOverlay({ data }: StatsOverlayProps) {
           "flex items-center gap-2 rounded-t-lg px-3 py-2",
           "bg-background/80 backdrop-blur-xl",
           "border border-b-0 border-border/50",
-          "text-xs font-semibold uppercase tracking-wider text-ua-blue",
+          "text-xs font-semibold uppercase tracking-wider",
+          isHistorical ? "text-ua-yellow" : "text-ua-blue",
           "hover:bg-background/90 transition-colors",
           collapsed && "rounded-b-lg border-b"
         )}
       >
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
-        </span>
+        {!isHistorical && (
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
+          </span>
+        )}
+        {isHistorical && (
+          <span className="relative flex h-2 w-2">
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
+          </span>
+        )}
         <span>Russian Losses</span>
         <span className="ml-auto text-muted-foreground">
           Day {warDay}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import type { CasualtyData, MapLayers, EquipmentMarker } from "@/lib/types";
 import StatsOverlay from "@/components/stats/StatsOverlay";
@@ -42,6 +42,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [territoryDate, setTerritoryDate] = useState<string | null>(null);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
 
+  // Historical casualty data for timeline scrubbing
+  const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
+  const fetchControllerRef = useRef<AbortController | null>(null);
+  const lastFetchedDate = useRef<string | null>(null);
+
   const handleToggleLayer = useCallback((layer: keyof MapLayers) => {
     setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
   }, []);
@@ -58,9 +63,57 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setTerritoryDate(date);
   }, []);
 
+  // Fetch historical loss data when timeline date changes
+  useEffect(() => {
+    // Abort previous request
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+
+    if (!territoryDate) {
+      lastFetchedDate.current = null;
+      return;
+    }
+
+    // Check if we're on the latest date (today) — use live data
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+    if (territoryDate >= todayStr) {
+      lastFetchedDate.current = null;
+      return;
+    }
+
+    // Debounce: don't fetch if same date
+    if (lastFetchedDate.current === territoryDate) return;
+    lastFetchedDate.current = territoryDate;
+
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
+    // Small delay to debounce rapid scrubbing
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/casualties/history?date=${territoryDate}`, {
+          signal: controller.signal,
+        });
+        if (res.ok && !controller.signal.aborted) {
+          const data = await res.json();
+          setHistoricalData(data);
+        }
+      } catch {
+        // Aborted or failed — ignore
+      }
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [territoryDate]);
+
   const handleTimelineClose = useCallback(() => {
     setTimelineOpen(false);
-    setTerritoryDate(null); // Reset to latest
+    setTerritoryDate(null);
+    lastFetchedDate.current = null;
   }, []);
 
   const handleTimelineOpen = useCallback(() => {
@@ -71,6 +124,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setHumanitarianOpen((prev) => !prev);
   }, []);
 
+  // Use historical data when timeline is scrubbed to a past date
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+  const isViewingPast = !!territoryDate && territoryDate < todayStr;
+  const displayData = (isViewingPast && historicalData) ? historicalData : casualtyData;
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <MapView
@@ -79,12 +138,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         territoryDate={territoryDate}
       />
       <Header />
-      {casualtyData && <StatsOverlay data={casualtyData} />}
+      {displayData && <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />}
       <LayerControls
         layers={layers}
         onToggle={handleToggleLayer}
-        onOpenTimeline={handleTimelineOpen}
-        timelineOpen={timelineOpen}
       />
       {selectedMarker && (
         <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
@@ -98,6 +155,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onDateChange={handleTimelineDateChange}
           onClose={handleTimelineClose}
         />
+      )}
+      {!timelineOpen && (
+        <button
+          onClick={handleTimelineOpen}
+          className="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-lg bg-background/80 backdrop-blur-xl border border-border/50 text-xs text-muted-foreground hover:text-foreground hover:bg-background/90 transition-colors"
+        >
+          Show Timeline
+        </button>
       )}
       <Footer />
     </main>

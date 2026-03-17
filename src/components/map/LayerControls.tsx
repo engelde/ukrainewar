@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -7,15 +8,14 @@ import {
   TbSwords,
   TbBomb,
   TbBorderAll,
-  TbClock,
+  TbChevronDown,
+  TbStack2,
 } from "react-icons/tb";
 import type { IconType } from "react-icons";
 
 interface LayerControlsProps {
   layers: MapLayers;
   onToggle: (layer: keyof MapLayers) => void;
-  onOpenTimeline: () => void;
-  timelineOpen: boolean;
 }
 
 const LAYER_CONFIG: {
@@ -58,9 +58,9 @@ const LAYER_CONFIG: {
 export default function LayerControls({
   layers,
   onToggle,
-  onOpenTimeline,
-  timelineOpen,
 }: LayerControlsProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div
       className={cn(
@@ -73,89 +73,75 @@ export default function LayerControls({
         "max-h-[calc(100vh-10rem)]"
       )}
     >
-      <div className="px-3 py-2 border-b border-border/30">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Map Layers
-        </span>
-      </div>
-      {LAYER_CONFIG.map((layer) => (
-        <button
-          key={layer.key}
-          onClick={() => onToggle(layer.key)}
-          className={cn(
-            "flex items-center gap-2 px-3 py-2",
-            "border-b border-border/20 last:border-b-0",
-            "hover:bg-surface-elevated/50 transition-colors",
-            "text-left"
-          )}
-        >
-          <div
-            className={cn(
-              "flex h-4 w-4 items-center justify-center rounded border border-border/50 transition-colors",
-              layers[layer.key]
-                ? "bg-ua-blue/20 border-ua-blue/50"
-                : "bg-transparent"
-            )}
-          >
-            {layers[layer.key] && (
-              <svg
-                className="h-3 w-3 text-ua-blue"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={3}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            )}
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <layer.Icon className={cn("h-3 w-3", layers[layer.key] ? "text-foreground" : "text-muted-foreground")} />
-              <span className="text-xs text-foreground">{layer.label}</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground">
-              {layer.description}
-            </span>
-          </div>
-        </button>
-      ))}
-
-      {/* Timeline toggle */}
       <button
-        onClick={onOpenTimeline}
-        className={cn(
-          "flex items-center gap-2 px-3 py-2",
-          "border-t border-border/30",
-          "hover:bg-surface-elevated/50 transition-colors",
-          "text-left",
-          timelineOpen && "bg-ua-blue/10"
-        )}
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center gap-2 px-3 py-2 border-b border-border/30 hover:bg-surface-elevated/50 transition-colors"
       >
-        <TbClock
+        <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Layers
+        </span>
+        <TbChevronDown
           className={cn(
-            "h-4 w-4",
-            timelineOpen ? "text-ua-blue" : "text-muted-foreground"
+            "h-3 w-3 text-muted-foreground ml-auto transition-transform",
+            collapsed && "rotate-180"
           )}
         />
-        <div className="flex flex-col">
-          <span
+      </button>
+      {!collapsed &&
+        LAYER_CONFIG.map((layer) => (
+          <button
+            key={layer.key}
+            onClick={() => onToggle(layer.key)}
             className={cn(
-              "text-xs",
-              timelineOpen ? "text-ua-blue" : "text-foreground"
+              "flex items-center gap-2 px-3 py-2",
+              "border-b border-border/20 last:border-b-0",
+              "hover:bg-surface-elevated/50 transition-colors",
+              "text-left"
             )}
           >
-            Timeline
-          </span>
-          <span className="text-[10px] text-muted-foreground">
-            Explore the war&apos;s progression
-          </span>
-        </div>
-      </button>
+            <div
+              className={cn(
+                "flex h-4 w-4 items-center justify-center rounded border border-border/50 transition-colors",
+                layers[layer.key]
+                  ? "bg-ua-blue/20 border-ua-blue/50"
+                  : "bg-transparent"
+              )}
+            >
+              {layers[layer.key] && (
+                <svg
+                  className="h-3 w-3 text-ua-blue"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <layer.Icon
+                  className={cn(
+                    "h-3 w-3",
+                    layers[layer.key]
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  )}
+                />
+                <span className="text-xs text-foreground">{layer.label}</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                {layer.description}
+              </span>
+            </div>
+          </button>
+        ))}
     </div>
   );
 }

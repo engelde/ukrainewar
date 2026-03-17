@@ -121,18 +121,28 @@ export default function MapView({
           ? `/api/territory/${territoryDate}`
           : "/api/territory";
         const res = await fetch(url);
-        if (!res.ok) return;
-        const { geojson } = await res.json();
 
-        const source = mapInstance.getSource(
+        const existingSource = mapInstance.getSource(
           "territory"
         ) as maplibregl.GeoJSONSource | undefined;
 
-        if (source) {
-          // Update existing source data (for timeline scrubbing)
-          source.setData(geojson);
+        if (!res.ok) {
+          // Clear territory data when out of range (e.g., pre-July 2024)
+          if (existingSource) {
+            existingSource.setData({ type: "FeatureCollection", features: [] });
+          }
           return;
         }
+        const { geojson } = await res.json();
+
+        if (existingSource) {
+          // Update existing source data (for timeline scrubbing)
+          existingSource.setData(geojson);
+          return;
+        }
+
+        // Guard: double-check source wasn't added between fetch and now
+        if (mapInstance.getSource("territory")) return;
 
         mapInstance.addSource("territory", {
           type: "geojson",
@@ -430,7 +440,7 @@ export default function MapView({
 
     map.current.addControl(
       new maplibregl.AttributionControl({ compact: true }),
-      "bottom-left"
+      "bottom-right"
     );
 
     map.current.on("load", () => {

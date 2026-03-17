@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { DATA_SOURCES } from "@/lib/constants";
 import {
   TbPlayerPlayFilled,
   TbPlayerPauseFilled,
@@ -18,8 +19,27 @@ interface TimelineScrubberProps {
 
 // Key events in the war for timeline markers
 const KEY_EVENTS: { date: string; label: string; description: string }[] = [
+  // 2022
+  { date: "20220224", label: "Invasion begins", description: "Russia launches full-scale invasion of Ukraine from multiple directions" },
+  { date: "20220227", label: "Sanctions & SWIFT", description: "Western nations impose sweeping sanctions; select Russian banks cut from SWIFT" },
+  { date: "20220302", label: "Kherson falls", description: "Russia captures Kherson, the first major Ukrainian city to fall" },
+  { date: "20220316", label: "Mariupol siege", description: "Russian forces encircle Mariupol; intense urban combat begins" },
+  { date: "20220402", label: "Bucha massacre", description: "Ukrainian forces recapture Bucha; evidence of mass civilian killings discovered" },
+  { date: "20220414", label: "Moskva sinks", description: "Ukrainian Neptune missiles sink the Russian Black Sea flagship Moskva" },
+  { date: "20220520", label: "Azovstal surrender", description: "Last Ukrainian defenders of Mariupol's Azovstal steel plant surrender" },
+  { date: "20220624", label: "Lysychansk falls", description: "Russia captures Lysychansk, completing control of Luhansk Oblast" },
+  { date: "20220906", label: "Kharkiv offensive", description: "Ukraine launches rapid counteroffensive, liberating most of Kharkiv Oblast in days" },
+  { date: "20221008", label: "Crimea Bridge hit", description: "Explosion damages the Kerch Strait Bridge connecting Crimea to Russia" },
+  { date: "20221111", label: "Kherson liberated", description: "Russia withdraws from Kherson; Ukraine's most significant territorial gain" },
+  // 2023
+  { date: "20230121", label: "Tanks pledged", description: "Western allies pledge Leopard 2 and M1 Abrams tanks to Ukraine" },
+  { date: "20230521", label: "Bakhmut falls", description: "Wagner forces capture Bakhmut after the war's longest and bloodiest battle" },
+  { date: "20230608", label: "Kakhovka Dam", description: "Kakhovka Dam is destroyed, causing catastrophic flooding downstream" },
+  { date: "20230610", label: "Summer offensive", description: "Ukraine begins long-anticipated counteroffensive in southern Zaporizhzhia" },
+  { date: "20230823", label: "Prigozhin killed", description: "Wagner leader Yevgeny Prigozhin dies in plane crash two months after aborted mutiny" },
   // 2024
-  { date: "20240708", label: "Dataset begins", description: "DeepState territory tracking data starts" },
+  { date: "20240217", label: "Avdiivka falls", description: "Russia captures Avdiivka after months of intense fighting" },
+  { date: "20240708", label: "Territory data begins", description: "DeepState territory tracking data starts" },
   { date: "20240718", label: "Pokrovsk offensive", description: "Russia launches major offensive toward Pokrovsk in Donetsk Oblast with ~40,000 troops" },
   { date: "20240806", label: "Kursk offensive", description: "Ukraine launches surprise cross-border offensive into Russia's Kursk Oblast" },
   { date: "20240826", label: "Massive energy strikes", description: "Russia launches one of its largest combined missile and drone attacks targeting Ukrainian energy infrastructure" },
@@ -59,32 +79,32 @@ function formatDateShort(dateStr: string): string {
   return `${months[m]} ${parseInt(d)}`;
 }
 
+function generateDateRange(): string[] {
+  const dates: string[] = [];
+  const start = new Date("2022-02-24");
+  const end = new Date();
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    dates.push(`${y}${m}${day}`);
+  }
+  return dates;
+}
+
+// DeepState territory data availability range
+const TERRITORY_DATA_START = "20240708";
+
 export default function TimelineScrubber({
   onDateChange,
   onClose,
 }: TimelineScrubberProps) {
-  const [dates, setDates] = useState<string[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(-1);
+  const [dates] = useState<string[]>(() => generateDateRange());
+  const [currentIndex, setCurrentIndex] = useState<number>(
+    () => generateDateRange().length - 1
+  );
   const [isPlaying, setIsPlaying] = useState(false);
-  const [loading, setLoading] = useState(true);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Fetch available dates
-  useEffect(() => {
-    async function fetchDates() {
-      try {
-        const res = await fetch("/api/territory/dates");
-        if (!res.ok) return;
-        const data = await res.json();
-        setDates(data.dates || []);
-        setCurrentIndex(data.dates.length - 1); // Start at latest
-        setLoading(false);
-      } catch {
-        setLoading(false);
-      }
-    }
-    fetchDates();
-  }, []);
 
   // Notify parent when index changes
   useEffect(() => {
@@ -149,23 +169,6 @@ export default function TimelineScrubber({
     setIsPlaying(false);
   }, [dates.length]);
 
-  if (loading) {
-    return (
-      <div
-        className={cn(
-          "fixed bottom-12 left-1/2 -translate-x-1/2 z-30",
-          "rounded-lg px-6 py-3",
-          "bg-background/85 backdrop-blur-xl",
-          "border border-border/50"
-        )}
-      >
-        <span className="text-xs text-muted-foreground">
-          Loading timeline...
-        </span>
-      </div>
-    );
-  }
-
   if (dates.length === 0) return null;
 
   const currentDate = dates[currentIndex] || dates[dates.length - 1];
@@ -186,24 +189,41 @@ export default function TimelineScrubber({
     return Math.abs(currentIndex - eventIdx) <= 5;
   });
 
+  // Calculate war day for current date
+  const warStart = new Date("2022-02-24");
+  const currentDateObj = new Date(
+    `${currentDate.slice(0, 4)}-${currentDate.slice(4, 6)}-${currentDate.slice(6, 8)}`
+  );
+  const warDay = Math.floor(
+    (currentDateObj.getTime() - warStart.getTime()) / 86400000
+  ) + 1;
+
+  // Year boundaries for tick marks
+  const yearTicks = ["2023", "2024", "2025", "2026"]
+    .map((y) => {
+      const idx = dates.indexOf(`${y}0101`);
+      return idx >= 0 ? { year: y, position: (idx / (dates.length - 1)) * 100 } : null;
+    })
+    .filter(Boolean) as { year: string; position: number }[];
+
+  // Whether territory data is available for current date
+  const hasTerritoryData = currentDate >= TERRITORY_DATA_START;
+
   return (
     <div
       className={cn(
-        "fixed bottom-12 left-1/2 -translate-x-1/2 z-30",
-        "w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-3xl",
-        "sm:bottom-14",
-        "rounded-lg",
-        "bg-background/85 backdrop-blur-xl",
-        "border border-border/50",
-        "shadow-xl shadow-black/30"
+        "fixed bottom-0 left-0 right-0 z-30",
+        "bg-background/90 backdrop-blur-xl",
+        "border-t border-border/50",
+        "shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
       )}
     >
       {/* Event info card — shown when near key events */}
       {activeEvent && (
-        <div className="mx-3 mt-2 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-3 py-2 flex items-start gap-2">
+        <div className="mx-4 mt-2 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-3 py-2 flex items-start gap-2">
           <TbInfoCircle className="h-3.5 w-3.5 text-ua-blue mt-0.5 flex-shrink-0" />
           <div className="min-w-0">
-            <span className="text-[10px] font-semibold text-ua-blue">
+            <span className="text-[11px] font-semibold text-ua-blue">
               {activeEvent.label}
             </span>
             <span className="text-[10px] text-muted-foreground ml-1.5">
@@ -216,80 +236,112 @@ export default function TimelineScrubber({
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
-            War Timeline
-          </span>
-          <span className="text-xs font-mono text-foreground">
-            {formatDateDisplay(currentDate)}
-          </span>
-          {currentIndex < dates.length - 1 && (
-            <span className="text-[9px] text-ua-yellow/70 font-mono">
-              {currentIndex < dates.length - 1 ? `−${dates.length - 1 - currentIndex}d` : ""}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={onClose}
-          className="flex h-5 w-5 items-center justify-center rounded hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
-        >
-          <TbX className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {/* Main timeline bar */}
+      <div className="px-4 py-2">
+        <div className="flex items-center gap-3">
+          {/* Left: Date info */}
+          <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[140px]">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
+                Timeline
+              </span>
+              {!hasTerritoryData && (
+                <span className="text-[8px] px-1 py-0.5 rounded bg-surface-elevated text-muted-foreground">
+                  No map data
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono text-foreground font-medium">
+                {formatDateDisplay(currentDate)}
+              </span>
+              {currentIndex < dates.length - 1 && (
+                <span className="text-[9px] text-ua-yellow/70 font-mono">
+                  Day {warDay}
+                </span>
+              )}
+              {currentIndex === dates.length - 1 && (
+                <span className="text-[9px] text-capture font-mono">
+                  Today
+                </span>
+              )}
+            </div>
+          </div>
 
-      {/* Controls + Slider */}
-      <div className="px-3 py-2">
-        <div className="flex items-center gap-2">
-          {/* Step back */}
-          <button
-            onClick={handleStepBack}
-            disabled={currentIndex <= 0}
-            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            <TbChevronLeft className="h-3.5 w-3.5" />
-          </button>
+          {/* Transport controls */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={handleStepBack}
+              disabled={currentIndex <= 0}
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+            >
+              <TbChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={togglePlay}
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                isPlaying
+                  ? "bg-ua-blue/20 text-ua-blue"
+                  : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {isPlaying ? (
+                <TbPlayerPauseFilled className="h-4 w-4" />
+              ) : (
+                <TbPlayerPlayFilled className="h-4 w-4" />
+              )}
+            </button>
+            <button
+              onClick={handleStepForward}
+              disabled={currentIndex >= dates.length - 1}
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+            >
+              <TbChevronRight className="h-4 w-4" />
+            </button>
+          </div>
 
-          {/* Play/Pause */}
-          <button
-            onClick={togglePlay}
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
-              isPlaying
-                ? "bg-ua-blue/20 text-ua-blue"
-                : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {isPlaying ? (
-              <TbPlayerPauseFilled className="h-3.5 w-3.5" />
-            ) : (
-              <TbPlayerPlayFilled className="h-3.5 w-3.5" />
-            )}
-          </button>
-
-          {/* Step forward */}
-          <button
-            onClick={handleStepForward}
-            disabled={currentIndex >= dates.length - 1}
-            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            <TbChevronRight className="h-3.5 w-3.5" />
-          </button>
-
-          {/* Slider */}
+          {/* Slider area */}
           <div className="relative flex-1">
-            {/* Event markers */}
+            {/* Year tick marks */}
+            <div className="absolute inset-0 pointer-events-none">
+              {yearTicks.map((tick) => (
+                <div
+                  key={tick.year}
+                  className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center"
+                  style={{ left: `${tick.position}%` }}
+                >
+                  <div className="w-px h-4 bg-border/60" />
+                </div>
+              ))}
+            </div>
+
+            {/* Event markers on slider */}
             <div className="absolute inset-0 pointer-events-none">
               {eventPositions.map((event) => (
                 <button
                   key={event.date}
                   onClick={() => handleJumpToEvent(event.date)}
-                  className="absolute top-1/2 -translate-y-1/2 w-2 h-4 sm:w-1.5 sm:h-3 bg-ua-yellow/60 rounded-full pointer-events-auto hover:bg-ua-yellow transition-colors"
+                  className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-ua-yellow/50 rounded-full pointer-events-auto hover:bg-ua-yellow hover:h-4 transition-all"
                   style={{ left: `${event.position}%` }}
                   title={`${event.label}: ${event.description} (${formatDateShort(event.date)})`}
                 />
               ))}
+            </div>
+
+            {/* Territory data range indicator */}
+            <div className="absolute inset-0 pointer-events-none">
+              {(() => {
+                const startIdx = dates.indexOf(TERRITORY_DATA_START);
+                if (startIdx < 0) return null;
+                const startPct = (startIdx / (dates.length - 1)) * 100;
+                return (
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-ua-blue/10 rounded-full"
+                    style={{ left: `${startPct}%`, right: "0%" }}
+                  />
+                );
+              })()}
             </div>
 
             <input
@@ -298,18 +350,35 @@ export default function TimelineScrubber({
               max={dates.length - 1}
               value={currentIndex}
               onChange={handleSliderChange}
-              className="timeline-slider w-full h-1.5 rounded-full appearance-none cursor-pointer"
+              className="timeline-slider w-full h-2 rounded-full appearance-none cursor-pointer"
             />
+
+            {/* Year labels below slider */}
+            <div className="absolute -bottom-3.5 left-0 right-0 pointer-events-none">
+              <span className="absolute left-0 text-[9px] text-muted-foreground/60">2022</span>
+              {yearTicks.map((tick) => (
+                <span
+                  key={tick.year}
+                  className="absolute text-[9px] text-muted-foreground/60 -translate-x-1/2"
+                  style={{ left: `${tick.position}%` }}
+                >
+                  {tick.year}
+                </span>
+              ))}
+            </div>
           </div>
 
-          {/* Date range labels */}
-          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-            {formatDateShort(dates[dates.length - 1])}
-          </span>
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground ml-1"
+          >
+            <TbX className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Key event labels — horizontal scroll */}
-        <div className="hidden sm:flex gap-1.5 mt-1.5 overflow-x-auto scrollbar-none pb-0.5">
+        <div className="hidden sm:flex gap-1.5 mt-4 overflow-x-auto scrollbar-none pb-1">
           {eventPositions.map((event) => (
             <button
               key={event.date}
@@ -326,6 +395,27 @@ export default function TimelineScrubber({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Data source citations */}
+      <div className="hidden sm:flex items-center gap-1 px-4 py-1 border-t border-border/20 overflow-x-auto scrollbar-none">
+        <span className="text-[9px] text-muted-foreground/50 mr-1 flex-shrink-0">Sources:</span>
+        {DATA_SOURCES.map((source, i) => (
+          <span key={source.name} className="text-[9px] flex-shrink-0">
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground/40 hover:text-ua-blue transition-colors"
+              title={source.description}
+            >
+              {source.name}
+            </a>
+            {i < DATA_SOURCES.length - 1 && (
+              <span className="text-border/30 mx-0.5">·</span>
+            )}
+          </span>
+        ))}
       </div>
     </div>
   );

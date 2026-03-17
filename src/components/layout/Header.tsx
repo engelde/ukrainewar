@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { DATA_SOURCES } from "@/lib/constants";
 
 export default function Header() {
   return (
@@ -21,27 +20,5 @@ export default function Header() {
 }
 
 export function Footer() {
-  return (
-    <footer className="fixed bottom-0 left-0 right-0 z-30 px-4 py-2 sm:px-6 hidden sm:block">
-      <div className="flex items-center gap-1 flex-wrap bg-background/60 backdrop-blur-xl rounded-lg px-3 py-1.5 border border-border/30 max-w-fit">
-        <span className="text-[10px] text-muted-foreground mr-1">Sources:</span>
-        {DATA_SOURCES.map((source, i) => (
-          <span key={source.name} className="text-[10px]">
-            <a
-              href={source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-ua-blue transition-colors"
-              title={source.description}
-            >
-              {source.name}
-            </a>
-            {i < DATA_SOURCES.length - 1 && (
-              <span className="text-border mx-1">·</span>
-            )}
-          </span>
-        ))}
-      </div>
-    </footer>
-  );
+  return null;
 }
