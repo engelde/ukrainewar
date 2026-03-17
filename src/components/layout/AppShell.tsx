@@ -40,7 +40,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const [timelineOpen, setTimelineOpen] = useState(true);
   const [territoryDate, setTerritoryDate] = useState<string | null>(null);
-  const [humanitarianOpen, setHumanitarianOpen] = useState(false);
+  const [humanitarianOpen, setHumanitarianOpen] = useState(true);
 
   const handleToggleLayer = useCallback((layer: keyof MapLayers) => {
     setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));

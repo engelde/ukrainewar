@@ -18,13 +18,28 @@ interface TimelineScrubberProps {
 
 // Key events in the war for timeline markers
 const KEY_EVENTS: { date: string; label: string; description: string }[] = [
+  // 2024
   { date: "20240708", label: "Dataset begins", description: "DeepState territory tracking data starts" },
-  { date: "20240806", label: "Kursk offensive", description: "Ukraine launches surprise cross-border offensive into Kursk Oblast" },
+  { date: "20240718", label: "Pokrovsk offensive", description: "Russia launches major offensive toward Pokrovsk in Donetsk Oblast with ~40,000 troops" },
+  { date: "20240806", label: "Kursk offensive", description: "Ukraine launches surprise cross-border offensive into Russia's Kursk Oblast" },
+  { date: "20240826", label: "Massive energy strikes", description: "Russia launches one of its largest combined missile and drone attacks targeting Ukrainian energy infrastructure" },
+  { date: "20240901", label: "Novohrodivka falls", description: "Russian forces capture Novohrodivka in their advance toward Pokrovsk" },
   { date: "20241005", label: "Vuhledar falls", description: "Russia captures Vuhledar after prolonged siege" },
-  { date: "20241105", label: "US election", description: "Donald Trump wins US presidential election" },
-  { date: "20241216", label: "DPRK troops deployed", description: "North Korean soldiers confirmed fighting alongside Russian forces" },
-  { date: "20250120", label: "Trump inaugurated", description: "Trump takes office, signals shift in Ukraine policy" },
+  { date: "20241016", label: "Kurakhove battle begins", description: "Russian forces begin assault on the city of Kurakhove in Donetsk Oblast" },
+  { date: "20241105", label: "US election", description: "Donald Trump wins US presidential election, casting uncertainty over Ukraine support" },
+  { date: "20241115", label: "Selydove falls", description: "Russian forces capture the city of Selydove in Donetsk Oblast" },
+  { date: "20241216", label: "DPRK troops deployed", description: "North Korean soldiers confirmed fighting alongside Russian forces in Kursk" },
+  { date: "20241225", label: "Kurakhove falls", description: "Russia captures Kurakhove after 2-month battle, seizes power station" },
+  // 2025
+  { date: "20250120", label: "Trump inaugurated", description: "Trump takes office, signals prioritization of ending the war" },
   { date: "20250224", label: "3rd anniversary", description: "Three years since Russia's full-scale invasion of Ukraine" },
+  { date: "20250318", label: "Ceasefire proposed", description: "Trump-Putin call results in proposed limited ceasefire on energy infrastructure; quickly broken" },
+  { date: "20250426", label: "Kursk recaptured", description: "Russia claims all Ukrainian forces driven out of Kursk region" },
+  { date: "20250601", label: "Operation Spider Web", description: "Ukraine launches coordinated long-range drone strikes on Russian airfields deep in Russian territory" },
+  { date: "20250630", label: "Luhansk fully occupied", description: "Russia claims complete control of Luhansk Oblast" },
+  { date: "20250731", label: "Chasiv Yar falls", description: "Russia captures the strategic fortress city of Chasiv Yar after prolonged assault" },
+  { date: "20250815", label: "Alaska summit", description: "Trump and Putin meet at Joint Base Elmendorf-Richardson in Anchorage; no ceasefire achieved" },
+  { date: "20250818", label: "DC summit", description: "Trump hosts Zelenskyy and European/NATO leaders at White House; cautious optimism, no breakthrough" },
 ];
 
 function formatDateDisplay(dateStr: string): string {
@@ -293,14 +308,14 @@ export default function TimelineScrubber({
           </span>
         </div>
 
-        {/* Key event labels — hidden on very small screens */}
-        <div className="hidden sm:flex gap-2 mt-1.5 flex-wrap">
+        {/* Key event labels — horizontal scroll */}
+        <div className="hidden sm:flex gap-1.5 mt-1.5 overflow-x-auto scrollbar-none pb-0.5">
           {eventPositions.map((event) => (
             <button
               key={event.date}
               onClick={() => handleJumpToEvent(event.date)}
               className={cn(
-                "text-[9px] px-1.5 py-0.5 rounded",
+                "text-[9px] px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0",
                 "transition-colors",
                 dates[currentIndex] === dates[dates.findIndex((d) => d >= event.date)]
                   ? "bg-ua-yellow/20 text-ua-yellow"

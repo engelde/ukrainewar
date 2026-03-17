@@ -2,13 +2,50 @@
 
 import type { EquipmentMarker } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { TbX, TbExternalLink } from "react-icons/tb";
+import {
+  GiTank,
+  GiRocket,
+  GiHelicopter,
+  GiBattleship,
+} from "react-icons/gi";
+import {
+  TbPlane,
+  TbTruck,
+  TbDrone,
+  TbRadar,
+  TbShieldChevron,
+  TbBomb,
+} from "react-icons/tb";
 
-const STATUS_STYLES: Record<string, { color: string; label: string }> = {
-  destroyed: { color: "text-destruction", label: "Destroyed" },
-  damaged: { color: "text-damage", label: "Damaged" },
-  captured: { color: "text-capture", label: "Captured" },
-  abandoned: { color: "text-abandoned", label: "Abandoned" },
+const STATUS_STYLES: Record<string, { color: string; bg: string; label: string }> = {
+  destroyed: { color: "text-destruction", bg: "bg-destruction/15", label: "Destroyed" },
+  damaged: { color: "text-damage", bg: "bg-damage/15", label: "Damaged" },
+  captured: { color: "text-capture", bg: "bg-capture/15", label: "Captured" },
+  abandoned: { color: "text-abandoned", bg: "bg-abandoned/15", label: "Abandoned" },
 };
+
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  tank: <GiTank className="h-5 w-5" />,
+  ifv: <TbShieldChevron className="h-5 w-5" />,
+  apc: <TbShieldChevron className="h-5 w-5" />,
+  artillery: <TbBomb className="h-5 w-5" />,
+  mlrs: <GiRocket className="h-5 w-5" />,
+  helicopter: <GiHelicopter className="h-5 w-5" />,
+  jet: <TbPlane className="h-5 w-5" />,
+  ship: <GiBattleship className="h-5 w-5" />,
+  uav: <TbDrone className="h-5 w-5" />,
+  "air defense": <TbRadar className="h-5 w-5" />,
+  vehicle: <TbTruck className="h-5 w-5" />,
+};
+
+function getTypeIcon(type: string) {
+  const lower = type.toLowerCase();
+  for (const [key, icon] of Object.entries(TYPE_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return <TbBomb className="h-5 w-5" />;
+}
 
 interface DetailPanelProps {
   marker: EquipmentMarker;
@@ -18,101 +55,83 @@ interface DetailPanelProps {
 export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
   const statusStyle = STATUS_STYLES[marker.status] || {
     color: "text-muted-foreground",
+    bg: "bg-muted/15",
     label: marker.status,
   };
 
   return (
     <div
       className={cn(
-        "fixed left-3 top-14 z-30 w-72",
-        "sm:left-4 sm:top-16",
+        "fixed bottom-28 left-1/2 -translate-x-1/2 z-40",
+        "sm:bottom-32",
+        "w-[calc(100%-2rem)] max-w-sm",
         "rounded-lg",
-        "bg-background/85 backdrop-blur-xl",
+        "bg-background/90 backdrop-blur-xl",
         "border border-border/50",
-        "shadow-xl shadow-black/30",
-        "animate-in slide-in-from-left-4 fade-in duration-200"
+        "shadow-xl shadow-black/40",
+        "animate-in slide-in-from-bottom-4 fade-in duration-200"
       )}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 border-b border-border/30 p-3">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-sm font-bold text-foreground leading-tight">
-            {marker.model}
-          </h3>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            {marker.type}
-          </span>
+      {/* Header with type icon and model */}
+      <div className="flex items-start justify-between gap-3 border-b border-border/30 px-3 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className={cn("flex items-center justify-center h-9 w-9 rounded-lg", statusStyle.bg, statusStyle.color)}>
+            {getTypeIcon(marker.type)}
+          </div>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <h3 className="text-sm font-bold text-foreground leading-tight truncate">
+              {marker.model}
+            </h3>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              {marker.type}
+            </span>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+          className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <TbX className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Details */}
-      <div className="flex flex-col gap-2 p-3">
-        {/* Status badge */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Status:</span>
-          <span
-            className={cn(
-              "text-xs font-semibold capitalize",
-              statusStyle.color
-            )}
-          >
+      {/* Details grid */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-3 py-2.5">
+        <div>
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Status</span>
+          <div className={cn("text-xs font-semibold capitalize", statusStyle.color)}>
             {statusStyle.label}
-          </span>
+          </div>
         </div>
-
-        {/* Date */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Date:</span>
-          <span className="text-xs text-foreground">{marker.date}</span>
+        <div>
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Date</span>
+          <div className="text-xs text-foreground">{marker.date}</div>
         </div>
-
-        {/* Location */}
         {marker.location && (
-          <div className="flex items-start gap-2">
-            <span className="text-xs text-muted-foreground shrink-0">
-              Location:
-            </span>
-            <span className="text-xs text-foreground">{marker.location}</span>
+          <div className="col-span-2">
+            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Location</span>
+            <div className="text-xs text-foreground">{marker.location}</div>
           </div>
         )}
-
-        {/* Coordinates */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Coords:</span>
-          <span className="text-[11px] font-mono text-muted-foreground">
+        <div className="col-span-2">
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Coordinates</span>
+          <div className="text-[11px] font-mono text-muted-foreground">
             {marker.lat.toFixed(4)}, {marker.lng.toFixed(4)}
-          </span>
+          </div>
         </div>
+      </div>
 
-        {/* Source link */}
-        <div className="mt-1 pt-2 border-t border-border/30">
-          <a
-            href={`https://ukr.warspotting.net/search/?q=${marker.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-ua-blue hover:text-ua-blue-light transition-colors"
-          >
-            View on WarSpotting →
-          </a>
-        </div>
+      {/* Source link */}
+      <div className="px-3 py-2 border-t border-border/30">
+        <a
+          href={`https://ukr.warspotting.net/search/?q=${marker.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-[10px] text-ua-blue hover:text-ua-blue-light transition-colors"
+        >
+          View on WarSpotting
+          <TbExternalLink className="h-3 w-3" />
+        </a>
       </div>
     </div>
   );

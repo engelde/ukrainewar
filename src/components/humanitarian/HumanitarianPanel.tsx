@@ -8,6 +8,7 @@ import {
   TbCoin,
   TbChevronDown,
   TbChevronUp,
+  TbChevronLeft,
   TbWorld,
   TbHeartHandshake,
 } from "react-icons/tb";
@@ -138,10 +139,10 @@ export default function HumanitarianPanel({
   const [refugees, setRefugees] = useState<RefugeeData | null>(null);
   const [funding, setFunding] = useState<FundingData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch data on mount (always, since panel defaults to open)
   useEffect(() => {
-    if (!isOpen) return;
-
     async function fetchData() {
       try {
         const [refRes, fundRes] = await Promise.all([
@@ -157,28 +158,24 @@ export default function HumanitarianPanel({
       }
     }
     fetchData();
-  }, [isOpen]);
-
-  const [loading, setLoading] = useState(true);
+  }, []);
 
   if (!isOpen) {
     return (
       <button
         onClick={onToggle}
         className={cn(
-          "fixed right-3 bottom-28 z-30",
-          "sm:right-4 sm:bottom-32",
-          "flex items-center gap-1.5 px-2 py-3",
+          "fixed left-3 top-14 z-30",
+          "sm:left-4 sm:top-16",
+          "flex items-center gap-1.5 px-2.5 py-1.5",
           "rounded-lg",
           "bg-background/80 backdrop-blur-xl",
           "border border-border/50",
           "text-muted-foreground hover:text-foreground",
-          "transition-colors",
-          "writing-mode-vertical"
+          "transition-colors"
         )}
-        style={{ writingMode: "vertical-rl" }}
       >
-        <TbHeartHandshake className="h-3.5 w-3.5 rotate-90" />
+        <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
         <span className="text-[10px] font-semibold uppercase tracking-wider">
           Humanitarian
         </span>
@@ -189,8 +186,8 @@ export default function HumanitarianPanel({
   return (
     <div
       className={cn(
-        "fixed right-3 top-14 z-30",
-        "sm:right-4 sm:top-16",
+        "fixed left-3 top-14 z-30",
+        "sm:left-4 sm:top-16",
         "w-[calc(100vw-1.5rem)] sm:w-64",
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
@@ -213,7 +210,7 @@ export default function HumanitarianPanel({
           onClick={onToggle}
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          <TbChevronDown className="h-3.5 w-3.5 rotate-90" />
+          <TbChevronLeft className="h-3.5 w-3.5" />
         </button>
       </div>
 
@@ -313,7 +310,7 @@ export default function HumanitarianPanel({
         </button>
         {expandedSection === "idps" && refugees && (
           <div className="px-3 pb-2.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {refugees.yearly
                 .filter((y: { year: number }) => y.year >= 2022)
                 .map(
@@ -345,7 +342,7 @@ export default function HumanitarianPanel({
         )}
       </div>
 
-      {/* Civilian Casualties placeholder */}
+      {/* Civilian Casualties */}
       <div className={cn("border-b border-border/20", loading && "hidden")}>
         <div className="flex items-center gap-2 px-3 py-2">
           <TbUsers className="h-3.5 w-3.5 text-destruction" />
