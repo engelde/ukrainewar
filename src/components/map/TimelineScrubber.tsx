@@ -30,7 +30,6 @@ const SPEED_OPTIONS = [
   { label: "1×", ms: 200 },
   { label: "2×", ms: 100 },
   { label: "4×", ms: 50 },
-  { label: "8×", ms: 25 },
 ];
 
 function formatDateDisplay(dateStr: string): string {

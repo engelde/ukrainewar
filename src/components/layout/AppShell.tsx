@@ -200,9 +200,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const handleReset = useCallback(() => {
     resetPendingRef.current = true;
-    const warStart = "20220224";
-    setTerritoryDate(warStart);
-    setUrlDate(warStart);
+    setTerritoryDate(null);
+    setUrlDate(null);
     setUrlLng(null);
     setUrlLat(null);
     setUrlZoom(null);
