@@ -157,7 +157,26 @@ async function processAcledData(): Promise<Record<string, unknown>> {
           totalCivilian += m.civilian;
         }
       }
-      return { name, pcode: data.pcode, totalEvents, totalFatalities, totalCivilian };
+      return {
+        name,
+        pcode: data.pcode,
+        totalEvents,
+        totalFatalities,
+        totalCivilian,
+        monthly: Object.entries(data.months)
+          .filter(([key]) => key >= "2022")
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, d]) => {
+            const [y, m] = date.split("-");
+            const monthNames = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            return {
+              month: monthNames[parseInt(m)] || date,
+              year: parseInt(y),
+              events: d.events,
+              fatalities: d.fatalities,
+            };
+          }),
+      };
     })
     .sort((a, b) => b.totalEvents - a.totalEvents);
 
