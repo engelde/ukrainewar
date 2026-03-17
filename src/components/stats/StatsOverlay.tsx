@@ -14,6 +14,7 @@ import {
   TbTruck,
   TbUsers,
 } from "react-icons/tb";
+import { t } from "@/i18n";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import AnimatedCounter from "./AnimatedCounter";
@@ -38,7 +39,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
   return [
     {
       key: "personnel",
-      label: "Personnel",
+      label: t("stats.personnel"),
       daily: data.militaryPersonnel[0],
       total: data.militaryPersonnel[1],
       icon: <TbUsers className={iconClass} />,
@@ -46,7 +47,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "tanks",
-      label: "Tanks",
+      label: t("stats.tanks"),
       daily: data.tank[0],
       total: data.tank[1],
       icon: <GiTank className={iconClass} />,
@@ -54,7 +55,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "ifv",
-      label: "Armored Vehicles",
+      label: t("stats.armoredVehicles"),
       daily: data.armoredCombatVehicle[0],
       total: data.armoredCombatVehicle[1],
       icon: <TbShieldChevron className={iconClass} />,
@@ -62,7 +63,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "artillery",
-      label: "Artillery",
+      label: t("stats.artillery"),
       daily: data.artillerySystem[0],
       total: data.artillerySystem[1],
       icon: <TbBomb className={iconClass} />,
@@ -70,7 +71,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "mlrs",
-      label: "MLRS",
+      label: t("stats.mlrs"),
       daily: data.mlrs[0],
       total: data.mlrs[1],
       icon: <GiRocket className={iconClass} />,
@@ -78,7 +79,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "uav",
-      label: "UAVs",
+      label: t("stats.uavs"),
       daily: data.uav[0],
       total: data.uav[1],
       icon: <TbDrone className={iconClass} />,
@@ -86,7 +87,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "airDefense",
-      label: "Air Defense",
+      label: t("stats.airDefense"),
       daily: data.airDefenceSystem[0],
       total: data.airDefenceSystem[1],
       icon: <TbRadar className={iconClass} />,
@@ -94,7 +95,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "jets",
-      label: "Jets",
+      label: t("stats.jets"),
       daily: data.jet[0],
       total: data.jet[1],
       icon: <TbPlane className={iconClass} />,
@@ -102,7 +103,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "helicopters",
-      label: "Helicopters",
+      label: t("stats.helicopters"),
       daily: data.copter[0],
       total: data.copter[1],
       icon: <GiHelicopter className={iconClass} />,
@@ -110,7 +111,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "vehicles",
-      label: "Vehicles",
+      label: t("stats.vehicles"),
       daily: data.supplyVehicle[0],
       total: data.supplyVehicle[1],
       icon: <TbTruck className={iconClass} />,
@@ -118,7 +119,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
     },
     {
       key: "ships",
-      label: "Ships",
+      label: t("stats.ships"),
       daily: data.ship[0],
       total: data.ship[1],
       icon: <GiBattleship className={iconClass} />,
@@ -209,7 +210,7 @@ export default function StatsOverlay({
           <div className="flex items-center gap-2 px-3 py-2 flex-1">
             <TbSkull className="h-3.5 w-3.5 text-destruction" />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-destruction">
-              Russian Losses
+              {t("stats.title")}
             </span>
           </div>
           <button
@@ -241,7 +242,7 @@ export default function StatsOverlay({
               )}
             >
               <TbSkull className="h-3.5 w-3.5" />
-              <span>Russian Losses</span>
+              <span>{t("stats.title")}</span>
             </div>
             <button
               onClick={onCollapse}
@@ -307,13 +308,13 @@ export default function StatsOverlay({
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] text-muted-foreground">
-                              Confirmed losses · last {dates.length} days
+                              {t("stats.confirmedLosses", { count: dates.length })}
                             </span>
                             <span
                               className="text-[10px] font-medium"
                               style={{ color: TREND_COLORS[stat.trendKey] || "#3d8fd6" }}
                             >
-                              {trendValues.reduce((a, b) => a + b, 0)} total
+                              {trendValues.reduce((a, b) => a + b, 0)} {t("common.total")}
                             </span>
                           </div>
                           <Sparkline
@@ -330,7 +331,7 @@ export default function StatsOverlay({
                         </div>
                       ) : (
                         <span className="text-[10px] text-muted-foreground">
-                          No trend data available
+                          {t("stats.noTrendData")}
                         </span>
                       )}
                     </div>
@@ -345,7 +346,7 @@ export default function StatsOverlay({
                 rel="noopener noreferrer"
                 className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors"
               >
-                Source: Ukrainian Ministry of Defence
+                {t("stats.sourceMOD")}
               </a>
             </div>
           </div>

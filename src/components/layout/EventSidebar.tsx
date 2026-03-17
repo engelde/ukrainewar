@@ -26,6 +26,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { KEY_EVENTS, type WarEvent } from "@/data/events";
+import { getMonthsShort, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export type EventCategory =
@@ -46,37 +47,37 @@ interface EventCategoryInfo {
 export const EVENT_CATEGORIES: EventCategoryInfo[] = [
   {
     id: "battle",
-    label: "Battles",
+    label: "events.categories.battle",
     icon: <TbSword className="h-3.5 w-3.5" />,
     color: "text-destruction",
   },
   {
     id: "territorial",
-    label: "Territory",
+    label: "events.categories.territorial",
     icon: <TbFlag className="h-3.5 w-3.5" />,
     color: "text-damage",
   },
   {
     id: "political",
-    label: "Political",
+    label: "events.categories.political",
     icon: <TbUsers className="h-3.5 w-3.5" />,
     color: "text-ua-yellow",
   },
   {
     id: "military",
-    label: "Military",
+    label: "events.categories.military",
     icon: <TbShieldCheckered className="h-3.5 w-3.5" />,
     color: "text-capture",
   },
   {
     id: "humanitarian",
-    label: "Humanitarian",
+    label: "events.categories.humanitarian",
     icon: <TbBomb className="h-3.5 w-3.5" />,
     color: "text-destruction",
   },
   {
     id: "milestone",
-    label: "Milestones",
+    label: "events.categories.milestone",
     icon: <TbCalendarEvent className="h-3.5 w-3.5" />,
     color: "text-muted-foreground",
   },
@@ -153,20 +154,7 @@ export function getEventIcon(label: string) {
 }
 
 export function formatEventDate(dateStr: string): string {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const months = getMonthsShort();
   const y = dateStr.slice(0, 4);
   const m = parseInt(dateStr.slice(4, 6), 10) - 1;
   const d = parseInt(dateStr.slice(6, 8), 10);
@@ -253,7 +241,7 @@ export default function EventSidebar({ onEventClick, currentDate, onClose }: Eve
           <div className="flex items-center gap-2">
             <TbCalendarEvent className="h-5 w-5 text-ua-yellow" />
             <h2 className="text-sm font-bold tracking-wider uppercase text-sidebar-foreground">
-              Key Events
+              {t("events.title")}
             </h2>
             <span className="text-xs text-muted-foreground">({filteredEvents.length})</span>
           </div>
@@ -266,7 +254,7 @@ export default function EventSidebar({ onEventClick, currentDate, onClose }: Eve
                   ? "text-ua-yellow bg-ua-yellow/10"
                   : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent",
               )}
-              title="Filter by type"
+              title={t("events.filterByType")}
             >
               <TbFilter className="h-4 w-4" />
             </button>
@@ -274,7 +262,7 @@ export default function EventSidebar({ onEventClick, currentDate, onClose }: Eve
               <button
                 onClick={onClose}
                 className="rounded-md p-1.5 text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                title="Close sidebar"
+                title={t("events.closeSidebar")}
               >
                 <TbX className="h-4 w-4" />
               </button>
@@ -298,7 +286,7 @@ export default function EventSidebar({ onEventClick, currentDate, onClose }: Eve
                   )}
                 >
                   {cat.icon}
-                  {cat.label}
+                  {t(cat.label)}
                 </button>
               );
             })}
@@ -307,7 +295,7 @@ export default function EventSidebar({ onEventClick, currentDate, onClose }: Eve
                 onClick={() => setActiveFilters(new Set())}
                 className="text-[10px] text-muted-foreground hover:text-sidebar-foreground px-1.5 py-0.5 underline"
               >
-                Clear
+                {t("common.clear")}
               </button>
             )}
           </div>
@@ -382,7 +370,7 @@ export default function EventSidebar({ onEventClick, currentDate, onClose }: Eve
 
       <SidebarFooter className="border-t border-sidebar-border">
         <p className="text-[10px] text-muted-foreground text-center py-1">
-          Click an event to jump to that date on the timeline
+          {t("events.footerHint")}
         </p>
       </SidebarFooter>
     </Sidebar>

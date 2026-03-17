@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { t } from "@/i18n";
 import NavMenu from "./NavMenu";
 
 export default function Header() {
@@ -17,7 +18,7 @@ export default function Header() {
           <Image src="/icon.svg" alt="" width={20} height={20} className="h-5 w-5 rounded-[4px]" />
           <Link href="/" className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
-              RUSSO-UKRAINIAN WAR TRACKER
+              {t("header.title")}
             </h1>
           </Link>
           <div className="hidden sm:contents">

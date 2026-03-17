@@ -1,0 +1,120 @@
+{
+  "site": {
+    "title": "RUSSO-UKRAINIAN WAR TRACKER",
+    "description": "Real-time interactive tracker of the Russo-Ukrainian war"
+  },
+  "common": {
+    "loading": "Loading...",
+    "source": "Source",
+    "sources": "Sources",
+    "today": "Today",
+    "reset": "Reset",
+    "clear": "Clear",
+    "close": "Close",
+    "day": "Day",
+    "funded": "funded",
+    "total": "total",
+    "returned": "returned",
+    "killed": "killed",
+    "injured": "injured"
+  },
+  "header": {
+    "title": "RUSSO-UKRAINIAN WAR TRACKER"
+  },
+  "stats": {
+    "title": "Russian Losses",
+    "personnel": "Personnel",
+    "tanks": "Tanks",
+    "armoredVehicles": "Armored Vehicles",
+    "artillery": "Artillery",
+    "mlrs": "MLRS",
+    "uavs": "UAVs",
+    "airDefense": "Air Defense",
+    "jets": "Jets",
+    "helicopters": "Helicopters",
+    "vehicles": "Vehicles",
+    "ships": "Ships",
+    "confirmedLosses": "Confirmed losses · last {count} days",
+    "noTrendData": "No trend data available",
+    "sourceMOD": "Source: Ukrainian Ministry of Defence"
+  },
+  "map": {
+    "loading": "Loading map..."
+  },
+  "layers": {
+    "title": "Layers",
+    "territory": "Territory Control",
+    "territoryDesc": "Russian-occupied areas",
+    "frontline": "Frontline",
+    "frontlineDesc": "Current front lines",
+    "equipment": "Equipment Losses",
+    "equipmentDesc": "Confirmed loss locations",
+    "border": "Ukraine Border",
+    "borderDesc": "National boundary highlight",
+    "conflicts": "Conflict Events",
+    "conflictsDesc": "ACLED battle & incident data",
+    "heatmap": "Conflict Heatmap",
+    "heatmapDesc": "Regional fatality intensity",
+    "battles": "Major Battles",
+    "battlesDesc": "Key battle locations"
+  },
+  "timeline": {
+    "title": "Timeline",
+    "jumpToStart": "Jump to start",
+    "jumpToToday": "Jump to today",
+    "playbackSpeed": "Playback speed",
+    "events": "Events",
+    "toggleEvents": "Toggle event sidebar",
+    "resetTooltip": "Reset timeline, map, and panels"
+  },
+  "detail": {
+    "status": "Status",
+    "date": "Date",
+    "location": "Location",
+    "coordinates": "Coordinates",
+    "viewOnWarSpotting": "View on WarSpotting",
+    "destroyed": "Destroyed",
+    "damaged": "Damaged",
+    "captured": "Captured",
+    "abandoned": "Abandoned"
+  },
+  "events": {
+    "title": "Key Events",
+    "filterByType": "Filter by type",
+    "closeSidebar": "Close sidebar",
+    "footerHint": "Click an event to jump to that date on the timeline",
+    "categories": {
+      "battle": "Battles",
+      "territorial": "Territory",
+      "political": "Political",
+      "military": "Military",
+      "humanitarian": "Humanitarian",
+      "milestone": "Milestones"
+    }
+  },
+  "spending": {
+    "title": "Bilateral Aid",
+    "loadingAidData": "Loading aid data...",
+    "cumulativeAid": "Cumulative Aid",
+    "totalBilateralAid": "Total Bilateral Aid",
+    "donorCountries": "{count} donor countries",
+    "military": "Military",
+    "financial": "Financial",
+    "humanitarian": "Humanitarian",
+    "topDonors": "Top Donors",
+    "monthlyTrend": "Monthly Trend"
+  },
+  "humanitarian": {
+    "title": "Humanitarian",
+    "refugeesAbroad": "Refugees Abroad",
+    "topHostCountries": "Top host countries ({year})",
+    "acrossCountries": "Across {count} countries",
+    "internallyDisplaced": "Internally Displaced",
+    "civilianCasualties": "Civilian Casualties",
+    "unHumanitarianAppeals": "UN Humanitarian Appeals",
+    "unOchaAppeals": "UN OCHA Flash & Regional Appeals"
+  },
+  "months": {
+    "short": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  }
+}

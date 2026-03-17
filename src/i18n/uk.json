@@ -1,0 +1,120 @@
+{
+  "site": {
+    "title": "ТРЕКЕР РОСІЙСЬКО-УКРАЇНСЬКОЇ ВІЙНИ",
+    "description": "Інтерактивний трекер російсько-української війни в реальному часі"
+  },
+  "common": {
+    "loading": "Завантаження...",
+    "source": "Джерело",
+    "sources": "Джерела",
+    "today": "Сьогодні",
+    "reset": "Скинути",
+    "clear": "Очистити",
+    "close": "Закрити",
+    "day": "День",
+    "funded": "профінансовано",
+    "total": "всього",
+    "returned": "повернулися",
+    "killed": "загинули",
+    "injured": "поранені"
+  },
+  "header": {
+    "title": "ТРЕКЕР РОСІЙСЬКО-УКРАЇНСЬКОЇ ВІЙНИ"
+  },
+  "stats": {
+    "title": "Втрати Росії",
+    "personnel": "Особовий склад",
+    "tanks": "Танки",
+    "armoredVehicles": "Бронетехніка",
+    "artillery": "Артилерія",
+    "mlrs": "РСЗВ",
+    "uavs": "БПЛА",
+    "airDefense": "ППО",
+    "jets": "Літаки",
+    "helicopters": "Гелікоптери",
+    "vehicles": "Автомобілі",
+    "ships": "Кораблі",
+    "confirmedLosses": "Підтверджені втрати · останні {count} днів",
+    "noTrendData": "Дані про тренди відсутні",
+    "sourceMOD": "Джерело: Міністерство оборони України"
+  },
+  "map": {
+    "loading": "Завантаження карти..."
+  },
+  "layers": {
+    "title": "Шари",
+    "territory": "Контроль території",
+    "territoryDesc": "Окуповані Росією райони",
+    "frontline": "Лінія фронту",
+    "frontlineDesc": "Поточна лінія зіткнення",
+    "equipment": "Втрати техніки",
+    "equipmentDesc": "Підтверджені місця втрат",
+    "border": "Кордон України",
+    "borderDesc": "Державний кордон",
+    "conflicts": "Конфліктні події",
+    "conflictsDesc": "Дані ACLED про бойові дії",
+    "heatmap": "Теплова карта конфліктів",
+    "heatmapDesc": "Інтенсивність втрат за регіонами",
+    "battles": "Основні битви",
+    "battlesDesc": "Місця ключових битв"
+  },
+  "timeline": {
+    "title": "Хронологія",
+    "jumpToStart": "На початок",
+    "jumpToToday": "На сьогодні",
+    "playbackSpeed": "Швидкість відтворення",
+    "events": "Події",
+    "toggleEvents": "Показати/приховати панель подій",
+    "resetTooltip": "Скинути хронологію, карту та панелі"
+  },
+  "detail": {
+    "status": "Статус",
+    "date": "Дата",
+    "location": "Місцезнаходження",
+    "coordinates": "Координати",
+    "viewOnWarSpotting": "Переглянути на WarSpotting",
+    "destroyed": "Знищено",
+    "damaged": "Пошкоджено",
+    "captured": "Захоплено",
+    "abandoned": "Покинуто"
+  },
+  "events": {
+    "title": "Ключові події",
+    "filterByType": "Фільтр за типом",
+    "closeSidebar": "Закрити панель",
+    "footerHint": "Натисніть на подію, щоб перейти до цієї дати на хронології",
+    "categories": {
+      "battle": "Битви",
+      "territorial": "Територія",
+      "political": "Політика",
+      "military": "Військові",
+      "humanitarian": "Гуманітарні",
+      "milestone": "Віхи"
+    }
+  },
+  "spending": {
+    "title": "Двостороння допомога",
+    "loadingAidData": "Завантаження даних про допомогу...",
+    "cumulativeAid": "Сукупна допомога",
+    "totalBilateralAid": "Загальна двостороння допомога",
+    "donorCountries": "{count} країн-донорів",
+    "military": "Військова",
+    "financial": "Фінансова",
+    "humanitarian": "Гуманітарна",
+    "topDonors": "Топ донорів",
+    "monthlyTrend": "Щомісячний тренд"
+  },
+  "humanitarian": {
+    "title": "Гуманітарна ситуація",
+    "refugeesAbroad": "Біженці за кордоном",
+    "topHostCountries": "Основні країни прийому ({year})",
+    "acrossCountries": "У {count} країнах",
+    "internallyDisplaced": "Внутрішньо переміщені",
+    "civilianCasualties": "Цивільні жертви",
+    "unHumanitarianAppeals": "Гуманітарні заклики ООН",
+    "unOchaAppeals": "Термінові та регіональні заклики OCHA ООН"
+  },
+  "months": {
+    "short": ["Січ", "Лют", "Бер", "Кві", "Тра", "Чер", "Лип", "Сер", "Вер", "Жов", "Лис", "Гру"]
+  }
+}

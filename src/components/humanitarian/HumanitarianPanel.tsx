@@ -10,6 +10,7 @@ import {
   TbUsers,
   TbWorld,
 } from "react-icons/tb";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface RefugeeData {
@@ -205,7 +206,7 @@ export default function HumanitarianPanel({
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Humanitarian
+            {t("humanitarian.title")}
           </span>
         </div>
         <button
@@ -236,7 +237,7 @@ export default function HumanitarianPanel({
         <div className="flex items-center gap-1.5">
           <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-yellow">
-            Humanitarian
+            {t("humanitarian.title")}
           </span>
         </div>
         <button
@@ -271,7 +272,7 @@ export default function HumanitarianPanel({
           <div className="flex items-center gap-2">
             <TbWorld className="h-3.5 w-3.5 text-ua-blue" />
             <div className="text-left">
-              <div className="text-xs text-foreground">Refugees Abroad</div>
+              <div className="text-xs text-foreground">{t("humanitarian.refugeesAbroad")}</div>
               <div className="text-sm font-semibold text-foreground font-mono">
                 {refugees ? formatNumber(refugees.summary.total_refugees) : "..."}
               </div>
@@ -286,7 +287,7 @@ export default function HumanitarianPanel({
         {expandedSection === "refugees" && refugees && (
           <div className="px-3 pb-2.5 space-y-1.5">
             <div className="text-[9px] text-muted-foreground mb-1">
-              Top host countries ({refugees.summary.latest_year})
+              {t("humanitarian.topHostCountries", { year: refugees.summary.latest_year })}
             </div>
             <BarChart
               items={refugees.countries.slice(0, 8).map((c) => ({
@@ -299,7 +300,7 @@ export default function HumanitarianPanel({
               maxValue={refugees.countries[0]?.refugees || 1}
             />
             <div className="text-[9px] text-muted-foreground mt-1">
-              Across {refugees.summary.total_countries} countries
+              {t("humanitarian.acrossCountries", { count: refugees.summary.total_countries })}
             </div>
           </div>
         )}
@@ -314,7 +315,7 @@ export default function HumanitarianPanel({
           <div className="flex items-center gap-2">
             <TbHome className="h-3.5 w-3.5 text-damage" />
             <div className="text-left">
-              <div className="text-xs text-foreground">Internally Displaced</div>
+              <div className="text-xs text-foreground">{t("humanitarian.internallyDisplaced")}</div>
               <div className="text-sm font-semibold text-foreground font-mono">
                 {refugees ? formatNumber(refugees.summary.total_idps) : "..."}
               </div>
@@ -339,7 +340,7 @@ export default function HumanitarianPanel({
                     </div>
                     {y.returned_idps > 0 && (
                       <div className="text-[9px] text-capture">
-                        ↩ {formatNumber(y.returned_idps)} returned
+                        ↩ {formatNumber(y.returned_idps)} {t("common.returned")}
                       </div>
                     )}
                   </div>
@@ -355,7 +356,7 @@ export default function HumanitarianPanel({
           <TbUsers className="h-3.5 w-3.5 text-destruction" />
           <div className="flex-1">
             <div className="text-xs text-foreground">
-              Civilian Casualties
+              {t("humanitarian.civilianCasualties")}
               {isHistorical && (
                 <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
               )}
@@ -365,17 +366,17 @@ export default function HumanitarianPanel({
                 <span className="text-sm font-semibold text-foreground font-mono">
                   {currentCasualties.killed.toLocaleString()}+
                 </span>
-                <span className="text-[9px] text-muted-foreground ml-1">killed</span>
+                <span className="text-[9px] text-muted-foreground ml-1">{t("common.killed")}</span>
               </div>
               <div>
                 <span className="text-sm font-semibold text-foreground font-mono">
                   {currentCasualties.injured.toLocaleString()}+
                 </span>
-                <span className="text-[9px] text-muted-foreground ml-1">injured</span>
+                <span className="text-[9px] text-muted-foreground ml-1">{t("common.injured")}</span>
               </div>
             </div>
             <div className="text-[9px] text-muted-foreground/60 mt-0.5">
-              Source: OHCHR
+              {t("common.source")}: OHCHR
               {casualties ? ` (as of ${casualties.cumulativeAsOfDate.slice(0, 7)})` : ""}
             </div>
           </div>
@@ -391,14 +392,16 @@ export default function HumanitarianPanel({
           <div className="flex items-center gap-2">
             <TbCoin className="h-3.5 w-3.5 text-ua-yellow" />
             <div className="text-left">
-              <div className="text-xs text-foreground">UN Humanitarian Appeals</div>
+              <div className="text-xs text-foreground">
+                {t("humanitarian.unHumanitarianAppeals")}
+              </div>
               <div className="text-[9px] text-muted-foreground">
                 {funding
                   ? `${formatUSD(funding.summary.total_funded_usd)} of ${formatUSD(funding.summary.total_required_usd)}`
-                  : "Loading..."}
+                  : `${t("common.loading")}`}
               </div>
               <div className="text-[8px] text-muted-foreground/60">
-                UN OCHA Flash &amp; Regional Appeals
+                {t("humanitarian.unOchaAppeals")}
               </div>
             </div>
           </div>
@@ -426,7 +429,7 @@ export default function HumanitarianPanel({
       {/* Sources */}
       <div className={cn("px-3 py-1.5 border-t border-border/30", loading && "hidden")}>
         <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
-          <span>Sources:</span>
+          <span>{t("common.sources")}:</span>
           <a
             href="https://data.unhcr.org"
             target="_blank"

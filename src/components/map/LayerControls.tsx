@@ -11,6 +11,7 @@ import {
   TbStack2,
   TbSwords,
 } from "react-icons/tb";
+import { t } from "@/i18n";
 import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,60 +25,17 @@ interface LayerControlsProps {
 
 const LAYER_CONFIG: {
   key: keyof MapLayers;
-  label: string;
+  labelKey: string;
   color: string;
-  description: string;
   Icon: IconType;
 }[] = [
-  {
-    key: "territory",
-    label: "Territory Control",
-    color: "bg-occupation",
-    description: "Russian-occupied areas",
-    Icon: TbMapPin,
-  },
-  {
-    key: "frontline",
-    label: "Frontline",
-    color: "bg-destruction",
-    description: "Current front lines",
-    Icon: TbSwords,
-  },
-  {
-    key: "equipment",
-    label: "Equipment Losses",
-    color: "bg-damage",
-    description: "Confirmed loss locations",
-    Icon: TbBomb,
-  },
-  {
-    key: "border",
-    label: "Ukraine Border",
-    color: "bg-ua-blue",
-    description: "National boundary highlight",
-    Icon: TbBorderAll,
-  },
-  {
-    key: "conflicts",
-    label: "Conflict Events",
-    color: "bg-purple-500",
-    description: "ACLED battle & incident data",
-    Icon: TbFlame,
-  },
-  {
-    key: "heatmap",
-    label: "Conflict Heatmap",
-    color: "bg-red-500",
-    description: "Regional fatality intensity",
-    Icon: TbMap,
-  },
-  {
-    key: "battles",
-    label: "Major Battles",
-    color: "bg-red-500",
-    description: "Key battle locations",
-    Icon: TbSwords,
-  },
+  { key: "territory", labelKey: "layers.territory", color: "bg-occupation", Icon: TbMapPin },
+  { key: "frontline", labelKey: "layers.frontline", color: "bg-destruction", Icon: TbSwords },
+  { key: "equipment", labelKey: "layers.equipment", color: "bg-damage", Icon: TbBomb },
+  { key: "border", labelKey: "layers.border", color: "bg-ua-blue", Icon: TbBorderAll },
+  { key: "conflicts", labelKey: "layers.conflicts", color: "bg-purple-500", Icon: TbFlame },
+  { key: "heatmap", labelKey: "layers.heatmap", color: "bg-red-500", Icon: TbMap },
+  { key: "battles", labelKey: "layers.battles", color: "bg-red-500", Icon: TbSwords },
 ];
 
 export default function LayerControls({
@@ -100,7 +58,7 @@ export default function LayerControls({
         <div className="flex items-center gap-2 px-3 py-2 flex-1">
           <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Layers
+            {t("layers.title")}
           </span>
         </div>
         <button
@@ -127,7 +85,7 @@ export default function LayerControls({
         <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
           <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Layers
+            {t("layers.title")}
           </span>
         </div>
         <button
@@ -175,7 +133,7 @@ export default function LayerControls({
                   layers[layer.key] ? "text-foreground" : "text-muted-foreground",
                 )}
               />
-              <span className="text-xs text-foreground truncate">{layer.label}</span>
+              <span className="text-xs text-foreground truncate">{t(layer.labelKey)}</span>
             </div>
           </button>
         ))}

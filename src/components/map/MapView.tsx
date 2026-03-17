@@ -7,6 +7,7 @@ import type { Battle } from "@/data/battles";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
 import ukraineOblasts from "@/data/ukraine-oblasts.json";
+import { getMonthsShort, t } from "@/i18n";
 import { MAP_CENTER, MAP_STYLE, MAP_ZOOM } from "@/lib/constants";
 import type { EquipmentMarker, MapLayers } from "@/lib/types";
 
@@ -150,21 +151,7 @@ function battleGeoJSON(battles: Battle[], timelineDate?: string | null): GeoJSON
 
 function formatBattleDateRange(start: string, end?: string): string {
   const fmt = (d: string) => {
-    const months = [
-      "",
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
+    const months = ["", ...getMonthsShort()];
     return `${months[parseInt(d.slice(4, 6), 10)]} ${d.slice(6, 8)}, ${d.slice(0, 4)}`;
   };
   if (!end) return `${fmt(start)} – Present`;
@@ -1633,7 +1620,7 @@ export default function MapView({
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-3">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-ua-blue border-t-transparent" />
-            <span className="text-sm text-muted-foreground">Loading map...</span>
+            <span className="text-sm text-muted-foreground">{t("map.loading")}</span>
           </div>
         </div>
       )}

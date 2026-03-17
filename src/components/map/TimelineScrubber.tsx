@@ -13,6 +13,7 @@ import {
 } from "react-icons/tb";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { KEY_EVENTS } from "@/data/events";
+import { getMonthsShort, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface TimelineScrubberProps {
@@ -39,20 +40,7 @@ function formatDateDisplay(dateStr: string): string {
 }
 
 function formatDateShort(dateStr: string): string {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const months = getMonthsShort();
   const m = parseInt(dateStr.slice(4, 6), 10) - 1;
   const d = dateStr.slice(6, 8);
   return `${months[m]} ${parseInt(d, 10)}`;
@@ -515,7 +503,7 @@ export default function TimelineScrubber({
             <div className="flex items-center gap-2">
               <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
-                Timeline
+                {t("timeline.title")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -523,7 +511,7 @@ export default function TimelineScrubber({
                 {formatDateDisplay(currentDate)}
               </span>
               {currentIndex === dates.length - 1 && (
-                <span className="text-[9px] text-capture font-mono">Today</span>
+                <span className="text-[9px] text-capture font-mono">{t("common.today")}</span>
               )}
             </div>
           </div>
@@ -533,7 +521,7 @@ export default function TimelineScrubber({
             <button
               onClick={jumpToStart}
               className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
-              title="Jump to start"
+              title={t("timeline.jumpToStart")}
             >
               <TbPlayerSkipBackFilled className="h-4.5 w-4.5" />
             </button>
@@ -579,7 +567,7 @@ export default function TimelineScrubber({
             <button
               onClick={jumpToEnd}
               className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
-              title="Jump to today"
+              title={t("timeline.jumpToToday")}
             >
               <TbPlayerSkipForwardFilled className="h-4.5 w-4.5" />
             </button>
@@ -595,7 +583,7 @@ export default function TimelineScrubber({
                 ? "bg-ua-blue/15 text-ua-blue"
                 : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
             )}
-            title="Playback speed"
+            title={t("timeline.playbackSpeed")}
           >
             {SPEED_OPTIONS[speedIndex].label}
           </button>
@@ -626,7 +614,7 @@ export default function TimelineScrubber({
           {onToggleEvents && (
             <button
               onClick={onToggleEvents}
-              title="Toggle event sidebar"
+              title={t("timeline.toggleEvents")}
               className={cn(
                 "flex h-7 items-center rounded-md px-2.5 transition-colors",
                 "text-[10px] font-semibold uppercase tracking-wider",
@@ -635,7 +623,7 @@ export default function TimelineScrubber({
                   : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated",
               )}
             >
-              Events
+              {t("timeline.events")}
             </button>
           )}
         </div>

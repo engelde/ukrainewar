@@ -10,6 +10,7 @@ import {
   TbShieldCheckered,
 } from "react-icons/tb";
 import { AnimatedCounter } from "@/components/stats/AnimatedCounter";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface SpendingData {
@@ -118,7 +119,7 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbCurrencyEuro className="h-3.5 w-3.5 text-capture" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
-            Bilateral Aid
+            {t("spending.title")}
           </span>
         </div>
         <button
@@ -149,7 +150,7 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
         <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
           <TbCurrencyEuro className="h-3.5 w-3.5 text-capture" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
-            Bilateral Aid
+            {t("spending.title")}
           </span>
         </div>
         <button
@@ -162,14 +163,16 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
 
       {loading || !data ? (
         <div className="p-3 text-center">
-          <div className="text-[10px] text-muted-foreground animate-pulse">Loading aid data...</div>
+          <div className="text-[10px] text-muted-foreground animate-pulse">
+            {t("spending.loadingAidData")}
+          </div>
         </div>
       ) : (
         <div className="p-2.5 space-y-2.5">
           {/* Total Aid */}
           <div className="text-center pb-1.5 border-b border-border/20">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
-              {timelineTotals ? "Cumulative Aid" : "Total Bilateral Aid"}
+              {timelineTotals ? t("spending.cumulativeAid") : t("spending.totalBilateralAid")}
             </div>
             <div className="text-xl font-bold text-ua-yellow font-mono tabular-nums">
               €
@@ -181,7 +184,7 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
               B
             </div>
             <div className="text-[8px] text-muted-foreground mt-0.5">
-              {data.donors} donor countries · {data.source.release}
+              {t("spending.donorCountries", { count: data.donors })} · {data.source.release}
             </div>
           </div>
 
@@ -189,21 +192,21 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
           <div className="space-y-1.5">
             <AidTypeRow
               icon={<TbShieldCheckered className="h-3 w-3 text-destruction" />}
-              label="Military"
+              label={t("spending.military")}
               value={displayTotals?.military ?? 0}
               total={displayTotals?.total ?? 1}
               color="bg-destruction/60"
             />
             <AidTypeRow
               icon={<TbBuildingBank className="h-3 w-3 text-ua-blue-light" />}
-              label="Financial"
+              label={t("spending.financial")}
               value={displayTotals?.financial ?? 0}
               total={displayTotals?.total ?? 1}
               color="bg-ua-blue/60"
             />
             <AidTypeRow
               icon={<TbHeartHandshake className="h-3 w-3 text-capture" />}
-              label="Humanitarian"
+              label={t("spending.humanitarian")}
               value={displayTotals?.humanitarian ?? 0}
               total={displayTotals?.total ?? 1}
               color="bg-capture/60"
@@ -222,7 +225,7 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
                 <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
               )}
               <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-                Top Donors
+                {t("spending.topDonors")}
               </span>
             </button>
             {expandedSection === "donors" && (
@@ -262,7 +265,7 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
                   <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
                 )}
                 <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-                  Monthly Trend
+                  {t("spending.monthlyTrend")}
                 </span>
               </button>
               {expandedSection === "trend" && (
@@ -279,7 +282,7 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
       {data && (
         <div className="px-3 py-1.5 border-t border-border/30">
           <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
-            <span>Source:</span>
+            <span>{t("common.source")}:</span>
             <a
               href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/"
               target="_blank"

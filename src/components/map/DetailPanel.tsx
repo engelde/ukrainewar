@@ -11,14 +11,15 @@ import {
   TbTruck,
   TbX,
 } from "react-icons/tb";
+import { t } from "@/i18n";
 import type { EquipmentMarker } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STATUS_STYLES: Record<string, { color: string; bg: string; label: string }> = {
-  destroyed: { color: "text-destruction", bg: "bg-destruction/15", label: "Destroyed" },
-  damaged: { color: "text-damage", bg: "bg-damage/15", label: "Damaged" },
-  captured: { color: "text-capture", bg: "bg-capture/15", label: "Captured" },
-  abandoned: { color: "text-abandoned", bg: "bg-abandoned/15", label: "Abandoned" },
+const STATUS_STYLES: Record<string, { color: string; bg: string; labelKey: string }> = {
+  destroyed: { color: "text-destruction", bg: "bg-destruction/15", labelKey: "detail.destroyed" },
+  damaged: { color: "text-damage", bg: "bg-damage/15", labelKey: "detail.damaged" },
+  captured: { color: "text-capture", bg: "bg-capture/15", labelKey: "detail.captured" },
+  abandoned: { color: "text-abandoned", bg: "bg-abandoned/15", labelKey: "detail.abandoned" },
 };
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -52,8 +53,9 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
   const statusStyle = STATUS_STYLES[marker.status] || {
     color: "text-muted-foreground",
     bg: "bg-muted/15",
-    label: marker.status,
+    labelKey: "",
   };
+  const statusLabel = statusStyle.labelKey ? t(statusStyle.labelKey) : marker.status;
 
   return (
     <div
@@ -100,26 +102,30 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
       {/* Details grid */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-3 py-2.5">
         <div>
-          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Status</span>
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+            {t("detail.status")}
+          </span>
           <div className={cn("text-xs font-semibold capitalize", statusStyle.color)}>
-            {statusStyle.label}
+            {statusLabel}
           </div>
         </div>
         <div>
-          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Date</span>
+          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+            {t("detail.date")}
+          </span>
           <div className="text-xs text-foreground">{marker.date}</div>
         </div>
         {marker.location && (
           <div className="col-span-2">
             <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-              Location
+              {t("detail.location")}
             </span>
             <div className="text-xs text-foreground">{marker.location}</div>
           </div>
         )}
         <div className="col-span-2">
           <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-            Coordinates
+            {t("detail.coordinates")}
           </span>
           <div className="text-[11px] font-mono text-muted-foreground">
             {marker.lat.toFixed(4)}, {marker.lng.toFixed(4)}
@@ -135,7 +141,7 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-[10px] text-ua-blue hover:text-ua-blue-light transition-colors"
         >
-          View on WarSpotting
+          {t("detail.viewOnWarSpotting")}
           <TbExternalLink className="h-3 w-3" />
         </a>
       </div>

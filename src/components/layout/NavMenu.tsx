@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TbBrandGithub, TbDatabase, TbExternalLink, TbInfoCircle, TbX } from "react-icons/tb";
+import { t } from "@/i18n";
 import { DATA_SOURCES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -181,7 +182,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
               <div className="h-1/2 bg-ua-yellow" />
             </div>
             <span className="text-sm font-bold tracking-tight text-foreground">
-              RUSSO-UKRAINIAN WAR TRACKER
+              {t("header.title")}
             </span>
           </div>
           <button
