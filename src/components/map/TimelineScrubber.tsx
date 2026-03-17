@@ -40,7 +40,7 @@ const KEY_EVENTS: { date: string; label: string; description: string }[] = [
   { date: "20230823", label: "Prigozhin killed", description: "Wagner leader Yevgeny Prigozhin dies in plane crash two months after aborted mutiny" },
   // 2024
   { date: "20240217", label: "Avdiivka falls", description: "Russia captures Avdiivka after months of intense fighting" },
-  { date: "20240708", label: "Territory data begins", description: "DeepState territory tracking data starts" },
+  { date: "20240708", label: "DeepState tracking", description: "DeepState high-resolution polygon territory data begins (VIINA point-data covers earlier)" },
   { date: "20240718", label: "Pokrovsk offensive", description: "Russia launches major offensive toward Pokrovsk in Donetsk Oblast with ~40,000 troops" },
   { date: "20240806", label: "Kursk offensive", description: "Ukraine launches surprise cross-border offensive into Russia's Kursk Oblast" },
   { date: "20240826", label: "Massive energy strikes", description: "Russia launches one of its largest combined missile and drone attacks targeting Ukrainian energy infrastructure" },
@@ -101,7 +101,6 @@ function generateDateRange(): string[] {
   return dates;
 }
 
-const TERRITORY_DATA_START = "20240708";
 const PIXELS_PER_DAY = 2;
 
 const YEAR_MARKS = ["2022", "2023", "2024", "2025", "2026"];
@@ -417,12 +416,6 @@ export default function TimelineScrubber({
   // Current year from the timeline
   const currentYear = currentDate.slice(0, 4);
 
-  const hasTerritoryData = currentDate >= TERRITORY_DATA_START;
-  const territoryStartPx = (() => {
-    const idx = dates.indexOf(TERRITORY_DATA_START);
-    return idx >= 0 ? idx * PIXELS_PER_DAY : -1;
-  })();
-
   return (
     <div
       className={cn(
@@ -488,11 +481,6 @@ export default function TimelineScrubber({
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
                     Timeline
                   </span>
-                  {!hasTerritoryData && (
-                    <span className="text-[8px] px-1 py-0.5 rounded bg-surface-elevated text-muted-foreground">
-                      No map data
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-mono text-foreground font-medium">
@@ -623,17 +611,6 @@ export default function TimelineScrubber({
               >
                 {/* Track line */}
                 <div className="absolute top-3 left-0 right-0 h-0.5 bg-border/30 rounded-full" />
-
-                {/* Territory data availability range */}
-                {territoryStartPx >= 0 && (
-                  <div
-                    className="absolute top-2 h-2 bg-ua-blue/8 rounded-full"
-                    style={{
-                      left: `${territoryStartPx}px`,
-                      width: `${totalWidth - territoryStartPx}px`,
-                    }}
-                  />
-                )}
 
                 {/* Year tick marks + labels */}
                 {yearTicksPx.map((tick) => (

@@ -57,4 +57,9 @@ export const DATA_SOURCES = [
     url: "https://www.kielinstitut.de",
     description: "Ukraine Support Tracker",
   },
+  {
+    name: "VIINA (Zhukov & Ayers)",
+    url: "https://github.com/zhukovyuri/VIINA",
+    description: "Territorial control from news articles",
+  },
 ] as const;

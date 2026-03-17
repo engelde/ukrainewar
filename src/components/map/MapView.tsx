@@ -203,9 +203,103 @@ export default function MapView({
     );
   }, []);
 
+  // VIINA covers Feb 2022 – July 2024; DeepState covers July 2024+
+  const DEEPSTATE_START = "20240708";
+
+  const ensureViinaLayers = useCallback((mapInstance: maplibregl.Map) => {
+    if (mapInstance.getSource("viina-territory")) return;
+
+    mapInstance.addSource("viina-territory", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+
+    // RU-controlled circles
+    mapInstance.addLayer({
+      id: "viina-ru",
+      type: "circle",
+      source: "viina-territory",
+      filter: ["==", ["get", "status"], "RU"],
+      paint: {
+        "circle-color": "#c53030",
+        "circle-opacity": 0.45,
+        "circle-radius": [
+          "interpolate", ["linear"], ["zoom"],
+          4, 1.5,
+          6, 3,
+          8, 6,
+          10, 12,
+          12, 24,
+        ],
+        "circle-blur": 0.3,
+      },
+    });
+
+    // Contested circles
+    mapInstance.addLayer({
+      id: "viina-contested",
+      type: "circle",
+      source: "viina-territory",
+      filter: ["==", ["get", "status"], "CONTESTED"],
+      paint: {
+        "circle-color": "#eab308",
+        "circle-opacity": 0.5,
+        "circle-radius": [
+          "interpolate", ["linear"], ["zoom"],
+          4, 2,
+          6, 4,
+          8, 8,
+          10, 14,
+          12, 28,
+        ],
+        "circle-blur": 0.2,
+      },
+    });
+  }, []);
+
   const loadTerritoryData = useCallback(
     async (mapInstance: maplibregl.Map) => {
       try {
+        const useViina = territoryDate && territoryDate < DEEPSTATE_START;
+
+        if (useViina) {
+          // Use VIINA point-based territory data
+          const res = await fetch(`/api/territory/viina?date=${territoryDate}`);
+
+          // Clear DeepState data when using VIINA
+          const deepstateSource = mapInstance.getSource(
+            "territory"
+          ) as maplibregl.GeoJSONSource | undefined;
+          if (deepstateSource) {
+            deepstateSource.setData({ type: "FeatureCollection", features: [] });
+          }
+
+          ensureViinaLayers(mapInstance);
+          const viinaSource = mapInstance.getSource(
+            "viina-territory"
+          ) as maplibregl.GeoJSONSource | undefined;
+
+          if (!res.ok || !viinaSource) return;
+          const { geojson } = await res.json();
+          viinaSource.setData(geojson);
+
+          // Show VIINA layers, hide territory layers
+          ["viina-ru", "viina-contested"].forEach((id) => {
+            if (mapInstance.getLayer(id))
+              mapInstance.setLayoutProperty(id, "visibility", "visible");
+          });
+          return;
+        }
+
+        // Clear VIINA data when using DeepState
+        const viinaSource = mapInstance.getSource(
+          "viina-territory"
+        ) as maplibregl.GeoJSONSource | undefined;
+        if (viinaSource) {
+          viinaSource.setData({ type: "FeatureCollection", features: [] });
+        }
+
+        // DeepState territory (July 2024+)
         const url = territoryDate
           ? `/api/territory/${territoryDate}`
           : "/api/territory";
@@ -216,7 +310,6 @@ export default function MapView({
         ) as maplibregl.GeoJSONSource | undefined;
 
         if (!res.ok) {
-          // Clear territory data when out of range (e.g., pre-July 2024)
           if (existingSource) {
             existingSource.setData({ type: "FeatureCollection", features: [] });
           }
@@ -225,12 +318,10 @@ export default function MapView({
         const { geojson } = await res.json();
 
         if (existingSource) {
-          // Update existing source data (for timeline scrubbing)
           existingSource.setData(geojson);
           return;
         }
 
-        // Guard: double-check source wasn't added between fetch and now
         if (mapInstance.getSource("territory")) return;
 
         mapInstance.addSource("territory", {
@@ -265,7 +356,7 @@ export default function MapView({
         console.error("Failed to load territory data:", err);
       }
     },
-    [territoryDate]
+    [territoryDate, ensureViinaLayers]
   );
 
   const loadEquipmentData = useCallback(
@@ -989,6 +1080,17 @@ export default function MapView({
       );
     }
 
+    // VIINA territory layers
+    ["viina-ru", "viina-contested"].forEach((id) => {
+      if (map.current?.getLayer(id)) {
+        map.current.setLayoutProperty(
+          id,
+          "visibility",
+          layers.territory ? "visible" : "none"
+        );
+      }
+    });
+
     // Frontline border (separate toggle)
     if (map.current.getLayer("territory-line")) {
       map.current.setLayoutProperty(
@@ -1083,62 +1185,71 @@ export default function MapView({
   useEffect(() => {
     if (!loaded || !territoryDate) return;
     const month = `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}`;
-    if (month < "2022-02" || fetchedMonthsRef.current.has(month)) return;
 
-    // Mark as fetched immediately to prevent duplicate requests
-    fetchedMonthsRef.current.add(month);
+    const fetchMonth = (m: string) => {
+      if (m < "2022-02" || fetchedMonthsRef.current.has(m)) return;
+      fetchedMonthsRef.current.add(m);
 
-    fetch(`/api/losses/month?month=${month}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data?.losses?.length) return;
-        const existingIds = new Set(equipmentDataRef.current.map((m) => m.id));
-        const newMarkers: EquipmentMarker[] = data.losses
-          .filter(
-            (l: { geo?: string | null; id: number }) =>
-              l.geo && l.geo.includes(",") && !existingIds.has(l.id)
-          )
-          .map(
-            (l: {
-              id: number;
-              type: string;
-              model: string;
-              status: string;
-              date: string;
-              nearest_location: string | null;
-              geo: string;
-            }) => {
-              const [lat, lng] = l.geo.split(",").map(Number);
-              return {
-                id: l.id,
-                type: l.type,
-                model: l.model,
-                status: l.status,
-                date: l.date,
-                location: l.nearest_location,
-                lat,
-                lng,
-              };
-            }
-          )
-          .filter(
-            (m: { lat: number; lng: number }) =>
-              !isNaN(m.lat) && !isNaN(m.lng)
-          );
+      fetch(`/api/losses/month?month=${m}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data?.losses?.length) return;
+          const existingIds = new Set(equipmentDataRef.current.map((mk) => mk.id));
+          const newMarkers: EquipmentMarker[] = data.losses
+            .filter(
+              (l: { geo?: string | null; id: number }) =>
+                l.geo && l.geo.includes(",") && !existingIds.has(l.id)
+            )
+            .map(
+              (l: {
+                id: number;
+                type: string;
+                model: string;
+                status: string;
+                date: string;
+                nearest_location: string | null;
+                geo: string;
+              }) => {
+                const [lat, lng] = l.geo.split(",").map(Number);
+                return {
+                  id: l.id,
+                  type: l.type,
+                  model: l.model,
+                  status: l.status,
+                  date: l.date,
+                  location: l.nearest_location,
+                  lat,
+                  lng,
+                };
+              }
+            )
+            .filter(
+              (mk: { lat: number; lng: number }) =>
+                !isNaN(mk.lat) && !isNaN(mk.lng)
+            );
 
-        if (newMarkers.length > 0) {
-          equipmentDataRef.current = [
-            ...equipmentDataRef.current,
-            ...newMarkers,
-          ].sort((a, b) => a.date.localeCompare(b.date));
-          // Trigger re-filter of equipment markers
-          setEquipmentVersion((v) => v + 1);
-        }
-      })
-      .catch(() => {
-        // Remove from fetched set so it can be retried
-        fetchedMonthsRef.current.delete(month);
-      });
+          if (newMarkers.length > 0) {
+            equipmentDataRef.current = [
+              ...equipmentDataRef.current,
+              ...newMarkers,
+            ].sort((a, b) => a.date.localeCompare(b.date));
+            setEquipmentVersion((v) => v + 1);
+          }
+        })
+        .catch(() => {
+          fetchedMonthsRef.current.delete(m);
+        });
+    };
+
+    // Fetch current month
+    fetchMonth(month);
+
+    // Pre-fetch adjacent months for smoother playback
+    const [year, mon] = [parseInt(month.slice(0, 4)), parseInt(month.slice(5, 7))];
+    const nextMon = mon === 12 ? `${year + 1}-01` : `${year}-${String(mon + 1).padStart(2, "0")}`;
+    const prevMon = mon === 1 ? `${year - 1}-12` : `${year}-${String(mon - 1).padStart(2, "0")}`;
+    fetchMonth(nextMon);
+    fetchMonth(prevMon);
   }, [loaded, territoryDate]);
 
   // Filter equipment markers by timeline date
