@@ -25,7 +25,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { KEY_EVENTS, type WarEvent } from "@/data/events";
+import type { WarEvent } from "@/data/events";
 import { getMonthsShort, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
@@ -182,20 +182,26 @@ function groupByYear(events: WarEvent[]) {
 }
 
 interface EventSidebarProps {
+  events: WarEvent[];
   onEventClick: (date: string) => void;
   currentDate?: string | null;
   onClose?: () => void;
 }
 
-export default function EventSidebar({ onEventClick, currentDate, onClose }: EventSidebarProps) {
+export default function EventSidebar({
+  events,
+  onEventClick,
+  currentDate,
+  onClose,
+}: EventSidebarProps) {
   const activeRef = useRef<HTMLButtonElement>(null);
   const [activeFilters, setActiveFilters] = useState<Set<EventCategory>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
 
   const filteredEvents = useMemo(() => {
-    if (activeFilters.size === 0) return KEY_EVENTS;
-    return KEY_EVENTS.filter((e) => activeFilters.has(getEventCategory(e.label)));
-  }, [activeFilters]);
+    if (activeFilters.size === 0) return events;
+    return events.filter((e) => activeFilters.has(getEventCategory(e.label)));
+  }, [activeFilters, events]);
 
   const yearGroups = groupByYear(filteredEvents);
   const years = Object.keys(yearGroups).sort();

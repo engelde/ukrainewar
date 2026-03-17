@@ -15,8 +15,8 @@ import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { MAJOR_BATTLES } from "@/data/battles";
-import { KEY_EVENTS } from "@/data/events";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEvents } from "@/hooks/useEvents";
 import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
 import type { CasualtyData, EquipmentMarker, MapLayers } from "@/lib/types";
 
@@ -38,6 +38,7 @@ interface AppShellProps {
 
 export default function AppShell({ casualtyData }: AppShellProps) {
   const isMobile = useIsMobile();
+  const { events } = useEvents();
   const [urlDate, setUrlDate] = useQueryState(
     "t",
     parseAsString.withOptions({ shallow: true, throttleMs: 500 }),
@@ -215,12 +216,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const handleEventClick = useCallback(
     (date: string) => {
       handleTimelineDateChange(date);
-      const event = KEY_EVENTS.find((e) => e.date === date);
+      const event = events.find((e) => e.date === date);
       if (event?.lat != null && event?.lng != null) {
         setFlyToTarget({ lat: event.lat, lng: event.lng, zoom: 9 });
       }
     },
-    [handleTimelineDateChange],
+    [handleTimelineDateChange, events],
   );
 
   const handleToggleSidebar = useCallback(() => {
@@ -275,7 +276,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const activeMapEvent = (() => {
     if (!territoryDate) return null;
     const currentDateNum = parseInt(territoryDate, 10);
-    for (const event of KEY_EVENTS) {
+    for (const event of events) {
       const eventDateNum = parseInt(event.date, 10);
       if (Math.abs(currentDateNum - eventDateNum) <= 3 && event.lat != null && event.lng != null) {
         return {
@@ -292,6 +293,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   return (
     <SidebarProvider defaultOpen={false} open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <EventSidebar
+        events={events}
         onEventClick={handleEventClick}
         currentDate={territoryDate}
         onClose={() => setSidebarOpen(false)}
@@ -352,6 +354,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         )}
 
         <TimelineScrubber
+          events={events}
           key={timelineKey}
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}

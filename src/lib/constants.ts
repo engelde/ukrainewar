@@ -14,6 +14,7 @@ export const CACHE_TTL = {
   CASUALTIES: 4 * 60 * 60, // 4 hours
   TERRITORY: 12 * 60 * 60, // 12 hours
   ACLED: 24 * 60 * 60, // 24 hours
+  EVENTS: 24 * 60 * 60, // 24 hours
 } as const;
 
 export const ACLED_API = "https://acleddata.com/api/acled/read";
@@ -59,5 +60,10 @@ export const DATA_SOURCES = [
     name: "VIINA (Zhukov & Ayers)",
     url: "https://github.com/zhukovyuri/VIINA",
     description: "Territorial control from news articles",
+  },
+  {
+    name: "Wikidata",
+    url: "https://www.wikidata.org",
+    description: "Structured war event data via SPARQL",
   },
 ] as const;

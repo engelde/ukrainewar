@@ -11,6 +11,7 @@
  * - /api/humanitarian/refugees    (UNHCR → 24h cache)
  * - /api/humanitarian/funding     (OCHA FTS → 24h cache)
  * - /api/humanitarian/civilian-casualties (OHCHR → 24h cache)
+ * - /api/events            (Wikidata SPARQL + curated → 24h cache)
  *
  * Deploy: cd workers/data-refresh && npx wrangler deploy
  */
@@ -26,6 +27,7 @@ const ENDPOINTS = [
   "/api/humanitarian/refugees",
   "/api/humanitarian/funding",
   "/api/humanitarian/civilian-casualties",
+  "/api/events",
 ];
 
 export default {

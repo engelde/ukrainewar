@@ -12,11 +12,12 @@ import {
   TbTimeline,
 } from "react-icons/tb";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { KEY_EVENTS } from "@/data/events";
+import type { WarEvent } from "@/data/events";
 import { getMonthsShort, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface TimelineScrubberProps {
+  events: WarEvent[];
   onDateChange: (date: string) => void;
   initialDate?: string | null;
   dockSlot?: React.ReactNode;
@@ -64,6 +65,7 @@ const PIXELS_PER_DAY = 2;
 const YEAR_MARKS = ["2022", "2023", "2024", "2025", "2026"];
 
 export default function TimelineScrubber({
+  events,
   onDateChange,
   initialDate,
   dockSlot,
@@ -205,7 +207,7 @@ export default function TimelineScrubber({
     holdTimerRef.current = setTimeout(() => {
       holdFiredRef.current = true;
       const currentDateStr = dates[currentIndex] || "";
-      const prevEvent = [...KEY_EVENTS].reverse().find((e) => e.date < currentDateStr);
+      const prevEvent = [...events].reverse().find((e) => e.date < currentDateStr);
       if (prevEvent) {
         const idx = dates.findIndex((d) => d >= prevEvent.date);
         if (idx >= 0) {
@@ -217,14 +219,14 @@ export default function TimelineScrubber({
         setIsPlaying(false);
       }
     }, 500);
-  }, [dates, currentIndex]);
+  }, [dates, currentIndex, events]);
 
   const handleStepForwardDown = useCallback(() => {
     holdFiredRef.current = false;
     holdTimerRef.current = setTimeout(() => {
       holdFiredRef.current = true;
       const currentDateStr = dates[currentIndex] || "";
-      const nextEvent = KEY_EVENTS.find((e) => e.date > currentDateStr);
+      const nextEvent = events.find((e) => e.date > currentDateStr);
       if (nextEvent) {
         const idx = dates.findIndex((d) => d >= nextEvent.date);
         if (idx >= 0) {
@@ -236,7 +238,7 @@ export default function TimelineScrubber({
         setIsPlaying(false);
       }
     }, 500);
-  }, [dates, currentIndex]);
+  }, [dates, currentIndex, events]);
 
   const handleStepUp = useCallback(() => {
     if (holdTimerRef.current) {
@@ -393,14 +395,16 @@ export default function TimelineScrubber({
   const totalWidth = dates.length * PIXELS_PER_DAY;
 
   // Event positions in pixels
-  const eventPositionsPx = KEY_EVENTS.map((event) => {
-    const idx = dates.findIndex((d) => d >= event.date);
-    return {
-      ...event,
-      px: idx >= 0 ? idx * PIXELS_PER_DAY : -1,
-      index: idx,
-    };
-  }).filter((e) => e.px >= 0);
+  const eventPositionsPx = events
+    .map((event) => {
+      const idx = dates.findIndex((d) => d >= event.date);
+      return {
+        ...event,
+        px: idx >= 0 ? idx * PIXELS_PER_DAY : -1,
+        index: idx,
+      };
+    })
+    .filter((e) => e.px >= 0);
 
   // All labels with two-row collision-free layout
   const labelRows = (() => {
