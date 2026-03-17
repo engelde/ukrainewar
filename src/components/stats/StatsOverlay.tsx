@@ -134,10 +134,12 @@ const TREND_COLORS: Record<string, string> = {
 interface StatsOverlayProps {
   data: CasualtyData;
   isHistorical?: boolean;
+  collapsed?: boolean;
+  onCollapse?: () => void;
+  onExpand?: () => void;
 }
 
-export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function StatsOverlay({ data, isHistorical, collapsed = false, onCollapse, onExpand }: StatsOverlayProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
   const stats = mapCasualtyData(data);
@@ -193,28 +195,14 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             "overflow-hidden"
           )}
         >
-          <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
-            {!isHistorical && (
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destruction opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-destruction" />
-              </span>
-            )}
-            {isHistorical && (
-              <span className="relative flex h-2 w-2">
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
-              </span>
-            )}
-            <span className={cn(
-              "text-[10px] font-semibold uppercase tracking-wider",
-              "text-destruction"
-            )}>
-              <TbSkull className="h-3.5 w-3.5 inline mr-1" />
+          <div className="flex items-center gap-2 px-3 py-2 flex-1">
+            <TbSkull className="h-3.5 w-3.5 text-destruction" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-destruction">
               Russian Losses
             </span>
           </div>
           <button
-            onClick={() => setCollapsed(false)}
+            onClick={onExpand}
             className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -239,22 +227,11 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
               "text-xs font-semibold uppercase tracking-wider",
               "text-destruction"
             )}>
-              {!isHistorical && (
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destruction opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-destruction" />
-                </span>
-              )}
-              {isHistorical && (
-                <span className="relative flex h-2 w-2">
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
-                </span>
-              )}
               <TbSkull className="h-3.5 w-3.5" />
               <span>Russian Losses</span>
             </div>
             <button
-              onClick={() => setCollapsed(true)}
+              onClick={onCollapse}
               className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <TbChevronDown className="h-3 w-3" />

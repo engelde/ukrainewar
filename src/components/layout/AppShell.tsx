@@ -52,6 +52,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
   const [spendingOpen, setSpendingOpen] = useState(true);
+  const [statsCollapsed, setStatsCollapsed] = useState(false);
+  const [layersCollapsed, setLayersCollapsed] = useState(false);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
 
@@ -147,6 +149,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSelectedMarker(null);
     setHumanitarianOpen(true);
     setSpendingOpen(true);
+    setStatsCollapsed(false);
+    setLayersCollapsed(false);
     setTimelineKey(prev => prev + 1);
     setLayers({
       territory: true,
@@ -184,34 +188,86 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       />
       <Header />
       <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
-      {displayData && (
+
+      {/* Expanded panels — draggable */}
+      {displayData && !statsCollapsed && (
         <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
-          <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />
+          <StatsOverlay
+            data={displayData}
+            isHistorical={isViewingPast && !!historicalData}
+            collapsed={false}
+            onCollapse={() => setStatsCollapsed(true)}
+          />
         </DraggablePanel>
       )}
-      <DraggablePanel className="fixed left-4 bottom-[165px] z-30 sm:left-6 sm:bottom-[170px]">
-        <LayerControls
-          layers={layers}
-          onToggle={handleToggleLayer}
-        />
-      </DraggablePanel>
+      {!layersCollapsed && (
+        <DraggablePanel className="fixed left-4 bottom-[165px] z-30 sm:left-6 sm:bottom-[170px]">
+          <LayerControls
+            layers={layers}
+            onToggle={handleToggleLayer}
+            collapsed={false}
+            onCollapse={() => setLayersCollapsed(true)}
+          />
+        </DraggablePanel>
+      )}
       {selectedMarker && (
         <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
       )}
-      <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
-        <HumanitarianPanel
-          isOpen={humanitarianOpen}
-          onToggle={handleToggleHumanitarian}
-          timelineDate={territoryDate ?? undefined}
-        />
-      </DraggablePanel>
-      <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[344px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
-        <SpendingPanel
-          isOpen={spendingOpen}
-          onToggle={handleToggleSpending}
-          timelineDate={territoryDate ?? undefined}
-        />
-      </DraggablePanel>
+      {humanitarianOpen && (
+        <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <HumanitarianPanel
+            isOpen={true}
+            onToggle={handleToggleHumanitarian}
+            timelineDate={territoryDate ?? undefined}
+          />
+        </DraggablePanel>
+      )}
+      {spendingOpen && (
+        <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[314px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+          <SpendingPanel
+            isOpen={true}
+            onToggle={handleToggleSpending}
+            timelineDate={territoryDate ?? undefined}
+          />
+        </DraggablePanel>
+      )}
+
+      {/* Collapsed panels dock — fixed stack, not draggable */}
+      {(statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed) && (
+        <div className="fixed left-4 bottom-[70px] z-30 flex flex-col gap-1.5 sm:left-6">
+          {statsCollapsed && displayData && (
+            <StatsOverlay
+              data={displayData}
+              isHistorical={isViewingPast && !!historicalData}
+              collapsed={true}
+              onExpand={() => setStatsCollapsed(false)}
+            />
+          )}
+          {!humanitarianOpen && (
+            <HumanitarianPanel
+              isOpen={false}
+              onToggle={handleToggleHumanitarian}
+              timelineDate={territoryDate ?? undefined}
+            />
+          )}
+          {!spendingOpen && (
+            <SpendingPanel
+              isOpen={false}
+              onToggle={handleToggleSpending}
+              timelineDate={territoryDate ?? undefined}
+            />
+          )}
+          {layersCollapsed && (
+            <LayerControls
+              layers={layers}
+              onToggle={handleToggleLayer}
+              collapsed={true}
+              onExpand={() => setLayersCollapsed(false)}
+            />
+          )}
+        </div>
+      )}
+
       <TimelineScrubber
         key={timelineKey}
         onDateChange={handleTimelineDateChange}

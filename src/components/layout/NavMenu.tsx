@@ -24,15 +24,15 @@ export default function NavMenu() {
   }, [active]);
 
   return (
-    <div ref={menuRef} className="relative flex items-center gap-1">
+    <div ref={menuRef} className="relative flex items-center gap-0.5">
       <button
         onClick={() => setActive(active === "about" ? null : "about")}
         className={cn(
-          "flex items-center gap-1 rounded-lg px-2 py-1.5",
+          "flex items-center gap-1 rounded-md px-2 py-1",
           "text-[10px] font-semibold uppercase tracking-wider",
           "transition-colors",
           active === "about"
-            ? "bg-background/90 text-ua-blue border border-border/50"
+            ? "text-ua-blue"
             : "text-muted-foreground/70 hover:text-muted-foreground"
         )}
       >
@@ -42,11 +42,11 @@ export default function NavMenu() {
       <button
         onClick={() => setActive(active === "sources" ? null : "sources")}
         className={cn(
-          "flex items-center gap-1 rounded-lg px-2 py-1.5",
+          "flex items-center gap-1 rounded-md px-2 py-1",
           "text-[10px] font-semibold uppercase tracking-wider",
           "transition-colors",
           active === "sources"
-            ? "bg-background/90 text-ua-blue border border-border/50"
+            ? "text-ua-blue"
             : "text-muted-foreground/70 hover:text-muted-foreground"
         )}
       >
