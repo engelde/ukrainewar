@@ -274,10 +274,10 @@ export default function StatsOverlay({ data, isHistorical, collapsed = false, on
                   </span>
                   <AnimatedCounter
                     value={stat.total}
-                    className="ml-auto text-sm font-bold text-foreground"
+                    className="text-sm font-bold text-foreground tabular-nums"
                   />
                   {stat.daily > 0 && (
-                    <span className="text-[10px] font-medium text-destruction">
+                    <span className="ml-auto text-[10px] font-medium text-destruction">
                       +{stat.daily.toLocaleString()}
                     </span>
                   )}

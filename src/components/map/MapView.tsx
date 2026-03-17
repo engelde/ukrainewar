@@ -38,6 +38,80 @@ const STATUS_COLORS: Record<string, string> = {
   abandoned: "#9f7aea",
 };
 
+function normalizeEquipmentCategory(type: string): string {
+  const t = type.toLowerCase();
+  if (t.includes("tank")) return "tank";
+  if (t.includes("ifv") || t.includes("apc") || t.includes("mrap") || t.includes("imv")) return "ifv";
+  if (t.includes("artillery") || t.includes("howitzer") || t.includes("mortar")) return "artillery";
+  if (t.includes("mlrs") || t.includes("rocket")) return "mlrs";
+  if (t.includes("uav") || t.includes("drone") || t.includes("uas")) return "uav";
+  if (t.includes("air defense") || t.includes("anti-air") || t.includes("sam")) return "aa";
+  if (t.includes("jet") || t.includes("aircraft") || t.includes("fighter") || t.includes("bomber")) return "jet";
+  if (t.includes("helicopter") || t.includes("heli")) return "heli";
+  if (t.includes("ship") || t.includes("boat") || t.includes("vessel")) return "ship";
+  if (t.includes("truck") || t.includes("vehicle") || t.includes("car") || t.includes("engineering") || t.includes("logistics")) return "vehicle";
+  return "other";
+}
+
+const CATEGORY_SYMBOLS: Record<string, string> = {
+  tank: "T",
+  ifv: "I",
+  artillery: "A",
+  mlrs: "R",
+  uav: "D",
+  aa: "S",
+  jet: "J",
+  heli: "H",
+  ship: "N",
+  vehicle: "V",
+  other: "•",
+};
+
+function createEquipmentIcon(
+  symbol: string,
+  statusColor: string,
+  size: number
+): ImageData {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  // Outer dark border
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fill();
+
+  // Inner colored circle
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 3, 0, Math.PI * 2);
+  ctx.fillStyle = statusColor;
+  ctx.fill();
+
+  // Category letter
+  ctx.fillStyle = "#fff";
+  ctx.font = `bold ${Math.round(size * 0.42)}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(symbol, size / 2, size / 2 + 1);
+
+  return ctx.getImageData(0, 0, size, size);
+}
+
+function loadEquipmentIcons(mapInstance: maplibregl.Map) {
+  const statuses = Object.entries(STATUS_COLORS);
+  const categories = Object.entries(CATEGORY_SYMBOLS);
+  for (const [status, color] of statuses) {
+    for (const [cat, symbol] of categories) {
+      const id = `equip-${cat}-${status}`;
+      if (!mapInstance.hasImage(id)) {
+        mapInstance.addImage(id, createEquipmentIcon(symbol, color, 24));
+      }
+    }
+  }
+}
+
 function battleGeoJSON(battles: Battle[], timelineDate?: string | null): GeoJSON.FeatureCollection {
   const filtered = timelineDate
     ? battles.filter((b) => b.startDate <= timelineDate)
@@ -419,6 +493,7 @@ export default function MapView({
               status: m.status,
               date: m.date,
               location: m.location || "",
+              category: normalizeEquipmentCategory(m.type),
             },
           })),
         };
@@ -478,12 +553,13 @@ export default function MapView({
           },
         });
 
-        // Individual markers (unclustered)
+        // Individual markers (unclustered) — circles at low zoom
         mapInstance.addLayer({
           id: "equipment-points",
           type: "circle",
           source: "equipment",
           filter: ["!", ["has", "point_count"]],
+          maxzoom: 14,
           paint: {
             "circle-color": [
               "match",
@@ -504,8 +580,52 @@ export default function MapView({
           },
         });
 
+        // Individual markers — category icons at high zoom
+        loadEquipmentIcons(mapInstance);
+
+        mapInstance.addLayer({
+          id: "equipment-icons",
+          type: "symbol",
+          source: "equipment",
+          filter: ["!", ["has", "point_count"]],
+          minzoom: 14,
+          layout: {
+            "icon-image": [
+              "concat",
+              "equip-",
+              ["get", "category"],
+              "-",
+              ["get", "status"],
+            ] as unknown as maplibregl.ExpressionSpecification,
+            "icon-size": 1,
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": false,
+            "icon-padding": 2,
+          },
+        });
+
         // Click individual markers
         mapInstance.on("click", "equipment-points", (e) => {
+          if (!e.features?.length) return;
+          const props = e.features[0].properties;
+          if (!props) return;
+
+          const marker: EquipmentMarker = {
+            id: props.id,
+            type: props.type,
+            model: props.model,
+            status: props.status,
+            date: props.date,
+            location: props.location || null,
+            lat: (e.features[0].geometry as GeoJSON.Point).coordinates[1],
+            lng: (e.features[0].geometry as GeoJSON.Point).coordinates[0],
+          };
+
+          onMarkerClick?.(marker);
+        });
+
+        // Click icon markers (high zoom)
+        mapInstance.on("click", "equipment-icons", (e) => {
           if (!e.features?.length) return;
           const props = e.features[0].properties;
           if (!props) return;
@@ -553,6 +673,12 @@ export default function MapView({
         mapInstance.on("mouseleave", "equipment-points", () => {
           mapInstance.getCanvas().style.cursor = "";
         });
+        mapInstance.on("mouseenter", "equipment-icons", () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", "equipment-icons", () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
         mapInstance.on("mouseenter", "equipment-clusters", () => {
           mapInstance.getCanvas().style.cursor = "pointer";
         });
@@ -560,8 +686,8 @@ export default function MapView({
           mapInstance.getCanvas().style.cursor = "";
         });
 
-        // Hover tooltips for individual points
-        mapInstance.on("mouseenter", "equipment-points", (e) => {
+        // Hover tooltips for individual points and icons
+        const showEquipmentTooltip = (e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
           if (!e.features?.length) return;
           const props = e.features[0].properties;
           if (!props) return;
@@ -584,12 +710,17 @@ export default function MapView({
               </div>`
             )
             .addTo(mapInstance);
-        });
+        };
 
-        mapInstance.on("mouseleave", "equipment-points", () => {
+        const hideEquipmentTooltip = () => {
           popupRef.current?.remove();
           popupRef.current = null;
-        });
+        };
+
+        mapInstance.on("mouseenter", "equipment-points", showEquipmentTooltip);
+        mapInstance.on("mouseleave", "equipment-points", hideEquipmentTooltip);
+        mapInstance.on("mouseenter", "equipment-icons", showEquipmentTooltip);
+        mapInstance.on("mouseleave", "equipment-icons", hideEquipmentTooltip);
 
       } catch (err) {
         console.error("Failed to load equipment data:", err);
@@ -1104,6 +1235,7 @@ export default function MapView({
       "equipment-clusters",
       "equipment-cluster-count",
       "equipment-points",
+      "equipment-icons",
     ];
 
     equipmentLayers.forEach((layer) => {

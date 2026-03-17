@@ -19,7 +19,7 @@ export default function ResetButton({ onReset, warDay, isHistorical }: ResetButt
             "bg-background/70 backdrop-blur-xl",
             "border border-border/40",
             "text-[10px] font-semibold uppercase tracking-wider font-mono",
-            isHistorical ? "text-ua-yellow" : "text-muted-foreground"
+            "text-ua-yellow"
           )}
         >
           Day {warDay.toLocaleString()}
