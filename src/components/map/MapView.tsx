@@ -476,6 +476,8 @@ export default function MapView({
 
         equipmentDataRef.current = markers;
 
+        // Guard: map may have been removed during await (React Strict Mode)
+        if (map.current !== mapInstance) return;
         if (mapInstance.getSource("equipment")) return;
 
         // Create GeoJSON from markers
@@ -741,6 +743,8 @@ export default function MapView({
 
         acledDataRef.current = geojson;
 
+        // Guard: map may have been removed during await (React Strict Mode)
+        if (map.current !== mapInstance) return;
         if (mapInstance.getSource("acled")) return;
 
         mapInstance.addSource("acled", {
@@ -1045,6 +1049,9 @@ export default function MapView({
         const data: AcledRegionalData = await res.json();
         acledRegionalRef.current = data;
 
+        // Guard: map may have been removed during await (React Strict Mode)
+        if (map.current !== mapInstance) return;
+
         const beforeLayer = findFirstSymbolLayer(mapInstance);
 
         // Create oblast boundaries with event data
@@ -1077,7 +1084,7 @@ export default function MapView({
         if (!mapInstance.getSource("acled-heatmap")) {
           mapInstance.addSource("acled-heatmap", {
             type: "geojson",
-            data: geoWithData,
+            data: JSON.parse(JSON.stringify(geoWithData)),
           });
 
           mapInstance.addLayer(
@@ -1174,6 +1181,11 @@ export default function MapView({
       new maplibregl.AttributionControl({ compact: true }),
       "bottom-right"
     );
+
+    // Suppress non-critical MapLibre worker errors (e.g., GeoJSON processing race conditions)
+    map.current.on("error", (e) => {
+      if (e?.error?.message?.includes("reading 'length'")) return;
+    });
 
     map.current.on("load", () => {
       setLoaded(true);
@@ -1519,7 +1531,7 @@ export default function MapView({
         }),
       };
 
-      source.setData(geoWithData);
+      source.setData(JSON.parse(JSON.stringify(geoWithData)));
     }, 80);
 
     return () => clearTimeout(timer);

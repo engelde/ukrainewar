@@ -75,8 +75,13 @@ export default function SpendingPanel({
 
   useEffect(() => {
     fetch("/api/spending")
-      .then((r) => r.json())
-      .then((d) => setData(d))
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => {
+        if (d && d.byMonth && d.cumulative) setData(d);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
