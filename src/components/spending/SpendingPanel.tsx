@@ -74,7 +74,7 @@ export default function SpendingPanel({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/data/kiel-spending.json")
+    fetch("/api/spending")
       .then((r) => r.json())
       .then((d) => setData(d))
       .catch(() => {})

@@ -814,7 +814,7 @@ export default function MapView({
   const loadAcledHeatmap = useCallback(
     async (mapInstance: maplibregl.Map) => {
       try {
-        const res = await fetch("/data/acled-regional.json");
+        const res = await fetch("/api/acled/regional");
         if (!res.ok) return;
         const data: AcledRegionalData = await res.json();
         acledRegionalRef.current = data;
