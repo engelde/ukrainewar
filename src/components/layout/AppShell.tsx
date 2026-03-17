@@ -200,8 +200,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const handleReset = useCallback(() => {
     resetPendingRef.current = true;
-    setTerritoryDate(null);
-    setUrlDate(null);
+    const warStart = "20220224";
+    setTerritoryDate(warStart);
+    setUrlDate(warStart);
     setUrlLng(null);
     setUrlLat(null);
     setUrlZoom(null);
@@ -256,6 +257,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       <EventSidebar
         onEventClick={handleEventClick}
         currentDate={territoryDate}
+        onClose={() => setSidebarOpen(false)}
       />
       <SidebarInset className="relative h-screen overflow-hidden">
         <MapView

@@ -24,6 +24,7 @@ import {
   TbUsers,
   TbArrowBarRight,
   TbFilter,
+  TbX,
 } from "react-icons/tb";
 import {
   GiExplosiveMaterials,
@@ -113,9 +114,10 @@ function groupByYear(events: WarEvent[]) {
 interface EventSidebarProps {
   onEventClick: (date: string) => void;
   currentDate?: string | null;
+  onClose?: () => void;
 }
 
-export default function EventSidebar({ onEventClick, currentDate }: EventSidebarProps) {
+export default function EventSidebar({ onEventClick, currentDate, onClose }: EventSidebarProps) {
   const activeRef = useRef<HTMLButtonElement>(null);
   const [activeFilters, setActiveFilters] = useState<Set<EventCategory>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
@@ -172,18 +174,29 @@ export default function EventSidebar({ onEventClick, currentDate }: EventSidebar
               ({filteredEvents.length})
             </span>
           </div>
-          <button
-            onClick={() => setShowFilters(p => !p)}
-            className={cn(
-              "rounded-md p-1.5 transition-colors",
-              showFilters || activeFilters.size > 0
-                ? "text-ua-yellow bg-ua-yellow/10"
-                : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowFilters(p => !p)}
+              className={cn(
+                "rounded-md p-1.5 transition-colors",
+                showFilters || activeFilters.size > 0
+                  ? "text-ua-yellow bg-ua-yellow/10"
+                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              )}
+              title="Filter by type"
+            >
+              <TbFilter className="h-4 w-4" />
+            </button>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="rounded-md p-1.5 text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                title="Close sidebar"
+              >
+                <TbX className="h-4 w-4" />
+              </button>
             )}
-            title="Filter by type"
-          >
-            <TbFilter className="h-4 w-4" />
-          </button>
+          </div>
         </div>
         {/* Category filters */}
         {showFilters && (
