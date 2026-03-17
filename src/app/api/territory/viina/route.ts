@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
 interface Place {
   lat: number;
@@ -17,26 +15,16 @@ interface Snapshot {
 let placesCache: Record<string, Place> | null = null;
 let controlCache: Snapshot[] | null = null;
 
-function loadData() {
+async function loadData(origin: string) {
   if (!placesCache) {
-    const placesPath = path.join(
-      process.cwd(),
-      "public",
-      "data",
-      "viina",
-      "places.json"
-    );
-    placesCache = JSON.parse(fs.readFileSync(placesPath, "utf8"));
+    const res = await fetch(`${origin}/data/viina/places.json`);
+    if (!res.ok) throw new Error(`Failed to load places: ${res.status}`);
+    placesCache = await res.json();
   }
   if (!controlCache) {
-    const controlPath = path.join(
-      process.cwd(),
-      "public",
-      "data",
-      "viina",
-      "control.json"
-    );
-    controlCache = JSON.parse(fs.readFileSync(controlPath, "utf8"));
+    const res = await fetch(`${origin}/data/viina/control.json`);
+    if (!res.ok) throw new Error(`Failed to load control: ${res.status}`);
+    controlCache = await res.json();
   }
   return { places: placesCache!, control: controlCache! };
 }
@@ -75,7 +63,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { places, control } = loadData();
+    const { places, control } = await loadData(new URL(request.url).origin);
     const snapshot = findClosestSnapshot(control, date);
 
     if (!snapshot) {

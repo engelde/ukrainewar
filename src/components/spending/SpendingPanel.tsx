@@ -74,16 +74,21 @@ export default function SpendingPanel({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/spending")
-      .then((r) => {
+    const controller = new AbortController();
+    async function fetchData() {
+      try {
+        const r = await fetch("/api/spending", { signal: controller.signal });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((d) => {
+        const d = await r.json();
         if (d && d.byMonth && d.cumulative) setData(d);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      } catch (e) {
+        if (e instanceof Error && e.name !== 'AbortError') console.error('Spending fetch error:', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+    return () => controller.abort();
   }, []);
 
   const timelineTotals = useMemo(() => {

@@ -142,12 +142,13 @@ export default function TimelineScrubber({
 
   // Fetch daily losses for waveform visualization
   useEffect(() => {
-    fetch("/api/casualties/daily-totals")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { date: string; total: number }[] | null) => {
+    const controller = new AbortController();
+    async function fetchData() {
+      try {
+        const r = await fetch("/api/casualties/daily-totals", { signal: controller.signal });
+        const data: { date: string; total: number }[] | null = r.ok ? await r.json() : null;
         if (!data || !Array.isArray(data)) return;
         const map = new Map<string, number>();
-        // Cap outliers at the 99th percentile for visual consistency
         const sorted = [...data.map((d) => d.total)].sort((a, b) => a - b);
         const p99 = sorted[Math.floor(sorted.length * 0.99)] || 1;
         let max = 0;
@@ -158,8 +159,12 @@ export default function TimelineScrubber({
         }
         setDailyLosses(map);
         setMaxDaily(max);
-      })
-      .catch(() => {});
+      } catch (e) {
+        if (e instanceof Error && e.name !== 'AbortError') console.error('Daily totals fetch error:', e);
+      }
+    }
+    fetchData();
+    return () => controller.abort();
   }, []);
 
   // Notify parent when index changes (throttled during playback)

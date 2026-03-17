@@ -203,7 +203,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         </DraggablePanel>
       )}
       {!layersCollapsed && (
-        <DraggablePanel className="fixed left-4 bottom-[165px] z-30 sm:left-6 sm:bottom-[250px]">
+        <DraggablePanel className="fixed left-4 bottom-[155px] z-30 sm:left-6 sm:bottom-[240px]">
           <LayerControls
             layers={layers}
             onToggle={handleToggleLayer}

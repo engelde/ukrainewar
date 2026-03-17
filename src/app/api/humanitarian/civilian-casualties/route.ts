@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { join } from "path";
 
 let cachedData: Record<string, unknown> | null = null;
 let cachedAt = 0;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const now = Date.now();
     if (cachedData && now - cachedAt < CACHE_TTL) {
@@ -19,14 +17,10 @@ export async function GET() {
       });
     }
 
-    const filePath = join(
-      process.cwd(),
-      "public",
-      "data",
-      "civilian-casualties.json"
-    );
-    const raw = await readFile(filePath, "utf-8");
-    const data = JSON.parse(raw);
+    const origin = new URL(request.url).origin;
+    const res = await fetch(`${origin}/data/civilian-casualties.json`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
 
     cachedData = data;
     cachedAt = now;

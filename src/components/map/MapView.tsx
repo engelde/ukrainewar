@@ -177,6 +177,9 @@ function findFirstSymbolLayer(mapInstance: maplibregl.Map): string | undefined {
   return undefined;
 }
 
+// VIINA covers Feb 2022 – July 2024; DeepState covers July 2024+
+const DEEPSTATE_START = "20240708";
+
 interface MapViewProps {
   layers: MapLayers;
   onMarkerClick?: (marker: EquipmentMarker) => void;
@@ -277,9 +280,6 @@ export default function MapView({
       beforeLayer
     );
   }, []);
-
-  // VIINA covers Feb 2022 – July 2024; DeepState covers July 2024+
-  const DEEPSTATE_START = "20240708";
 
   const ensureViinaLayers = useCallback((mapInstance: maplibregl.Map) => {
     if (mapInstance.getSource("viina-territory")) return;
@@ -1084,7 +1084,7 @@ export default function MapView({
         if (!mapInstance.getSource("acled-heatmap")) {
           mapInstance.addSource("acled-heatmap", {
             type: "geojson",
-            data: JSON.parse(JSON.stringify(geoWithData)),
+            data: structuredClone(geoWithData),
           });
 
           mapInstance.addLayer(
@@ -1332,13 +1332,14 @@ export default function MapView({
   // Fetch historical equipment data when timeline moves to a new month
   useEffect(() => {
     if (!loaded || !territoryDate) return;
+    const controller = new AbortController();
     const month = `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}`;
 
     const fetchMonth = (m: string) => {
       if (m < "2022-02" || fetchedMonthsRef.current.has(m)) return;
       fetchedMonthsRef.current.add(m);
 
-      fetch(`/api/losses/month?month=${m}`)
+      fetch(`/api/losses/month?month=${m}`, { signal: controller.signal })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (!data?.losses?.length) return;
@@ -1384,7 +1385,8 @@ export default function MapView({
             setEquipmentVersion((v) => v + 1);
           }
         })
-        .catch(() => {
+        .catch((e) => {
+          if (e instanceof Error && e.name === "AbortError") return;
           fetchedMonthsRef.current.delete(m);
         });
     };
@@ -1398,6 +1400,8 @@ export default function MapView({
     const prevMon = mon === 1 ? `${year - 1}-12` : `${year}-${String(mon - 1).padStart(2, "0")}`;
     fetchMonth(nextMon);
     fetchMonth(prevMon);
+
+    return () => controller.abort();
   }, [loaded, territoryDate]);
 
   // Filter equipment markers by timeline date (debounced)
@@ -1531,7 +1535,7 @@ export default function MapView({
         }),
       };
 
-      source.setData(JSON.parse(JSON.stringify(geoWithData)));
+      source.setData(structuredClone(geoWithData));
     }, 80);
 
     return () => clearTimeout(timer);

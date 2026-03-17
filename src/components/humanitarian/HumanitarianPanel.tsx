@@ -168,23 +168,25 @@ export default function HumanitarianPanel({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchData() {
       try {
         const [refRes, fundRes, casRes] = await Promise.all([
-          fetch("/api/humanitarian/refugees"),
-          fetch("/api/humanitarian/funding"),
-          fetch("/api/humanitarian/civilian-casualties"),
+          fetch("/api/humanitarian/refugees", { signal: controller.signal }),
+          fetch("/api/humanitarian/funding", { signal: controller.signal }),
+          fetch("/api/humanitarian/civilian-casualties", { signal: controller.signal }),
         ]);
         if (refRes.ok) setRefugees(await refRes.json());
         if (fundRes.ok) setFunding(await fundRes.json());
         if (casRes.ok) setCasualties(await casRes.json());
-      } catch {
-        // Data loads silently on error
+      } catch (e) {
+        if (e instanceof Error && e.name !== 'AbortError') console.error('Humanitarian fetch error:', e);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
+    return () => controller.abort();
   }, []);
 
   const today = new Date().toISOString().replace(/-/g, "").slice(0, 8);
