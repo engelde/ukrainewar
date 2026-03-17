@@ -9,6 +9,11 @@ import LayerControls from "@/components/map/LayerControls";
 import DetailPanel from "@/components/map/DetailPanel";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
+import SpendingPanel from "@/components/spending/SpendingPanel";
+import BattlesPanel, {
+  MAJOR_BATTLES,
+  type Battle,
+} from "@/components/battles/BattlesPanel";
 import DataSourcesPanel from "@/components/layout/DataSourcesPanel";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 
@@ -35,6 +40,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     frontline: true,
     border: true,
     conflicts: true,
+    heatmap: true,
   });
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(
@@ -43,6 +49,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const [territoryDate, setTerritoryDate] = useState<string | null>(null);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
+  const [spendingOpen, setSpendingOpen] = useState(true);
+  const [battlesOpen, setBattlesOpen] = useState(true);
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
 
   // Historical casualty data for timeline scrubbing
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
@@ -116,6 +125,22 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setHumanitarianOpen((prev) => !prev);
   }, []);
 
+  const handleToggleSpending = useCallback(() => {
+    setSpendingOpen((prev) => !prev);
+  }, []);
+
+  const handleToggleBattles = useCallback(() => {
+    setBattlesOpen((prev) => !prev);
+  }, []);
+
+  const handleBattleClick = useCallback(
+    (battle: Battle) => {
+      setTerritoryDate(battle.startDate);
+      setFlyToTarget({ lat: battle.lat, lng: battle.lng, zoom: 9 });
+    },
+    []
+  );
+
   // Use historical data when timeline is scrubbed to a past date
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
@@ -128,6 +153,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         layers={layers}
         onMarkerClick={handleMarkerClick}
         territoryDate={territoryDate}
+        battles={MAJOR_BATTLES}
+        flyTo={flyToTarget}
       />
       <Header />
       {displayData && (
@@ -148,6 +175,21 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         <HumanitarianPanel
           isOpen={humanitarianOpen}
           onToggle={handleToggleHumanitarian}
+        />
+      </DraggablePanel>
+      <DraggablePanel className="fixed right-4 top-[280px] z-30 sm:right-6 sm:top-[300px] max-w-[calc(100vw-2rem)] sm:max-w-xs">
+        <SpendingPanel
+          isOpen={spendingOpen}
+          onToggle={handleToggleSpending}
+          timelineDate={territoryDate ?? undefined}
+        />
+      </DraggablePanel>
+      <DraggablePanel className="fixed left-4 top-[220px] z-30 sm:left-6 sm:top-[240px] max-w-[calc(100vw-2rem)] sm:max-w-xs">
+        <BattlesPanel
+          isOpen={battlesOpen}
+          onToggle={handleToggleBattles}
+          timelineDate={territoryDate ?? undefined}
+          onBattleClick={handleBattleClick}
         />
       </DraggablePanel>
       <TimelineScrubber

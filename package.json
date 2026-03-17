@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "data:kiel": "node scripts/process-kiel.mjs",
+    "data:acled": "node scripts/process-acled-hdx.mjs",
+    "data:update": "node scripts/process-kiel.mjs && node scripts/process-acled-hdx.mjs",
     "start": "next start",
     "lint": "eslint",
     "build:worker": "opennextjs-cloudflare build",
@@ -42,6 +45,7 @@
     "eslint-config-next": "16.1.7",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^4.74.0"
+    "wrangler": "^4.74.0",
+    "xlsx": "^0.18.5"
   }
 }

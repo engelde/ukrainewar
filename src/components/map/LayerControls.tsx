@@ -11,6 +11,7 @@ import {
   TbChevronDown,
   TbStack2,
   TbFlame,
+  TbMap,
 } from "react-icons/tb";
 import type { IconType } from "react-icons";
 
@@ -60,6 +61,13 @@ const LAYER_CONFIG: {
     color: "bg-purple-500",
     description: "ACLED battle & incident data",
     Icon: TbFlame,
+  },
+  {
+    key: "heatmap",
+    label: "Conflict Heatmap",
+    color: "bg-red-500",
+    description: "Regional fatality intensity",
+    Icon: TbMap,
   },
 ];
 

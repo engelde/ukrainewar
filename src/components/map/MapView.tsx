@@ -5,8 +5,31 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MAP_CENTER, MAP_ZOOM, MAP_STYLE } from "@/lib/constants";
 import type { MapLayers, EquipmentMarker } from "@/lib/types";
+import type { Battle } from "@/components/battles/BattlesPanel";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
+import ukraineOblasts from "@/data/ukraine-oblasts.json";
+
+interface AcledOblastMonthly {
+  month: string;
+  year: number;
+  events: number;
+  fatalities: number;
+}
+
+interface AcledOblast {
+  name: string;
+  pcode: string;
+  totalEvents: number;
+  totalFatalities: number;
+  monthly: AcledOblastMonthly[];
+}
+
+interface AcledRegionalData {
+  oblasts: AcledOblast[];
+  timeline: { month: string; year: number; events: number; fatalities: number }[];
+  yearlyTotals: { year: number; events: number; fatalities: number }[];
+}
 
 const STATUS_COLORS: Record<string, string> = {
   destroyed: "#e53e3e",
@@ -14,6 +37,52 @@ const STATUS_COLORS: Record<string, string> = {
   captured: "#48bb78",
   abandoned: "#9f7aea",
 };
+
+function battleGeoJSON(battles: Battle[], timelineDate?: string | null): GeoJSON.FeatureCollection {
+  const filtered = timelineDate
+    ? battles.filter((b) => b.startDate <= timelineDate)
+    : battles;
+
+  return {
+    type: "FeatureCollection",
+    features: filtered.map((b) => ({
+      type: "Feature" as const,
+      geometry: {
+        type: "Point" as const,
+        coordinates: [b.lng, b.lat],
+      },
+      properties: {
+        id: b.id,
+        name: b.name,
+        significance: b.significance,
+        active: timelineDate
+          ? b.startDate <= timelineDate && (!b.endDate || b.endDate >= timelineDate)
+          : false,
+        description: b.description,
+        outcome: b.outcome || "",
+        dateRange: formatBattleDateRange(b.startDate, b.endDate),
+      },
+    })),
+  };
+}
+
+function formatBattleDateRange(start: string, end?: string): string {
+  const fmt = (d: string) => {
+    const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[parseInt(d.slice(4, 6))]} ${d.slice(6, 8)}, ${d.slice(0, 4)}`;
+  };
+  if (!end) return `${fmt(start)} – Present`;
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
+const MONTH_NAMES: Record<string, number> = {
+  January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
+  July: 7, August: 8, September: 9, October: 10, November: 11, December: 12,
+};
+
+function monthIndex(name: string): number {
+  return MONTH_NAMES[name] ?? 0;
+}
 
 const ACLED_EVENT_COLORS: Record<string, string> = {
   Battles: "#ef4444",
@@ -37,12 +106,16 @@ interface MapViewProps {
   layers: MapLayers;
   onMarkerClick?: (marker: EquipmentMarker) => void;
   territoryDate?: string | null;
+  battles?: Battle[];
+  flyTo?: { lat: number; lng: number; zoom?: number } | null;
 }
 
 export default function MapView({
   layers,
   onMarkerClick,
   territoryDate,
+  battles = [],
+  flyTo: flyToTarget,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -50,6 +123,9 @@ export default function MapView({
   const equipmentDataRef = useRef<EquipmentMarker[]>([]);
   const acledDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
+  const battlePopupRef = useRef<maplibregl.Popup | null>(null);
+  const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
+  const acledRegionalRef = useRef<AcledRegionalData | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
   const loadUkraineBorder = useCallback((mapInstance: maplibregl.Map) => {
@@ -606,6 +682,248 @@ export default function MapView({
     []
   );
 
+  // Load battle markers as a map layer
+  const loadBattleMarkers = useCallback(
+    (mapInstance: maplibregl.Map, battleData: Battle[]) => {
+      if (mapInstance.getSource("battles")) {
+        const src = mapInstance.getSource("battles") as maplibregl.GeoJSONSource;
+        src.setData(battleGeoJSON(battleData));
+        return;
+      }
+
+      mapInstance.addSource("battles", {
+        type: "geojson",
+        data: battleGeoJSON(battleData),
+      });
+
+      // Outer glow ring
+      mapInstance.addLayer({
+        id: "battle-glow",
+        type: "circle",
+        source: "battles",
+        paint: {
+          "circle-radius": [
+            "match",
+            ["get", "significance"],
+            "critical", 16,
+            "major", 12,
+            8,
+          ],
+          "circle-color": [
+            "case",
+            ["get", "active"],
+            "#ef4444",
+            "rgba(239, 68, 68, 0.3)",
+          ],
+          "circle-opacity": ["case", ["get", "active"], 0.3, 0.15],
+          "circle-blur": 0.8,
+        },
+      });
+
+      // Inner point
+      mapInstance.addLayer({
+        id: "battle-points",
+        type: "circle",
+        source: "battles",
+        paint: {
+          "circle-radius": [
+            "match",
+            ["get", "significance"],
+            "critical", 6,
+            "major", 5,
+            4,
+          ],
+          "circle-color": [
+            "case",
+            ["get", "active"],
+            "#ef4444",
+            "#b91c1c",
+          ],
+          "circle-opacity": ["case", ["get", "active"], 0.9, 0.5],
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": [
+            "case",
+            ["get", "active"],
+            "#fca5a5",
+            "#7f1d1d",
+          ],
+        },
+      });
+
+      // Battle name labels
+      mapInstance.addLayer({
+        id: "battle-labels",
+        type: "symbol",
+        source: "battles",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": 10,
+          "text-offset": [0, 1.5],
+          "text-anchor": "top",
+          "text-allow-overlap": false,
+          "text-font": ["Open Sans Semibold"],
+        },
+        paint: {
+          "text-color": [
+            "case",
+            ["get", "active"],
+            "#fca5a5",
+            "#9ca3af",
+          ],
+          "text-halo-color": "rgba(0, 0, 0, 0.8)",
+          "text-halo-width": 1.5,
+        },
+      });
+
+      // Click handler for battle popup
+      mapInstance.on("click", "battle-points", (e) => {
+        if (!e.features?.length) return;
+        const f = e.features[0];
+        const coords = (f.geometry as GeoJSON.Point).coordinates.slice() as [number, number];
+        const props = f.properties || {};
+
+        battlePopupRef.current?.remove();
+        battlePopupRef.current = new maplibregl.Popup({
+          closeOnClick: true,
+          maxWidth: "260px",
+          className: "battle-popup",
+        })
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="font-family: system-ui; color: #e8e8ed; padding: 4px;">
+              <div style="font-weight: 600; font-size: 12px; color: #fca5a5; margin-bottom: 4px;">${props.name}</div>
+              <div style="font-size: 10px; color: #8888a0; margin-bottom: 4px;">${props.dateRange}</div>
+              <div style="font-size: 10px; color: #b0b0c0; line-height: 1.4;">${props.description}</div>
+              ${props.outcome ? `<div style="font-size: 10px; margin-top: 4px; color: ${props.outcome?.includes("Ukrainian") ? "#48bb78" : props.outcome?.includes("Russian") ? "#e53e3e" : "#ffd500"}; font-weight: 500;">${props.outcome}</div>` : ""}
+            </div>`
+          )
+          .addTo(mapInstance);
+      });
+
+      mapInstance.on("mouseenter", "battle-points", () => {
+        mapInstance.getCanvas().style.cursor = "pointer";
+      });
+      mapInstance.on("mouseleave", "battle-points", () => {
+        mapInstance.getCanvas().style.cursor = "";
+      });
+    },
+    []
+  );
+
+  // Load ACLED regional heatmap (choropleth by oblast)
+  const loadAcledHeatmap = useCallback(
+    async (mapInstance: maplibregl.Map) => {
+      try {
+        const res = await fetch("/data/acled-regional.json");
+        if (!res.ok) return;
+        const data: AcledRegionalData = await res.json();
+        acledRegionalRef.current = data;
+
+        const beforeLayer = findFirstSymbolLayer(mapInstance);
+
+        // Create oblast boundaries with event data
+        const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
+        const geoWithData: GeoJSON.FeatureCollection = {
+          type: "FeatureCollection",
+          features: oblastFeatures.map((f) => {
+            const name = (f.properties as { name: string }).name;
+            const oblastData = data.oblasts.find((o) => o.name === name);
+            const total = oblastData
+              ? oblastData.monthly
+                  .filter((m) => m.year >= 2022)
+                  .reduce((sum, m) => sum + m.fatalities, 0)
+              : 0;
+            return {
+              ...f,
+              properties: {
+                ...f.properties,
+                fatalities: total,
+                events: oblastData
+                  ? oblastData.monthly
+                      .filter((m) => m.year >= 2022)
+                      .reduce((sum, m) => sum + m.events, 0)
+                  : 0,
+              },
+            };
+          }),
+        };
+
+        if (!mapInstance.getSource("acled-heatmap")) {
+          mapInstance.addSource("acled-heatmap", {
+            type: "geojson",
+            data: geoWithData,
+          });
+
+          mapInstance.addLayer(
+            {
+              id: "acled-heatmap-fill",
+              type: "fill",
+              source: "acled-heatmap",
+              paint: {
+                "fill-color": [
+                  "interpolate",
+                  ["linear"],
+                  ["get", "fatalities"],
+                  0, "rgba(0, 0, 0, 0)",
+                  100, "rgba(239, 68, 68, 0.08)",
+                  1000, "rgba(239, 68, 68, 0.15)",
+                  5000, "rgba(239, 68, 68, 0.25)",
+                  20000, "rgba(239, 68, 68, 0.4)",
+                  50000, "rgba(239, 68, 68, 0.55)",
+                ],
+                "fill-opacity": 0.7,
+              },
+            },
+            beforeLayer
+          );
+
+          mapInstance.addLayer({
+            id: "acled-heatmap-line",
+            type: "line",
+            source: "acled-heatmap",
+            paint: {
+              "line-color": "rgba(239, 68, 68, 0.15)",
+              "line-width": 0.5,
+            },
+          });
+
+          // Hover popup for oblast info
+          mapInstance.on("click", "acled-heatmap-fill", (e) => {
+            if (!e.features?.length) return;
+            const props = e.features[0].properties || {};
+            heatmapPopupRef.current?.remove();
+            heatmapPopupRef.current = new maplibregl.Popup({
+              closeOnClick: true,
+              maxWidth: "220px",
+              className: "battle-popup",
+            })
+              .setLngLat(e.lngLat)
+              .setHTML(
+                `<div style="font-family: system-ui; color: #e8e8ed; padding: 4px;">
+                  <div style="font-weight: 600; font-size: 12px; color: #fca5a5; margin-bottom: 4px;">${props.name}</div>
+                  <div style="font-size: 10px; color: #b0b0c0;">
+                    <div>Fatalities: <span style="color: #ef4444; font-weight: 600;">${Number(props.fatalities).toLocaleString()}</span></div>
+                    <div>Events: <span style="color: #f97316; font-weight: 600;">${Number(props.events).toLocaleString()}</span></div>
+                  </div>
+                </div>`
+              )
+              .addTo(mapInstance);
+          });
+
+          mapInstance.on("mouseenter", "acled-heatmap-fill", () => {
+            mapInstance.getCanvas().style.cursor = "pointer";
+          });
+          mapInstance.on("mouseleave", "acled-heatmap-fill", () => {
+            mapInstance.getCanvas().style.cursor = "";
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load ACLED heatmap:", err);
+      }
+    },
+    []
+  );
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -638,12 +956,18 @@ export default function MapView({
         loadTerritoryData(map.current);
         loadEquipmentData(map.current);
         loadAcledData(map.current);
+        loadAcledHeatmap(map.current);
+        if (battles.length > 0) {
+          loadBattleMarkers(map.current, battles);
+        }
       }
     });
 
     return () => {
       popupRef.current?.remove();
       acledPopupRef.current?.remove();
+      battlePopupRef.current?.remove();
+      heatmapPopupRef.current?.remove();
       map.current?.remove();
       map.current = null;
     };
@@ -720,7 +1044,31 @@ export default function MapView({
         );
       }
     });
-  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border, layers.conflicts]);
+
+    // ACLED regional heatmap layers
+    const heatmapLayers = ["acled-heatmap-fill", "acled-heatmap-line"];
+    heatmapLayers.forEach((layer) => {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(
+          layer,
+          "visibility",
+          layers.heatmap ? "visible" : "none"
+        );
+      }
+    });
+
+    // Battle marker layers
+    const battleLayers = ["battle-glow", "battle-points", "battle-labels"];
+    battleLayers.forEach((layer) => {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(
+          layer,
+          "visibility",
+          "visible"
+        );
+      }
+    });
+  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border, layers.conflicts, layers.heatmap]);
 
   // Update territory when timeline date changes
   useEffect(() => {
@@ -792,6 +1140,76 @@ export default function MapView({
 
     source.setData(filtered);
   }, [loaded, territoryDate]);
+
+  // Update battle markers based on timeline date
+  useEffect(() => {
+    if (!map.current || !loaded || battles.length === 0) return;
+    const source = map.current.getSource("battles") as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+    source.setData(battleGeoJSON(battles, territoryDate));
+  }, [loaded, territoryDate, battles]);
+
+  // Update ACLED heatmap by timeline date
+  useEffect(() => {
+    if (!map.current || !loaded) return;
+    const source = map.current.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
+    if (!source || !acledRegionalRef.current) return;
+
+    const data = acledRegionalRef.current;
+    const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
+
+    // Parse timeline date to year/month for filtering
+    const year = territoryDate ? parseInt(territoryDate.slice(0, 4)) : null;
+    const month = territoryDate ? parseInt(territoryDate.slice(4, 6)) : null;
+
+    const geoWithData: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: oblastFeatures.map((f) => {
+        const name = (f.properties as { name: string }).name;
+        const oblastData = data.oblasts.find((o) => o.name === name);
+        let fatalities = 0;
+        let events = 0;
+
+        if (oblastData) {
+          if (year && month) {
+            // Sum up to this month
+            oblastData.monthly
+              .filter((m) => m.year < year || (m.year === year && monthIndex(m.month) <= month))
+              .forEach((m) => {
+                fatalities += m.fatalities;
+                events += m.events;
+              });
+          } else {
+            // No filter — show totals
+            fatalities = oblastData.monthly
+              .filter((m) => m.year >= 2022)
+              .reduce((sum, m) => sum + m.fatalities, 0);
+            events = oblastData.monthly
+              .filter((m) => m.year >= 2022)
+              .reduce((sum, m) => sum + m.events, 0);
+          }
+        }
+
+        return {
+          ...f,
+          properties: { ...f.properties, fatalities, events },
+        };
+      }),
+    };
+
+    source.setData(geoWithData);
+  }, [loaded, territoryDate]);
+
+  // Fly to target location
+  useEffect(() => {
+    if (!map.current || !loaded || !flyToTarget) return;
+    map.current.flyTo({
+      center: [flyToTarget.lng, flyToTarget.lat],
+      zoom: flyToTarget.zoom ?? 9,
+      duration: 1500,
+      essential: true,
+    });
+  }, [loaded, flyToTarget]);
 
   return (
     <>

@@ -83,6 +83,7 @@ export interface MapLayers {
   frontline: boolean;
   border: boolean;
   conflicts: boolean;
+  heatmap: boolean;
 }
 
 export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";
