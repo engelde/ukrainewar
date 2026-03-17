@@ -106,27 +106,28 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       return;
     }
 
-    // Debounce: don't fetch if same date
+    // Skip if we already fetched this exact date
     if (lastFetchedDate.current === territoryDate) return;
-    lastFetchedDate.current = territoryDate;
 
     const controller = new AbortController();
     fetchControllerRef.current = controller;
+    const dateToFetch = territoryDate;
 
-    // Small delay to debounce rapid scrubbing
+    // Short debounce to batch rapid updates during playback
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/casualties/history?date=${territoryDate}`, {
+        const res = await fetch(`/api/casualties/history?date=${dateToFetch}`, {
           signal: controller.signal,
         });
         if (res.ok && !controller.signal.aborted) {
           const data = await res.json();
+          lastFetchedDate.current = dateToFetch;
           setHistoricalData(data);
         }
       } catch {
         // Aborted or failed — ignore
       }
-    }, 150);
+    }, 30);
 
     return () => {
       clearTimeout(timer);
