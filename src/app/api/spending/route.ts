@@ -59,20 +59,37 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
   );
 
   // Monthly allocations
-  const allocSheet = XLSX.utils.sheet_to_json<unknown[]>(
-    wb.Sheets["Allocations by type and month"],
-    { header: 1 }
+  const allocSheetName = Object.keys(wb.Sheets).find((s) =>
+    s.toLowerCase().includes("allocation")
   );
   const byMonth: Record<string, unknown>[] = [];
-  for (const row of allocSheet as unknown[][]) {
-    if (!row || typeof row[1] !== "number" || row[1] < 40000) continue;
-    byMonth.push({
-      date: excelDateToISO(row[1] as number),
-      military: round(row[2] as number),
-      humanitarian: round(row[3] as number),
-      financial: round(row[4] as number),
-      total: round(row[5] as number),
-    });
+  if (allocSheetName) {
+    const allocSheet = XLSX.utils.sheet_to_json<unknown[]>(
+      wb.Sheets[allocSheetName],
+      { header: 1 }
+    );
+    for (const row of allocSheet as unknown[][]) {
+      if (!row || !row[1]) continue;
+
+      let date: string | null = null;
+      if (typeof row[1] === "number" && row[1] > 40000) {
+        date = excelDateToISO(row[1]);
+      } else if (typeof row[1] === "string") {
+        // Handle text dates like "2022-02", "Feb 2022", etc.
+        const m = row[1].match(/(\d{4})-(\d{2})/);
+        if (m) date = `${m[1]}-${m[2]}`;
+      }
+      if (!date) continue;
+
+      const military = typeof row[2] === "number" ? round(row[2]) : 0;
+      const humanitarian = typeof row[3] === "number" ? round(row[3]) : 0;
+      const financial = typeof row[4] === "number" ? round(row[4]) : 0;
+      const total = typeof row[5] === "number" ? round(row[5]) : military + humanitarian + financial;
+
+      if (military + humanitarian + financial > 0) {
+        byMonth.push({ date, military, humanitarian, financial, total });
+      }
+    }
   }
 
   // Totals

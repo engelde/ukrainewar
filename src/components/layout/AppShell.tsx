@@ -53,7 +53,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
   const [spendingOpen, setSpendingOpen] = useState(true);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
-  const [layersCollapsed, setLayersCollapsed] = useState(false);
+  const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
 
