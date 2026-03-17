@@ -373,7 +373,7 @@ function MiniBarChart({ months }: { months: SpendingData["byMonth"] }) {
             )}
             {finH >= 1 && (
               <div
-                className="bg-ua-blue"
+                className="bg-ua-blue-light"
                 style={{ height: `${finH}px` }}
               />
             )}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const HDX_HAPI = "https://hapi.humdata.org/api/v2";
-const APP_ID = Buffer.from("uawar:uawar@app.com").toString("base64");
+const APP_ID = Buffer.from("ukrainewar:contact@ukrainewar.app").toString("base64");
 
 interface FundingItem {
   appeal_code: string;

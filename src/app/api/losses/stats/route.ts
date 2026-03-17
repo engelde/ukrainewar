@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { WARSPOTTING_API } from "@/lib/constants";
 
 const headers = {
-  "User-Agent": "UkraineWarTracker/1.0 (uawar.app)",
+  "User-Agent": "UkraineWarTracker/1.0 (ukrainewar.app)",
   Accept: "application/json",
 };
 

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Ukraine War Tracker",
-    short_name: "UA War",
+    name: "Russo-Ukrainian War Tracker",
+    short_name: "Ukraine War",
     description:
       "Real-time interactive tracker of the Russo-Ukrainian war with equipment losses, territory control, and humanitarian data.",
     start_url: "/",

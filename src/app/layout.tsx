@@ -1,16 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, DM_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmMono = DM_Mono({
+  variable: "--font-dm-mono",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
 export const viewport: Viewport = {
@@ -23,8 +24,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Ukraine War Tracker — uawar.app",
-    template: "%s — Ukraine War Tracker",
+    default: "Russo-Ukrainian War Tracker — ukrainewar.app",
+    template: "%s — Russo-Ukrainian War Tracker",
   },
   description:
     "Real-time interactive tracker of the Russo-Ukrainian war. Explore equipment losses, casualty data, territory control, bilateral aid, and humanitarian impact through an immersive map experience.",
@@ -46,19 +47,19 @@ export const metadata: Metadata = {
     "military losses",
     "refugee data",
   ],
-  metadataBase: new URL("https://uawar.app"),
-  applicationName: "Ukraine War Tracker",
-  authors: [{ name: "uawar.app" }],
-  creator: "uawar.app",
-  publisher: "uawar.app",
+  metadataBase: new URL("https://ukrainewar.app"),
+  applicationName: "Russo-Ukrainian War Tracker",
+  authors: [{ name: "ukrainewar.app" }],
+  creator: "ukrainewar.app",
+  publisher: "ukrainewar.app",
   category: "news",
   classification: "Conflict Data Visualization",
   openGraph: {
-    title: "Ukraine War Tracker",
+    title: "Russo-Ukrainian War Tracker",
     description:
       "Real-time data visualization of the Russo-Ukrainian war — equipment losses, territory control, bilateral aid, humanitarian data, and an interactive timeline of events.",
-    url: "https://uawar.app",
-    siteName: "Ukraine War Tracker",
+    url: "https://ukrainewar.app",
+    siteName: "Russo-Ukrainian War Tracker",
     type: "website",
     locale: "en_US",
     images: [
@@ -66,18 +67,18 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Ukraine War Tracker — Interactive map and data visualization of the Russo-Ukrainian war",
+        alt: "Russo-Ukrainian War Tracker — Interactive map and data visualization of the Russo-Ukrainian war",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ukraine War Tracker",
+    title: "Russo-Ukrainian War Tracker",
     description:
       "Real-time interactive visualization of the Russo-Ukrainian war — losses, territory, aid, and humanitarian data",
     images: ["/og-image.png"],
-    creator: "@uawar_app",
+    creator: "@ukrainewar_app",
   },
   robots: {
     index: true,
@@ -91,7 +92,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://uawar.app",
+    canonical: "https://ukrainewar.app",
   },
   other: {
     "theme-color": "#0A0A0F",
@@ -108,8 +109,8 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Ukraine War Tracker",
-    url: "https://uawar.app",
+    name: "Russo-Ukrainian War Tracker",
+    url: "https://ukrainewar.app",
     description:
       "Real-time interactive tracker of the Russo-Ukrainian war with equipment losses, territory control, bilateral aid, and humanitarian data.",
     applicationCategory: "NewsApplication",
@@ -136,7 +137,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-hidden`}
+        className={`${dmSans.variable} ${dmMono.variable} antialiased overflow-hidden`}
       >
         <NuqsAdapter>{children}</NuqsAdapter>
       </body>

@@ -8,7 +8,7 @@ import type {
 } from "./types";
 
 const WARSPOTTING_HEADERS = {
-  "User-Agent": "UkraineWarTracker/1.0 (uawar.app)",
+  "User-Agent": "UkraineWarTracker/1.0 (ukrainewar.app)",
   Accept: "application/json",
 };
 

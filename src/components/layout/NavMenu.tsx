@@ -59,7 +59,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
         <span>Sources</span>
       </button>
       <a
-        href="https://github.com/engelde/uawar"
+        href="https://github.com/engelde/ukrainewar"
         target="_blank"
         rel="noopener noreferrer"
         className={cn(
@@ -178,7 +178,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
               <div className="h-1/2 bg-ua-yellow" />
             </div>
             <span className="text-sm font-bold tracking-tight text-foreground">
-              UKRAINE WAR TRACKER
+              RUSSO-UKRAINIAN WAR TRACKER
             </span>
           </div>
           <button
@@ -231,7 +231,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
           </SidebarSection>
 
           <a
-            href="https://github.com/engelde/uawar"
+            href="https://github.com/engelde/ukrainewar"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2.5 text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30 transition-colors"

@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/"],
       },
     ],
-    sitemap: "https://uawar.app/sitemap.xml",
+    sitemap: "https://ukrainewar.app/sitemap.xml",
   };
 }

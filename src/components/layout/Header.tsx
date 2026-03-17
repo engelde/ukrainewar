@@ -3,9 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import NavMenu from "./NavMenu";
-import { TbMenu2 } from "react-icons/tb";
+import { TbMenu2, TbCalendarEvent } from "react-icons/tb";
 
-export default function Header() {
+interface HeaderProps {
+  onToggleEvents?: () => void;
+  eventsOpen?: boolean;
+}
+
+export default function Header({ onToggleEvents, eventsOpen }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -26,9 +31,26 @@ export default function Header() {
           </div>
           <Link href="/" className="flex items-center gap-2">
             <h1 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
-              UKRAINE WAR TRACKER
+              RUSSO-UKRAINIAN WAR TRACKER
             </h1>
           </Link>
+          {/* Events button */}
+          {onToggleEvents && (
+            <>
+              <div className="w-px h-4 bg-border/40" />
+              <button
+                onClick={onToggleEvents}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+                  eventsOpen
+                    ? "text-ua-yellow bg-ua-yellow/10"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <TbCalendarEvent className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Events</span>
+              </button>
+            </>
+          )}
           {/* Desktop nav links */}
           <div className="hidden sm:contents">
             <div className="w-px h-4 bg-border/40" />

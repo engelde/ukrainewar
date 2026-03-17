@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useQueryState, parseAsString } from "nuqs";
+import { cn } from "@/lib/utils";
 import type { CasualtyData, MapLayers, EquipmentMarker } from "@/lib/types";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import Header, { Footer } from "@/components/layout/Header";
@@ -11,6 +12,7 @@ import DetailPanel from "@/components/map/DetailPanel";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
+import EventSidebar from "@/components/layout/EventSidebar";
 import { MAJOR_BATTLES } from "@/data/battles";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import ResetButton from "@/components/layout/ResetButton";
@@ -56,6 +58,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
+  const [eventSidebarOpen, setEventSidebarOpen] = useState(false);
 
   // Historical casualty data for timeline scrubbing
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
@@ -142,6 +145,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSpendingOpen((prev) => !prev);
   }, []);
 
+  const handleToggleEventSidebar = useCallback(() => {
+    setEventSidebarOpen((prev) => !prev);
+  }, []);
+
+  const handleEventClick = useCallback((date: string) => {
+    handleTimelineDateChange(date);
+  }, [handleTimelineDateChange]);
+
   // Reset everything to defaults
   const handleReset = useCallback(() => {
     setTerritoryDate(null);
@@ -153,6 +164,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setStatsCollapsed(false);
     setLayersCollapsed(false);
     setTimelineKey(prev => prev + 1);
+    setEventSidebarOpen(false);
     setLayers({
       territory: true,
       equipment: true,
@@ -180,16 +192,31 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   })();
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden">
-      <MapView
-        layers={layers}
-        onMarkerClick={handleMarkerClick}
-        territoryDate={territoryDate}
-        battles={MAJOR_BATTLES}
-        flyTo={flyToTarget}
+    <>
+      <EventSidebar
+        isOpen={eventSidebarOpen}
+        onClose={() => setEventSidebarOpen(false)}
+        onEventClick={handleEventClick}
+        currentDate={territoryDate}
       />
-      <Header />
-      <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
+      <main
+        className={cn(
+          "relative h-screen overflow-hidden transition-all duration-300 ease-in-out",
+          eventSidebarOpen ? "sm:ml-96 sm:w-[calc(100vw-24rem)] w-screen" : "w-screen ml-0"
+        )}
+      >
+        <MapView
+          layers={layers}
+          onMarkerClick={handleMarkerClick}
+          territoryDate={territoryDate}
+          battles={MAJOR_BATTLES}
+          flyTo={flyToTarget}
+        />
+        <Header
+          onToggleEvents={handleToggleEventSidebar}
+          eventsOpen={eventSidebarOpen}
+        />
+        <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
 
       {/* Expanded panels — draggable */}
       {displayData && !statsCollapsed && (
@@ -277,6 +304,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       />
 
       <Footer />
-    </main>
+      </main>
+    </>
   );
 }
