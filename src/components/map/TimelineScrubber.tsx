@@ -412,38 +412,44 @@ export default function TimelineScrubber({
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-30",
-        "px-4 pb-1.5 sm:px-6 sm:pb-2"
+        "fixed bottom-0 z-30",
+        collapsed
+          ? "left-0 px-4 pb-1.5 sm:px-6 sm:pb-2"
+          : "left-0 right-0 px-4 pb-1.5 sm:px-6 sm:pb-2"
       )}
     >
       <div
         className={cn(
           "rounded-lg",
-          "bg-background/90 backdrop-blur-xl",
-          "border border-border/50",
-          "shadow-[0_-4px_20px_rgba(0,0,0,0.4)]",
-          "transition-all duration-300"
+          "transition-all duration-300",
+          collapsed
+            ? ""
+            : "bg-background/90 backdrop-blur-xl border border-border/50 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
         )}
       >
-        {/* Collapsed state — just a header bar */}
+        {/* Collapsed state — compact bar like other panels */}
         {collapsed && (
-          <button
-            onClick={() => setCollapsed(false)}
+          <div
             className={cn(
-              "w-full flex items-center gap-2 px-3 py-2",
-              "rounded-lg",
-              "text-xs font-semibold uppercase tracking-wider",
-              "text-ua-blue",
-              "hover:bg-surface-elevated/30 transition-colors"
+              "flex items-center rounded-lg",
+              "bg-background/80 backdrop-blur-xl",
+              "border border-border/50",
+              "overflow-hidden"
             )}
           >
-            <TbChevronDown className="h-3 w-3 text-muted-foreground rotate-180 transition-transform" />
-            <TbTimeline className="h-3.5 w-3.5" />
-            <span>Timeline</span>
-            <span className="text-[10px] font-mono text-muted-foreground ml-auto">
-              {formatDateDisplay(currentDate)}
-            </span>
-          </button>
+            <div className="flex items-center gap-2 px-3 py-2 flex-1">
+              <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
+                Timeline
+              </span>
+            </div>
+            <button
+              onClick={() => setCollapsed(false)}
+              className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <TbChevronDown className="h-3 w-3 rotate-180" />
+            </button>
+          </div>
         )}
 
         {/* Expanded state */}

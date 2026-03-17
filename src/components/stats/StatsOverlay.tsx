@@ -345,12 +345,12 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
               </div>
             );
           })}
+            <div className="px-3 py-1.5 border-t border-border/30">
+              <a href="https://www.mil.gov.ua" target="_blank" rel="noopener noreferrer" className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors">
+                Source: Ukrainian Ministry of Defence
+              </a>
+            </div>
         </div>
-          <div className="px-3 py-1.5 border-t border-border/30">
-            <a href="https://www.mil.gov.ua" target="_blank" rel="noopener noreferrer" className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors">
-              Source: Ukrainian Ministry of Defence ↗
-            </a>
-          </div>
         </>
       )}
     </div>

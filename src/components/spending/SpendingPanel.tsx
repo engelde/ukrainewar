@@ -281,9 +281,12 @@ export default function SpendingPanel({
       {/* Source footer */}
       {data && (
         <div className="px-3 py-1.5 border-t border-border/30">
-          <a href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/" target="_blank" rel="noopener noreferrer" className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors">
-            Source: {data.source.name} · {data.source.release} ↗
-          </a>
+          <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+            <span>Source:</span>
+            <a href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/" target="_blank" rel="noopener noreferrer" className="hover:text-ua-blue transition-colors">
+              {data.source.name}
+            </a>
+          </div>
         </div>
       )}
     </div>
