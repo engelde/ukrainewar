@@ -251,20 +251,20 @@
 
 /* Push bottom-right map controls above the timeline */
 .maplibregl-ctrl-bottom-right {
-  bottom: 170px !important;
-  right: 12px !important;
+  bottom: 160px !important;
+  right: 16px !important;
 }
 @media (min-width: 640px) {
   .maplibregl-ctrl-bottom-right {
-    bottom: 190px !important;
-    right: 16px !important;
+    bottom: 175px !important;
+    right: 24px !important;
   }
 }
 
-/* Style map navigation controls to match dark theme */
+/* Style map navigation controls to match dark theme panels */
 .maplibregl-ctrl-group {
-  background: oklch(0.12 0.008 270 / 0.8) !important;
-  backdrop-filter: blur(12px);
+  background: oklch(0.07 0.005 270 / 0.8) !important;
+  backdrop-filter: blur(24px);
   border: 1px solid oklch(0.22 0.015 270 / 0.5) !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;

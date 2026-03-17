@@ -9,6 +9,7 @@ import LayerControls from "@/components/map/LayerControls";
 import DetailPanel from "@/components/map/DetailPanel";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
+import DataSourcesPanel from "@/components/layout/DataSourcesPanel";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
@@ -129,11 +130,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       />
       <Header />
       {displayData && (
-        <DraggablePanel className="fixed right-3 top-14 z-30 sm:right-4 sm:top-16 max-w-[calc(100vw-1.5rem)] sm:max-w-xs">
+        <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
           <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />
         </DraggablePanel>
       )}
-      <DraggablePanel className="fixed left-3 bottom-44 z-30 sm:left-4 sm:bottom-52">
+      <DraggablePanel className="fixed left-4 bottom-[155px] z-30 sm:left-6 sm:bottom-[170px]">
         <LayerControls
           layers={layers}
           onToggle={handleToggleLayer}
@@ -142,7 +143,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       {selectedMarker && (
         <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
       )}
-      <DraggablePanel className="fixed left-3 top-14 z-30 sm:left-4 sm:top-16 max-w-[calc(100vw-1.5rem)] sm:max-w-xs">
+      <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
         <HumanitarianPanel
           isOpen={humanitarianOpen}
           onToggle={handleToggleHumanitarian}
@@ -151,6 +152,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       <TimelineScrubber
         onDateChange={handleTimelineDateChange}
       />
+      <DraggablePanel className="fixed left-4 bottom-[120px] z-40 sm:left-6 sm:bottom-[130px]">
+        <DataSourcesPanel />
+      </DraggablePanel>
       <Footer />
     </main>
   );

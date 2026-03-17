@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { DATA_SOURCES } from "@/lib/constants";
 import {
   TbPlayerPlayFilled,
   TbPlayerPauseFilled,
@@ -182,6 +181,26 @@ export default function TimelineScrubber({
     };
   }).filter((e) => e.position >= 0);
 
+  // Calculate which event labels to show (collision-free, alternating rows)
+  const visibleEventLabels = (() => {
+    const MIN_GAP = 8; // minimum 8% gap between any adjacent labels
+    const result: { date: string; label: string; position: number; row: number }[] = [];
+    let lastPos = -MIN_GAP;
+
+    for (const event of eventPositions) {
+      if (event.position - lastPos >= MIN_GAP) {
+        result.push({
+          date: event.date,
+          label: event.label,
+          position: event.position,
+          row: result.length % 2, // alternate rows for visual separation
+        });
+        lastPos = event.position;
+      }
+    }
+    return result;
+  })();
+
   // Find the closest active event (within 5 days of current date)
   const activeEvent = eventPositions.find((event) => {
     const eventIdx = event.index;
@@ -266,7 +285,7 @@ export default function TimelineScrubber({
             )}
 
             {/* Main timeline bar */}
-            <div className="px-3 py-2">
+            <div className="px-3 pt-2 pb-10 sm:pb-12">
               <div className="flex items-center gap-3">
                 {/* Left: Date info */}
                 <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[140px]">
@@ -351,7 +370,12 @@ export default function TimelineScrubber({
                       <button
                         key={event.date}
                         onClick={() => handleJumpToEvent(event.date)}
-                        className="absolute top-1/2 -translate-y-1/2 w-1 h-3 bg-ua-yellow/50 rounded-full pointer-events-auto hover:bg-ua-yellow hover:h-4 transition-all"
+                        className={cn(
+                          "absolute top-1/2 -translate-y-1/2 rounded-full pointer-events-auto transition-all",
+                          activeEvent?.date === event.date
+                            ? "w-2 h-4 bg-ua-yellow"
+                            : "w-1.5 h-3 bg-ua-yellow/50 hover:bg-ua-yellow hover:h-4"
+                        )}
                         style={{ left: `${event.position}%` }}
                         title={`${event.label}: ${event.description} (${formatDateShort(event.date)})`}
                       />
@@ -395,6 +419,51 @@ export default function TimelineScrubber({
                       </span>
                     ))}
                   </div>
+
+                  {/* Event labels positioned at actual timeline locations */}
+                  <div
+                    className="absolute left-0 right-0 pointer-events-none hidden sm:block"
+                    style={{ top: "calc(100% + 22px)" }}
+                  >
+                    {visibleEventLabels.map((labelInfo) => {
+                      const isLabelActive = activeEvent?.date === labelInfo.date;
+                      return (
+                        <div
+                          key={labelInfo.date}
+                          className="absolute pointer-events-auto"
+                          style={{
+                            left: `${labelInfo.position}%`,
+                          }}
+                        >
+                          <div className="flex flex-col items-center -translate-x-1/2">
+                            <div
+                              className={cn(
+                                "w-px",
+                                labelInfo.row === 0 ? "h-2" : "h-5",
+                                isLabelActive
+                                  ? "bg-ua-yellow/50"
+                                  : "bg-border/40"
+                              )}
+                            />
+                            <button
+                              onClick={() =>
+                                handleJumpToEvent(labelInfo.date)
+                              }
+                              className={cn(
+                                "text-[7px] whitespace-nowrap leading-none mt-0.5",
+                                "transition-colors",
+                                isLabelActive
+                                  ? "text-ua-yellow font-semibold"
+                                  : "text-muted-foreground/50 hover:text-muted-foreground"
+                              )}
+                            >
+                              {labelInfo.label}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Collapse button */}
@@ -406,46 +475,8 @@ export default function TimelineScrubber({
                 </button>
               </div>
 
-              {/* Key event labels — horizontal scroll */}
-              <div className="hidden sm:flex gap-1.5 mt-4 overflow-x-auto scrollbar-none pb-1">
-                {eventPositions.map((event) => (
-                  <button
-                    key={event.date}
-                    onClick={() => handleJumpToEvent(event.date)}
-                    className={cn(
-                      "text-[9px] px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0",
-                      "transition-colors",
-                      dates[currentIndex] === dates[dates.findIndex((d) => d >= event.date)]
-                        ? "bg-ua-yellow/20 text-ua-yellow"
-                        : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
-                    )}
-                  >
-                    {event.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* Data source citations */}
-            <div className="hidden sm:flex items-center gap-1 px-3 py-1 border-t border-border/20 overflow-x-auto scrollbar-none">
-              <span className="text-[9px] text-muted-foreground/50 mr-1 flex-shrink-0">Sources:</span>
-              {DATA_SOURCES.map((source, i) => (
-                <span key={source.name} className="text-[9px] flex-shrink-0">
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground/40 hover:text-ua-blue transition-colors"
-                    title={source.description}
-                  >
-                    {source.name}
-                  </a>
-                  {i < DATA_SOURCES.length - 1 && (
-                    <span className="text-border/30 mx-0.5">·</span>
-                  )}
-                </span>
-              ))}
-            </div>
           </>
         )}
       </div>
