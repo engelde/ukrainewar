@@ -76,7 +76,7 @@ function formatDateDisplay(dateStr: string): string {
   const m = dateStr.slice(4, 6);
   const d = dateStr.slice(6, 8);
   const y = dateStr.slice(0, 4);
-  return `${m}/${d}/${y}`;
+  return `${m}.${d}.${y}`;
 }
 
 function formatDateShort(dateStr: string): string {
@@ -666,7 +666,7 @@ export default function TimelineScrubber({
                                 : "text-muted-foreground/70 hover:text-muted-foreground"
                             )}
                           >
-                            {labelInfo.label}
+                            {labelInfo.date.slice(4, 6)}.{labelInfo.date.slice(6, 8)}
                           </button>
                         </div>
                       </div>

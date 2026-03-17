@@ -138,20 +138,22 @@ export default function LayerControls({
           <TbChevronDown className="h-3 w-3" />
         </button>
       </div>
-      {LAYER_CONFIG.map((layer) => (
+      <div className="grid grid-cols-2">
+        {LAYER_CONFIG.map((layer, i) => (
           <button
             key={layer.key}
             onClick={() => onToggle(layer.key)}
             className={cn(
               "flex items-center gap-2 px-3 py-2",
-              "border-b border-border/20 last:border-b-0",
+              "border-b border-border/20",
+              i % 2 === 0 && "border-r border-r-border/20",
               "hover:bg-surface-elevated/50 transition-colors",
               "text-left"
             )}
           >
             <div
               className={cn(
-                "flex h-4 w-4 items-center justify-center rounded border border-border/50 transition-colors",
+                "flex h-4 w-4 items-center justify-center rounded border border-border/50 transition-colors flex-shrink-0",
                 layers[layer.key]
                   ? "bg-ua-blue/20 border-ua-blue/50"
                   : "bg-transparent"
@@ -173,24 +175,20 @@ export default function LayerControls({
                 </svg>
               )}
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <layer.Icon
-                  className={cn(
-                    "h-3 w-3",
-                    layers[layer.key]
-                      ? "text-foreground"
-                      : "text-muted-foreground"
-                  )}
-                />
-                <span className="text-xs text-foreground">{layer.label}</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                {layer.description}
-              </span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <layer.Icon
+                className={cn(
+                  "h-3 w-3 flex-shrink-0",
+                  layers[layer.key]
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                )}
+              />
+              <span className="text-xs text-foreground truncate">{layer.label}</span>
             </div>
           </button>
         ))}
+      </div>
     </div>
   );
 }
