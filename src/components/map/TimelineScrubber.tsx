@@ -132,12 +132,52 @@ export default function TimelineScrubber({
   const dragStartX = useRef(0);
   const dragScrollLeft = useRef(0);
 
-  // Notify parent when index changes
+  // Throttle data-heavy onDateChange during playback
+  const dateChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingDateRef = useRef<string | null>(null);
+
+  // Notify parent when index changes (throttled during playback)
   useEffect(() => {
-    if (currentIndex >= 0 && dates[currentIndex]) {
-      onDateChange(dates[currentIndex]);
+    if (currentIndex < 0 || !dates[currentIndex]) return;
+    const date = dates[currentIndex];
+
+    if (!isPlaying) {
+      // Not playing — update immediately (manual scrub / step)
+      if (dateChangeTimerRef.current) {
+        clearTimeout(dateChangeTimerRef.current);
+        dateChangeTimerRef.current = null;
+      }
+      pendingDateRef.current = null;
+      onDateChange(date);
+      return;
     }
-  }, [currentIndex, dates, onDateChange]);
+
+    // During playback — throttle to max ~8 updates/sec
+    pendingDateRef.current = date;
+    if (!dateChangeTimerRef.current) {
+      onDateChange(date); // Fire immediately on first tick
+      dateChangeTimerRef.current = setTimeout(() => {
+        dateChangeTimerRef.current = null;
+        if (pendingDateRef.current) {
+          onDateChange(pendingDateRef.current);
+        }
+      }, 120);
+    }
+  }, [currentIndex, dates, onDateChange, isPlaying]);
+
+  // Flush pending date when playback stops
+  useEffect(() => {
+    if (!isPlaying && pendingDateRef.current) {
+      onDateChange(pendingDateRef.current);
+      pendingDateRef.current = null;
+    }
+    return () => {
+      if (dateChangeTimerRef.current) {
+        clearTimeout(dateChangeTimerRef.current);
+        dateChangeTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, onDateChange]);
 
   // Play/pause — if at the end, restart from beginning
   const togglePlay = useCallback(() => {

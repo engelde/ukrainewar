@@ -165,10 +165,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   }, [setUrlDate]);
 
   // Use historical data when timeline is scrubbed to a past date
+  // Keep showing last historical data during playback to avoid flashing
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
   const isViewingPast = !!territoryDate && territoryDate < todayStr;
-  const displayData = (isViewingPast && historicalData) ? historicalData : casualtyData;
+  const displayData = isViewingPast ? (historicalData ?? casualtyData) : casualtyData;
 
   const warDay = (() => {
     const start = new Date(2022, 1, 24); // Feb 24, 2022
