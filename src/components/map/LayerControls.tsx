@@ -114,7 +114,7 @@ export default function LayerControls({
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <div className={cn("h-2 w-2 rounded-full", layer.color)} />
+              <layer.Icon className={cn("h-3 w-3", layers[layer.key] ? "text-foreground" : "text-muted-foreground")} />
               <span className="text-xs text-foreground">{layer.label}</span>
             </div>
             <span className="text-[10px] text-muted-foreground">
@@ -151,7 +151,7 @@ export default function LayerControls({
             Timeline
           </span>
           <span className="text-[10px] text-muted-foreground">
-            Animate frontline changes
+            Explore the war&apos;s progression
           </span>
         </div>
       </button>

@@ -2,6 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import {
+  TbPlayerPlayFilled,
+  TbPlayerPauseFilled,
+  TbChevronLeft,
+  TbChevronRight,
+  TbX,
+  TbInfoCircle,
+} from "react-icons/tb";
 
 interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
@@ -153,8 +161,15 @@ export default function TimelineScrubber({
     return {
       ...event,
       position: idx >= 0 ? (idx / (dates.length - 1)) * 100 : -1,
+      index: idx,
     };
   }).filter((e) => e.position >= 0);
+
+  // Find the closest active event (within 5 days of current date)
+  const activeEvent = eventPositions.find((event) => {
+    const eventIdx = event.index;
+    return Math.abs(currentIndex - eventIdx) <= 5;
+  });
 
   return (
     <div
@@ -168,33 +183,44 @@ export default function TimelineScrubber({
         "shadow-xl shadow-black/30"
       )}
     >
+      {/* Event info card — shown when near key events */}
+      {activeEvent && (
+        <div className="mx-3 mt-2 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-3 py-2 flex items-start gap-2">
+          <TbInfoCircle className="h-3.5 w-3.5 text-ua-blue mt-0.5 flex-shrink-0" />
+          <div className="min-w-0">
+            <span className="text-[10px] font-semibold text-ua-blue">
+              {activeEvent.label}
+            </span>
+            <span className="text-[10px] text-muted-foreground ml-1.5">
+              {formatDateShort(activeEvent.date)}
+            </span>
+            <p className="text-[10px] text-foreground/80 mt-0.5 leading-snug">
+              {activeEvent.description}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
-            Territory Timeline
+            War Timeline
           </span>
           <span className="text-xs font-mono text-foreground">
             {formatDateDisplay(currentDate)}
           </span>
+          {currentIndex < dates.length - 1 && (
+            <span className="text-[9px] text-ua-yellow/70 font-mono">
+              {currentIndex < dates.length - 1 ? `−${dates.length - 1 - currentIndex}d` : ""}
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
           className="flex h-5 w-5 items-center justify-center rounded hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
         >
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <TbX className="h-3.5 w-3.5" />
         </button>
       </div>
 
@@ -207,19 +233,7 @@ export default function TimelineScrubber({
             disabled={currentIndex <= 0}
             className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
           >
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
+            <TbChevronLeft className="h-3.5 w-3.5" />
           </button>
 
           {/* Play/Pause */}
@@ -233,27 +247,9 @@ export default function TimelineScrubber({
             )}
           >
             {isPlaying ? (
-              <svg
-                className="h-3.5 w-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 9v6m4-6v6"
-                />
-              </svg>
+              <TbPlayerPauseFilled className="h-3.5 w-3.5" />
             ) : (
-              <svg
-                className="h-3.5 w-3.5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
+              <TbPlayerPlayFilled className="h-3.5 w-3.5" />
             )}
           </button>
 
@@ -263,19 +259,7 @@ export default function TimelineScrubber({
             disabled={currentIndex >= dates.length - 1}
             className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
           >
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <TbChevronRight className="h-3.5 w-3.5" />
           </button>
 
           {/* Slider */}

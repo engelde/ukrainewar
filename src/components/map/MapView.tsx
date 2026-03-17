@@ -453,22 +453,29 @@ export default function MapView({
   useEffect(() => {
     if (!map.current || !loaded) return;
 
-    const territoryLayers = ["territory-fill", "territory-line"];
+    // Territory fill (occupation overlay)
+    if (map.current.getLayer("territory-fill")) {
+      map.current.setLayoutProperty(
+        "territory-fill",
+        "visibility",
+        layers.territory ? "visible" : "none"
+      );
+    }
+
+    // Frontline border (separate toggle)
+    if (map.current.getLayer("territory-line")) {
+      map.current.setLayoutProperty(
+        "territory-line",
+        "visibility",
+        layers.frontline ? "visible" : "none"
+      );
+    }
+
     const equipmentLayers = [
       "equipment-clusters",
       "equipment-cluster-count",
       "equipment-points",
     ];
-
-    territoryLayers.forEach((layer) => {
-      if (map.current?.getLayer(layer)) {
-        map.current.setLayoutProperty(
-          layer,
-          "visibility",
-          layers.territory ? "visible" : "none"
-        );
-      }
-    });
 
     equipmentLayers.forEach((layer) => {
       if (map.current?.getLayer(layer)) {
@@ -496,13 +503,50 @@ export default function MapView({
         );
       }
     });
-  }, [loaded, layers.territory, layers.equipment, layers.border]);
+  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border]);
 
   // Update territory when timeline date changes
   useEffect(() => {
     if (!map.current || !loaded || !territoryDate) return;
     loadTerritoryData(map.current);
   }, [loaded, territoryDate, loadTerritoryData]);
+
+  // Filter equipment markers by timeline date
+  useEffect(() => {
+    if (!map.current || !loaded) return;
+    const source = map.current.getSource("equipment") as maplibregl.GeoJSONSource | undefined;
+    if (!source || equipmentDataRef.current.length === 0) return;
+
+    // Normalize timeline date (YYYYMMDD) to comparable format
+    const timelineDateNorm = territoryDate
+      ? `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}-${territoryDate.slice(6, 8)}`
+      : null;
+
+    const filtered = timelineDateNorm
+      ? equipmentDataRef.current.filter((m) => m.date <= timelineDateNorm)
+      : equipmentDataRef.current;
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: filtered.map((m) => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "Point" as const,
+          coordinates: [m.lng, m.lat],
+        },
+        properties: {
+          id: m.id,
+          type: m.type,
+          model: m.model,
+          status: m.status,
+          date: m.date,
+          location: m.location || "",
+        },
+      })),
+    };
+
+    source.setData(geojson);
+  }, [loaded, territoryDate]);
 
   return (
     <>
