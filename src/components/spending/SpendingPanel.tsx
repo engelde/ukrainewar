@@ -338,36 +338,44 @@ function AidTypeRow({
 
 function MiniBarChart({ months }: { months: SpendingData["byMonth"] }) {
   if (!months || months.length === 0) return null;
-  const maxVal = Math.max(...months.map((m) => m.total));
-  if (maxVal === 0) return null;
+  const maxTotal = Math.max(...months.map((m) => m.total));
+  if (maxTotal === 0) return null;
+  const BAR_HEIGHT = 64;
+  // sqrt scale so smaller months are visible relative to the peak
+  const sqrtMax = Math.sqrt(maxTotal);
   return (
-    <div className="flex items-end gap-px h-16">
+    <div className="flex items-end gap-px" style={{ height: `${BAR_HEIGHT}px` }}>
       {months.map((m) => {
-        const milH = (m.military / maxVal) * 100;
-        const finH = (m.financial / maxVal) * 100;
-        const humH = (m.humanitarian / maxVal) * 100;
+        const ratio = Math.sqrt(m.total) / sqrtMax;
+        const totalPx = ratio * BAR_HEIGHT;
+        const milFrac = m.total > 0 ? m.military / m.total : 0;
+        const finFrac = m.total > 0 ? m.financial / m.total : 0;
+        const humFrac = 1 - milFrac - finFrac;
+        const milH = Math.round(totalPx * milFrac);
+        const finH = Math.round(totalPx * finFrac);
+        const humH = Math.max(Math.round(totalPx * humFrac), 0);
         return (
           <div
             key={m.date}
-            className="flex-1 flex flex-col justify-end gap-px min-w-0 group relative"
+            className="flex-1 flex flex-col justify-end min-w-0"
             title={`${m.date}: ${formatEUR(m.total)}`}
           >
-            {milH > 0 && (
+            {milH >= 1 && (
               <div
-                className="bg-destruction/50 rounded-t-sm"
-                style={{ height: `${Math.max(milH, 2)}%` }}
+                className="bg-destruction rounded-t-sm"
+                style={{ height: `${milH}px` }}
               />
             )}
-            {finH > 0 && (
+            {finH >= 1 && (
               <div
-                className="bg-ua-blue/50"
-                style={{ height: `${Math.max(finH, 2)}%` }}
+                className="bg-ua-blue"
+                style={{ height: `${finH}px` }}
               />
             )}
-            {humH > 0 && (
+            {humH >= 1 && (
               <div
-                className="bg-capture/50 rounded-b-sm"
-                style={{ height: `${Math.max(humH, 2)}%` }}
+                className="bg-capture rounded-b-sm"
+                style={{ height: `${humH}px` }}
               />
             )}
           </div>

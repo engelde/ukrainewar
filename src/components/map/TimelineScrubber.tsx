@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
 import {
   TbPlayerPlayFilled,
@@ -123,6 +123,10 @@ export default function TimelineScrubber({
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(2); // default 1× (200ms)
+
+  // Daily losses waveform data
+  const [dailyLosses, setDailyLosses] = useState<Map<string, number>>(new Map());
+  const [maxDaily, setMaxDaily] = useState(0);
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isInitialScroll = useRef(true);
@@ -135,6 +139,28 @@ export default function TimelineScrubber({
   // Throttle data-heavy onDateChange during playback
   const dateChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingDateRef = useRef<string | null>(null);
+
+  // Fetch daily losses for waveform visualization
+  useEffect(() => {
+    fetch("/api/casualties/daily-totals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { date: string; total: number }[] | null) => {
+        if (!data || !Array.isArray(data)) return;
+        const map = new Map<string, number>();
+        // Cap outliers at the 99th percentile for visual consistency
+        const sorted = [...data.map((d) => d.total)].sort((a, b) => a - b);
+        const p99 = sorted[Math.floor(sorted.length * 0.99)] || 1;
+        let max = 0;
+        for (const entry of data) {
+          const capped = Math.min(entry.total, p99);
+          map.set(entry.date, capped);
+          if (capped > max) max = capped;
+        }
+        setDailyLosses(map);
+        setMaxDaily(max);
+      })
+      .catch(() => {});
+  }, []);
 
   // Notify parent when index changes (throttled during playback)
   useEffect(() => {
@@ -616,6 +642,17 @@ export default function TimelineScrubber({
                 style={{ width: `${totalWidth}px`, height: "75px" }}
                 onClick={handleTimelineClick}
               >
+                {/* Daily losses waveform (background) */}
+                {maxDaily > 0 && (
+                  <WaveformCanvas
+                    dates={dates}
+                    dailyLosses={dailyLosses}
+                    maxDaily={maxDaily}
+                    totalWidth={totalWidth}
+                    currentIndex={currentIndex}
+                  />
+                )}
+
                 {/* Track line */}
                 <div className="absolute top-3 left-0 right-0 h-0.5 bg-border/30 rounded-full" />
 
@@ -721,3 +758,70 @@ export default function TimelineScrubber({
     </div>
   );
 }
+
+// Canvas-based waveform for daily losses visualization
+
+const WaveformCanvas = memo(function WaveformCanvas({
+  dates,
+  dailyLosses,
+  maxDaily,
+  totalWidth,
+  currentIndex,
+}: {
+  dates: string[];
+  dailyLosses: Map<string, number>;
+  maxDaily: number;
+  totalWidth: number;
+  currentIndex: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const WAVE_HEIGHT = 22;
+  const WAVE_TOP = 3; // align with track line center
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = totalWidth * dpr;
+    canvas.height = WAVE_HEIGHT * dpr;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, totalWidth, WAVE_HEIGHT);
+
+    const barWidth = PIXELS_PER_DAY;
+    const mid = WAVE_HEIGHT / 2;
+
+    for (let i = 0; i < dates.length; i++) {
+      const val = dailyLosses.get(dates[i]) ?? 0;
+      if (val === 0) continue;
+
+      const ratio = val / maxDaily;
+      const halfH = ratio * (WAVE_HEIGHT / 2 - 1);
+
+      const isPast = i <= currentIndex;
+      if (isPast) {
+        ctx.fillStyle = "rgba(239, 68, 68, 0.18)";
+      } else {
+        ctx.fillStyle = "rgba(239, 68, 68, 0.08)";
+      }
+
+      const x = i * barWidth;
+      ctx.fillRect(x, mid - halfH, Math.max(barWidth - 0.5, 1), halfH * 2);
+    }
+  }, [dates, dailyLosses, maxDaily, totalWidth, currentIndex]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute left-0 pointer-events-none"
+      style={{
+        top: `${WAVE_TOP}px`,
+        width: `${totalWidth}px`,
+        height: `${WAVE_HEIGHT}px`,
+      }}
+    />
+  );
+});
