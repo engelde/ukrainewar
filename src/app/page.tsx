@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { fetchCasualties } from "@/lib/api";
 
@@ -10,5 +11,9 @@ export default async function Home() {
     console.error("Failed to fetch casualty data:", error);
   }
 
-  return <AppShell casualtyData={casualtyData} />;
+  return (
+    <Suspense>
+      <AppShell casualtyData={casualtyData} />
+    </Suspense>
+  );
 }
