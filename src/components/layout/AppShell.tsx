@@ -34,6 +34,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     equipment: true,
     frontline: true,
     border: true,
+    conflicts: true,
   });
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(

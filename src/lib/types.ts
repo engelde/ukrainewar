@@ -82,6 +82,22 @@ export interface MapLayers {
   equipment: boolean;
   frontline: boolean;
   border: boolean;
+  conflicts: boolean;
 }
 
 export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";
+
+export interface AcledEvent {
+  event_id: string;
+  event_date: string; // YYYY-MM-DD
+  event_type: string;
+  sub_event_type: string;
+  actor1: string;
+  actor2: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  fatalities: number;
+  notes: string;
+  admin1: string;
+}

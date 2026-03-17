@@ -15,7 +15,11 @@ export const CACHE_TTL = {
   LOSSES_RECENT: 6 * 60 * 60, // 6 hours
   CASUALTIES: 4 * 60 * 60, // 4 hours
   TERRITORY: 12 * 60 * 60, // 12 hours
+  ACLED: 24 * 60 * 60, // 24 hours
 } as const;
+
+export const ACLED_API = "https://acleddata.com/api/acled/read";
+export const ACLED_AUTH_URL = "https://acleddata.com/oauth/token";
 
 export const DATA_SOURCES = [
   {

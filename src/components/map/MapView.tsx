@@ -15,6 +15,15 @@ const STATUS_COLORS: Record<string, string> = {
   abandoned: "#9f7aea",
 };
 
+const ACLED_EVENT_COLORS: Record<string, string> = {
+  Battles: "#ef4444",
+  "Explosions/Remote violence": "#f97316",
+  "Violence against civilians": "#a855f7",
+  "Strategic developments": "#3b82f6",
+  Protests: "#22c55e",
+  Riots: "#eab308",
+};
+
 function findFirstSymbolLayer(mapInstance: maplibregl.Map): string | undefined {
   const layers = mapInstance.getStyle().layers;
   if (!layers) return undefined;
@@ -39,6 +48,8 @@ export default function MapView({
   const map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false);
   const equipmentDataRef = useRef<EquipmentMarker[]>([]);
+  const acledDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
+  const acledPopupRef = useRef<maplibregl.Popup | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
   const loadUkraineBorder = useCallback((mapInstance: maplibregl.Map) => {
@@ -418,6 +429,183 @@ export default function MapView({
     [onMarkerClick]
   );
 
+  // Load ACLED conflict event data
+  const loadAcledData = useCallback(
+    async (mapInstance: maplibregl.Map) => {
+      try {
+        const res = await fetch("/api/acled");
+        if (!res.ok) return;
+        const geojson: GeoJSON.FeatureCollection = await res.json();
+        if (!geojson.features) return;
+
+        acledDataRef.current = geojson;
+
+        if (mapInstance.getSource("acled")) return;
+
+        mapInstance.addSource("acled", {
+          type: "geojson",
+          data: geojson,
+          cluster: true,
+          clusterMaxZoom: 11,
+          clusterRadius: 40,
+        });
+
+        // Cluster circles — warm purple tint
+        mapInstance.addLayer({
+          id: "acled-clusters",
+          type: "circle",
+          source: "acled",
+          filter: ["has", "point_count"],
+          paint: {
+            "circle-color": [
+              "step",
+              ["get", "point_count"],
+              "#a855f7",
+              20,
+              "#9333ea",
+              100,
+              "#7e22ce",
+            ],
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              14,
+              20,
+              20,
+              100,
+              26,
+            ],
+            "circle-opacity": 0.8,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "rgba(168, 85, 247, 0.3)",
+          },
+        });
+
+        // Cluster count labels
+        mapInstance.addLayer({
+          id: "acled-cluster-count",
+          type: "symbol",
+          source: "acled",
+          filter: ["has", "point_count"],
+          layout: {
+            "text-field": "{point_count_abbreviated}",
+            "text-size": 10,
+            "text-font": ["Open Sans Bold"],
+          },
+          paint: {
+            "text-color": "#ffffff",
+          },
+        });
+
+        // Individual event points — color by event type
+        mapInstance.addLayer({
+          id: "acled-points",
+          type: "circle",
+          source: "acled",
+          filter: ["!", ["has", "point_count"]],
+          paint: {
+            "circle-color": [
+              "match",
+              ["get", "type"],
+              "Battles",
+              ACLED_EVENT_COLORS["Battles"],
+              "Explosions/Remote violence",
+              ACLED_EVENT_COLORS["Explosions/Remote violence"],
+              "Violence against civilians",
+              ACLED_EVENT_COLORS["Violence against civilians"],
+              "Strategic developments",
+              ACLED_EVENT_COLORS["Strategic developments"],
+              "Protests",
+              ACLED_EVENT_COLORS["Protests"],
+              "Riots",
+              ACLED_EVENT_COLORS["Riots"],
+              "#888",
+            ],
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["get", "fatalities"],
+              0, 4,
+              5, 6,
+              20, 9,
+              100, 13,
+            ],
+            "circle-stroke-width": 1.5,
+            "circle-stroke-color": "rgba(0,0,0,0.5)",
+            "circle-opacity": 0.85,
+          },
+        });
+
+        // Click clusters to zoom
+        mapInstance.on("click", "acled-clusters", async (e) => {
+          const features = mapInstance.queryRenderedFeatures(e.point, {
+            layers: ["acled-clusters"],
+          });
+          if (!features.length) return;
+          const clusterId = features[0].properties?.cluster_id;
+          const source = mapInstance.getSource("acled") as maplibregl.GeoJSONSource;
+          try {
+            const zoom = await source.getClusterExpansionZoom(clusterId);
+            mapInstance.easeTo({
+              center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
+              zoom,
+            });
+          } catch {
+            // ignore cluster zoom errors
+          }
+        });
+
+        // Hover tooltips for individual conflict events
+        mapInstance.on("mouseenter", "acled-points", (e) => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+          if (!e.features?.length) return;
+          const props = e.features[0].properties;
+          if (!props) return;
+          const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
+
+          const eventColor = ACLED_EVENT_COLORS[props.type] || "#888";
+          const fatalities = parseInt(props.fatalities) || 0;
+
+          acledPopupRef.current?.remove();
+          acledPopupRef.current = new maplibregl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: 10,
+            className: "acled-popup",
+          })
+            .setLngLat(coords)
+            .setHTML(
+              `<div style="font-size:12px;color:#e8e8ed;line-height:1.4;max-width:240px">
+                <strong style="color:${eventColor}">${props.type}</strong><br/>
+                <span style="color:#ccc">${props.subtype || ""}</span><br/>
+                <span style="color:#8888a0">${props.location} · ${props.date}</span>
+                ${fatalities > 0 ? `<br/><span style="color:#ef4444">⚔ ${fatalities} fatalities</span>` : ""}
+              </div>`
+            )
+            .addTo(mapInstance);
+        });
+
+        mapInstance.on("mouseleave", "acled-points", () => {
+          mapInstance.getCanvas().style.cursor = "";
+          acledPopupRef.current?.remove();
+          acledPopupRef.current = null;
+        });
+
+        // Cursor changes for clusters
+        mapInstance.on("mouseenter", "acled-clusters", () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", "acled-clusters", () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
+
+      } catch (err) {
+        console.error("Failed to load ACLED data:", err);
+      }
+    },
+    []
+  );
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -449,11 +637,13 @@ export default function MapView({
         loadUkraineBorder(map.current);
         loadTerritoryData(map.current);
         loadEquipmentData(map.current);
+        loadAcledData(map.current);
       }
     });
 
     return () => {
       popupRef.current?.remove();
+      acledPopupRef.current?.remove();
       map.current?.remove();
       map.current = null;
     };
@@ -513,7 +703,24 @@ export default function MapView({
         );
       }
     });
-  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border]);
+
+    // ACLED conflict event layers
+    const acledLayers = [
+      "acled-clusters",
+      "acled-cluster-count",
+      "acled-points",
+    ];
+
+    acledLayers.forEach((layer) => {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(
+          layer,
+          "visibility",
+          layers.conflicts ? "visible" : "none"
+        );
+      }
+    });
+  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border, layers.conflicts]);
 
   // Update territory when timeline date changes
   useEffect(() => {
@@ -556,6 +763,34 @@ export default function MapView({
     };
 
     source.setData(geojson);
+  }, [loaded, territoryDate]);
+
+  // Filter ACLED conflict events by timeline date
+  useEffect(() => {
+    if (!map.current || !loaded) return;
+    const source = map.current.getSource("acled") as maplibregl.GeoJSONSource | undefined;
+    if (!source || !acledDataRef.current) return;
+
+    // Normalize timeline date (YYYYMMDD) to YYYY-MM-DD for comparison
+    const timelineDateNorm = territoryDate
+      ? `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}-${territoryDate.slice(6, 8)}`
+      : null;
+
+    if (!timelineDateNorm) {
+      // No date filter — show all events
+      source.setData(acledDataRef.current);
+      return;
+    }
+
+    const filtered: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: acledDataRef.current.features.filter((f) => {
+        const date = f.properties?.date;
+        return date && date <= timelineDateNorm;
+      }),
+    };
+
+    source.setData(filtered);
   }, [loaded, territoryDate]);
 
   return (

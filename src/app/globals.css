@@ -153,6 +153,10 @@
   display: none;
 }
 
+.acled-popup .maplibregl-popup-close-button {
+  display: none;
+}
+
 /* Slide-in animation */
 @keyframes slide-in-from-left {
   from {

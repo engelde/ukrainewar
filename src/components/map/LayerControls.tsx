@@ -10,6 +10,7 @@ import {
   TbBorderAll,
   TbChevronDown,
   TbStack2,
+  TbFlame,
 } from "react-icons/tb";
 import type { IconType } from "react-icons";
 
@@ -52,6 +53,13 @@ const LAYER_CONFIG: {
     color: "bg-ua-blue",
     description: "National boundary highlight",
     Icon: TbBorderAll,
+  },
+  {
+    key: "conflicts",
+    label: "Conflict Events",
+    color: "bg-purple-500",
+    description: "ACLED battle & incident data",
+    Icon: TbFlame,
   },
 ];
 
