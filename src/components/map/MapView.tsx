@@ -5,6 +5,8 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MAP_CENTER, MAP_ZOOM, MAP_STYLE } from "@/lib/constants";
 import type { MapLayers, EquipmentMarker } from "@/lib/types";
+import ukraineBorder from "@/data/ukraine-border.json";
+import ukraineMask from "@/data/ukraine-mask.json";
 
 const STATUS_COLORS: Record<string, string> = {
   destroyed: "#e53e3e",
@@ -13,59 +15,159 @@ const STATUS_COLORS: Record<string, string> = {
   abandoned: "#9f7aea",
 };
 
+function findFirstSymbolLayer(mapInstance: maplibregl.Map): string | undefined {
+  const layers = mapInstance.getStyle().layers;
+  if (!layers) return undefined;
+  for (const layer of layers) {
+    if (layer.type === "symbol") return layer.id;
+  }
+  return undefined;
+}
+
 interface MapViewProps {
   layers: MapLayers;
   onMarkerClick?: (marker: EquipmentMarker) => void;
+  territoryDate?: string | null;
 }
 
-export default function MapView({ layers, onMarkerClick }: MapViewProps) {
+export default function MapView({
+  layers,
+  onMarkerClick,
+  territoryDate,
+}: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false);
   const equipmentDataRef = useRef<EquipmentMarker[]>([]);
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
-  const loadTerritoryData = useCallback(async (mapInstance: maplibregl.Map) => {
-    try {
-      const res = await fetch("/api/territory");
-      if (!res.ok) return;
-      const { geojson } = await res.json();
+  const loadUkraineBorder = useCallback((mapInstance: maplibregl.Map) => {
+    if (mapInstance.getSource("ukraine-border")) return;
 
-      if (mapInstance.getSource("territory")) return;
+    const beforeLayer = findFirstSymbolLayer(mapInstance);
 
-      mapInstance.addSource("territory", {
-        type: "geojson",
-        data: geojson,
-      });
+    // Dim mask — darkens everything outside Ukraine
+    mapInstance.addSource("ukraine-mask", {
+      type: "geojson",
+      data: ukraineMask as GeoJSON.FeatureCollection,
+    });
 
-      // Occupied territory fill
-      mapInstance.addLayer({
-        id: "territory-fill",
+    mapInstance.addLayer({
+      id: "ukraine-mask-fill",
+      type: "fill",
+      source: "ukraine-mask",
+      paint: {
+        "fill-color": "#000008",
+        "fill-opacity": 0.7,
+      },
+    });
+
+    // Ukraine border source
+    mapInstance.addSource("ukraine-border", {
+      type: "geojson",
+      data: ukraineBorder as GeoJSON.FeatureCollection,
+    });
+
+    // Subtle inner fill — makes Ukraine slightly brighter than surroundings
+    mapInstance.addLayer(
+      {
+        id: "ukraine-inner-glow",
         type: "fill",
-        source: "territory",
+        source: "ukraine-border",
         paint: {
-          "fill-color": "#c53030",
-          "fill-opacity": 0.3,
+          "fill-color": "#1a2a3a",
+          "fill-opacity": 0.15,
         },
-      });
+      },
+      beforeLayer
+    );
 
-      // Frontline border
-      mapInstance.addLayer({
-        id: "territory-line",
+    // Wide outer glow
+    mapInstance.addLayer(
+      {
+        id: "ukraine-border-glow",
         type: "line",
-        source: "territory",
+        source: "ukraine-border",
         paint: {
-          "line-color": "#ff4444",
+          "line-color": "#4a9ad4",
+          "line-width": 12,
+          "line-opacity": 0.25,
+          "line-blur": 8,
+        },
+      },
+      beforeLayer
+    );
+
+    // Main border line
+    mapInstance.addLayer(
+      {
+        id: "ukraine-border-line",
+        type: "line",
+        source: "ukraine-border",
+        paint: {
+          "line-color": "#7bbde8",
           "line-width": 2.5,
           "line-opacity": 0.85,
-          "line-dasharray": [3, 2],
         },
-      });
-
-    } catch (err) {
-      console.error("Failed to load territory data:", err);
-    }
+      },
+      beforeLayer
+    );
   }, []);
+
+  const loadTerritoryData = useCallback(
+    async (mapInstance: maplibregl.Map) => {
+      try {
+        const url = territoryDate
+          ? `/api/territory/${territoryDate}`
+          : "/api/territory";
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const { geojson } = await res.json();
+
+        const source = mapInstance.getSource(
+          "territory"
+        ) as maplibregl.GeoJSONSource | undefined;
+
+        if (source) {
+          // Update existing source data (for timeline scrubbing)
+          source.setData(geojson);
+          return;
+        }
+
+        mapInstance.addSource("territory", {
+          type: "geojson",
+          data: geojson,
+        });
+
+        // Occupied territory fill
+        mapInstance.addLayer({
+          id: "territory-fill",
+          type: "fill",
+          source: "territory",
+          paint: {
+            "fill-color": "#c53030",
+            "fill-opacity": 0.3,
+          },
+        });
+
+        // Frontline border
+        mapInstance.addLayer({
+          id: "territory-line",
+          type: "line",
+          source: "territory",
+          paint: {
+            "line-color": "#ff4444",
+            "line-width": 2.5,
+            "line-opacity": 0.85,
+            "line-dasharray": [3, 2],
+          },
+        });
+      } catch (err) {
+        console.error("Failed to load territory data:", err);
+      }
+    },
+    [territoryDate]
+  );
 
   const loadEquipmentData = useCallback(
     async (mapInstance: maplibregl.Map) => {
@@ -334,6 +436,7 @@ export default function MapView({ layers, onMarkerClick }: MapViewProps) {
     map.current.on("load", () => {
       setLoaded(true);
       if (map.current) {
+        loadUkraineBorder(map.current);
         loadTerritoryData(map.current);
         loadEquipmentData(map.current);
       }
@@ -377,6 +480,12 @@ export default function MapView({ layers, onMarkerClick }: MapViewProps) {
       }
     });
   }, [loaded, layers.territory, layers.equipment]);
+
+  // Update territory when timeline date changes
+  useEffect(() => {
+    if (!map.current || !loaded || !territoryDate) return;
+    loadTerritoryData(map.current);
+  }, [loaded, territoryDate, loadTerritoryData]);
 
   return (
     <>

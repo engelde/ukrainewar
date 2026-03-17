@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AnimatedCounter from "./AnimatedCounter";
+import Sparkline from "./Sparkline";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,12 @@ interface StatsEntry {
   daily: number;
   total: number;
   icon: string;
+  trendKey: string;
+}
+
+interface TrendData {
+  totalTrend: { date: string; count: number }[];
+  typeTrends: Record<string, { date: string; count: number }[]>;
 }
 
 function mapCasualtyData(data: CasualtyData): StatsEntry[] {
@@ -21,6 +28,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.militaryPersonnel[0],
       total: data.militaryPersonnel[1],
       icon: "👤",
+      trendKey: "_total",
     },
     {
       key: "tanks",
@@ -28,6 +36,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.tank[0],
       total: data.tank[1],
       icon: "🛡",
+      trendKey: "tanks",
     },
     {
       key: "ifv",
@@ -35,6 +44,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.armoredCombatVehicle[0],
       total: data.armoredCombatVehicle[1],
       icon: "🚛",
+      trendKey: "ifv",
     },
     {
       key: "artillery",
@@ -42,6 +52,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.artillerySystem[0],
       total: data.artillerySystem[1],
       icon: "💥",
+      trendKey: "artillery",
     },
     {
       key: "mlrs",
@@ -49,6 +60,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.mlrs[0],
       total: data.mlrs[1],
       icon: "🚀",
+      trendKey: "mlrs",
     },
     {
       key: "uav",
@@ -56,6 +68,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.uav[0],
       total: data.uav[1],
       icon: "✈",
+      trendKey: "uav",
     },
     {
       key: "airDefense",
@@ -63,6 +76,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.airDefenceSystem[0],
       total: data.airDefenceSystem[1],
       icon: "🎯",
+      trendKey: "airDefense",
     },
     {
       key: "jets",
@@ -70,6 +84,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.jet[0],
       total: data.jet[1],
       icon: "✈",
+      trendKey: "jets",
     },
     {
       key: "helicopters",
@@ -77,6 +92,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.copter[0],
       total: data.copter[1],
       icon: "🚁",
+      trendKey: "helicopters",
     },
     {
       key: "vehicles",
@@ -84,6 +100,7 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.supplyVehicle[0],
       total: data.supplyVehicle[1],
       icon: "🚚",
+      trendKey: "vehicles",
     },
     {
       key: "ships",
@@ -91,9 +108,24 @@ function mapCasualtyData(data: CasualtyData): StatsEntry[] {
       daily: data.ship[0],
       total: data.ship[1],
       icon: "🚢",
+      trendKey: "ships",
     },
   ];
 }
+
+const TREND_COLORS: Record<string, string> = {
+  _total: "#e53e3e",
+  tanks: "#e53e3e",
+  ifv: "#ed8936",
+  artillery: "#ed8936",
+  mlrs: "#d69e2e",
+  uav: "#3d8fd6",
+  airDefense: "#9f7aea",
+  jets: "#3d8fd6",
+  helicopters: "#3d8fd6",
+  vehicles: "#48bb78",
+  ships: "#4a90d9",
+};
 
 interface StatsOverlayProps {
   data: CasualtyData;
@@ -101,8 +133,44 @@ interface StatsOverlayProps {
 
 export default function StatsOverlay({ data }: StatsOverlayProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
   const stats = mapCasualtyData(data);
   const warDay = data.day;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTrend() {
+      try {
+        const res = await fetch("/api/losses/trend");
+        if (res.ok && !cancelled) {
+          const json = await res.json();
+          setTrendData(json);
+        }
+      } catch {
+        // Silently fail — sparklines are supplementary
+      }
+    }
+    loadTrend();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getTrendValues = (trendKey: string): number[] => {
+    if (!trendData) return [];
+    if (trendKey === "_total") {
+      return trendData.totalTrend.map((d) => d.count);
+    }
+    const trend = trendData.typeTrends[trendKey];
+    if (!trend) return [];
+    return trend.map((d) => d.count);
+  };
+
+  const getTrendDates = (): string[] => {
+    if (!trendData) return [];
+    return trendData.totalTrend.map((d) => d.date);
+  };
 
   return (
     <div
@@ -160,30 +228,79 @@ export default function StatsOverlay({ data }: StatsOverlayProps) {
             "overflow-hidden"
           )}
         >
-          {stats.map((stat) => (
-            <div
-              key={stat.key}
-              className={cn(
-                "group flex items-center gap-2 px-3 py-1.5",
-                "border-b border-border/30 last:border-b-0",
-                "hover:bg-surface-elevated/50 transition-colors cursor-default"
-              )}
-            >
-              <span className="w-5 text-center text-sm">{stat.icon}</span>
-              <span className="min-w-[85px] text-xs text-muted-foreground sm:min-w-[100px]">
-                {stat.label}
-              </span>
-              <AnimatedCounter
-                value={stat.total}
-                className="ml-auto text-sm font-bold text-foreground"
-              />
-              {stat.daily > 0 && (
-                <span className="text-[10px] font-medium text-destruction">
-                  +{stat.daily.toLocaleString()}
-                </span>
-              )}
-            </div>
-          ))}
+          {stats.map((stat) => {
+            const isExpanded = expandedKey === stat.key;
+            const trendValues = getTrendValues(stat.trendKey);
+            const hasTrend = trendValues.length > 2;
+            const dates = getTrendDates();
+
+            return (
+              <div key={stat.key}>
+                <button
+                  onClick={() =>
+                    setExpandedKey(isExpanded ? null : stat.key)
+                  }
+                  className={cn(
+                    "group flex w-full items-center gap-2 px-3 py-1.5",
+                    "border-b border-border/30 last:border-b-0",
+                    "hover:bg-surface-elevated/50 transition-colors",
+                    isExpanded && "bg-surface-elevated/30"
+                  )}
+                >
+                  <span className="w-5 text-center text-sm">{stat.icon}</span>
+                  <span className="min-w-[85px] text-left text-xs text-muted-foreground sm:min-w-[100px]">
+                    {stat.label}
+                  </span>
+                  <AnimatedCounter
+                    value={stat.total}
+                    className="ml-auto text-sm font-bold text-foreground"
+                  />
+                  {stat.daily > 0 && (
+                    <span className="text-[10px] font-medium text-destruction">
+                      +{stat.daily.toLocaleString()}
+                    </span>
+                  )}
+                </button>
+                {/* Expanded sparkline */}
+                {isExpanded && (
+                  <div
+                    className={cn(
+                      "border-b border-border/30 bg-surface/40 px-3 py-2",
+                      "animate-in slide-in-from-top-2 fade-in duration-200"
+                    )}
+                  >
+                    {hasTrend ? (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">
+                            Confirmed losses · last {dates.length} days
+                          </span>
+                          <span className="text-[10px] font-medium" style={{ color: TREND_COLORS[stat.trendKey] || "#3d8fd6" }}>
+                            {trendValues.reduce((a, b) => a + b, 0)} total
+                          </span>
+                        </div>
+                        <Sparkline
+                          data={trendValues}
+                          width={200}
+                          height={32}
+                          color={TREND_COLORS[stat.trendKey] || "#3d8fd6"}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                          <span>{dates[0]?.slice(5)}</span>
+                          <span>{dates[dates.length - 1]?.slice(5)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">
+                        No trend data available
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

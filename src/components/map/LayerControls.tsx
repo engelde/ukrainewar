@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 interface LayerControlsProps {
   layers: MapLayers;
   onToggle: (layer: keyof MapLayers) => void;
+  onOpenTimeline: () => void;
+  timelineOpen: boolean;
 }
 
 const LAYER_CONFIG: {
@@ -37,6 +39,8 @@ const LAYER_CONFIG: {
 export default function LayerControls({
   layers,
   onToggle,
+  onOpenTimeline,
+  timelineOpen,
 }: LayerControlsProps) {
   return (
     <div
@@ -100,6 +104,48 @@ export default function LayerControls({
           </div>
         </button>
       ))}
+
+      {/* Timeline toggle */}
+      <button
+        onClick={onOpenTimeline}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2",
+          "border-t border-border/30",
+          "hover:bg-surface-elevated/50 transition-colors",
+          "text-left",
+          timelineOpen && "bg-ua-blue/10"
+        )}
+      >
+        <svg
+          className={cn(
+            "h-4 w-4",
+            timelineOpen ? "text-ua-blue" : "text-muted-foreground"
+          )}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div className="flex flex-col">
+          <span
+            className={cn(
+              "text-xs",
+              timelineOpen ? "text-ua-blue" : "text-foreground"
+            )}
+          >
+            Timeline
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            Animate frontline changes
+          </span>
+        </div>
+      </button>
     </div>
   );
 }

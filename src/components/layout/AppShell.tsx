@@ -7,6 +7,7 @@ import StatsOverlay from "@/components/stats/StatsOverlay";
 import Header, { Footer } from "@/components/layout/Header";
 import LayerControls from "@/components/map/LayerControls";
 import DetailPanel from "@/components/map/DetailPanel";
+import TimelineScrubber from "@/components/map/TimelineScrubber";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -35,6 +36,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     null
   );
 
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [territoryDate, setTerritoryDate] = useState<string | null>(null);
+
   const handleToggleLayer = useCallback((layer: keyof MapLayers) => {
     setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
   }, []);
@@ -47,14 +51,42 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSelectedMarker(null);
   }, []);
 
+  const handleTimelineDateChange = useCallback((date: string) => {
+    setTerritoryDate(date);
+  }, []);
+
+  const handleTimelineClose = useCallback(() => {
+    setTimelineOpen(false);
+    setTerritoryDate(null); // Reset to latest
+  }, []);
+
+  const handleTimelineOpen = useCallback(() => {
+    setTimelineOpen(true);
+  }, []);
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
-      <MapView layers={layers} onMarkerClick={handleMarkerClick} />
+      <MapView
+        layers={layers}
+        onMarkerClick={handleMarkerClick}
+        territoryDate={territoryDate}
+      />
       <Header />
       {casualtyData && <StatsOverlay data={casualtyData} />}
-      <LayerControls layers={layers} onToggle={handleToggleLayer} />
+      <LayerControls
+        layers={layers}
+        onToggle={handleToggleLayer}
+        onOpenTimeline={handleTimelineOpen}
+        timelineOpen={timelineOpen}
+      />
       {selectedMarker && (
         <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
+      )}
+      {timelineOpen && (
+        <TimelineScrubber
+          onDateChange={handleTimelineDateChange}
+          onClose={handleTimelineClose}
+        />
       )}
       <Footer />
     </main>
