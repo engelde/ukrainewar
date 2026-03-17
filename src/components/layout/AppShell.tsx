@@ -232,46 +232,46 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         </DraggablePanel>
       )}
 
-      {/* Collapsed panels dock — fixed stack, not draggable */}
-      {(statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed) && (
-        <div className="fixed left-4 bottom-[70px] z-30 flex flex-col gap-1.5 sm:left-6">
-          {statsCollapsed && displayData && (
-            <StatsOverlay
-              data={displayData}
-              isHistorical={isViewingPast && !!historicalData}
-              collapsed={true}
-              onExpand={() => setStatsCollapsed(false)}
-            />
-          )}
-          {!humanitarianOpen && (
-            <HumanitarianPanel
-              isOpen={false}
-              onToggle={handleToggleHumanitarian}
-              timelineDate={territoryDate ?? undefined}
-            />
-          )}
-          {!spendingOpen && (
-            <SpendingPanel
-              isOpen={false}
-              onToggle={handleToggleSpending}
-              timelineDate={territoryDate ?? undefined}
-            />
-          )}
-          {layersCollapsed && (
-            <LayerControls
-              layers={layers}
-              onToggle={handleToggleLayer}
-              collapsed={true}
-              onExpand={() => setLayersCollapsed(false)}
-            />
-          )}
-        </div>
-      )}
-
       <TimelineScrubber
         key={timelineKey}
         onDateChange={handleTimelineDateChange}
         initialDate={urlDate}
+        dockSlot={
+          (statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed) ? (
+            <>
+              {statsCollapsed && displayData && (
+                <StatsOverlay
+                  data={displayData}
+                  isHistorical={isViewingPast && !!historicalData}
+                  collapsed={true}
+                  onExpand={() => setStatsCollapsed(false)}
+                />
+              )}
+              {!humanitarianOpen && (
+                <HumanitarianPanel
+                  isOpen={false}
+                  onToggle={handleToggleHumanitarian}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {!spendingOpen && (
+                <SpendingPanel
+                  isOpen={false}
+                  onToggle={handleToggleSpending}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {layersCollapsed && (
+                <LayerControls
+                  layers={layers}
+                  onToggle={handleToggleLayer}
+                  collapsed={true}
+                  onExpand={() => setLayersCollapsed(false)}
+                />
+              )}
+            </>
+          ) : undefined
+        }
       />
 
       <Footer />

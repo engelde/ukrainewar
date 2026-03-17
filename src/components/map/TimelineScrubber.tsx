@@ -7,7 +7,6 @@ import {
   TbPlayerPauseFilled,
   TbChevronLeft,
   TbChevronRight,
-  TbChevronDown,
   TbInfoCircle,
   TbPlayerSkipBackFilled,
   TbPlayerSkipForwardFilled,
@@ -17,6 +16,7 @@ import {
 interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
   initialDate?: string | null;
+  dockSlot?: React.ReactNode;
 }
 
 // Key events in the war for timeline markers
@@ -109,6 +109,7 @@ const YEAR_MARKS = ["2022", "2023", "2024", "2025", "2026"];
 export default function TimelineScrubber({
   onDateChange,
   initialDate,
+  dockSlot,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -120,7 +121,6 @@ export default function TimelineScrubber({
     return generateDateRange().length - 1;
   });
   const [isPlaying, setIsPlaying] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(1); // default 1× (400ms)
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -325,7 +325,6 @@ export default function TimelineScrubber({
 
   // Auto-scroll to keep playhead visible
   useEffect(() => {
-    if (collapsed) return;
     const container = scrollContainerRef.current;
     if (!container) return;
 
@@ -350,7 +349,7 @@ export default function TimelineScrubber({
         });
       }
     }
-  }, [currentIndex, collapsed, isPlaying]);
+  }, [currentIndex, isPlaying]);
 
   if (dates.length === 0) return null;
 
@@ -412,66 +411,47 @@ export default function TimelineScrubber({
   return (
     <div
       className={cn(
-        "fixed bottom-0 z-30",
-        collapsed
-          ? "left-0 px-4 pb-1.5 sm:px-6 sm:pb-2"
-          : "left-0 right-0 px-4 pb-1.5 sm:px-6 sm:pb-2"
+        "fixed bottom-0 left-0 right-0 z-30",
+        "px-4 pb-1.5 sm:px-6 sm:pb-2",
+        "flex flex-col items-start pointer-events-none"
       )}
     >
+      {/* Collapsed panels dock slot */}
+      {dockSlot && (
+        <div className="flex flex-col gap-1.5 mb-1.5 pointer-events-auto">
+          {dockSlot}
+        </div>
+      )}
+
+      {/* Timeline panel — always expanded */}
       <div
         className={cn(
-          "rounded-lg",
-          "transition-all duration-300",
-          collapsed
-            ? ""
-            : "bg-background/90 backdrop-blur-xl border border-border/50 shadow-[0_-4px_20px_rgba(0,0,0,0.4)]"
+          "w-full rounded-lg pointer-events-auto",
+          "bg-background/90 backdrop-blur-xl",
+          "border border-border/50",
+          "shadow-[0_-4px_20px_rgba(0,0,0,0.4)]",
+          "transition-all duration-300"
         )}
       >
-        {/* Collapsed state — compact bar like other panels */}
-        {collapsed && (
-          <div
-            className={cn(
-              "flex items-center rounded-lg",
-              "bg-background/80 backdrop-blur-xl",
-              "border border-border/50",
-              "overflow-hidden"
-            )}
-          >
-            <div className="flex items-center gap-2 px-3 py-2 flex-1">
-              <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
-                Timeline
-              </span>
+        {/* Event info card — shown when near key events */}
+        {activeEvent && (
+          <div className="mx-3 mt-2.5 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-4 py-2.5 flex items-start gap-2.5">
+            <TbInfoCircle className="h-4 w-4 text-ua-blue mt-0.5 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-[13px] font-semibold text-ua-blue">
+                  {activeEvent.label}
+                </span>
+                <span className="text-[11px] text-muted-foreground font-mono">
+                  {formatDateShort(activeEvent.date)}
+                </span>
+              </div>
+              <p className="text-[12px] text-foreground/80 mt-1 leading-relaxed">
+                {activeEvent.description}
+              </p>
             </div>
-            <button
-              onClick={() => setCollapsed(false)}
-              className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <TbChevronDown className="h-3 w-3 rotate-180" />
-            </button>
           </div>
         )}
-
-        {/* Expanded state */}
-        {!collapsed && (
-          <>
-            {/* Event info card — shown when near key events */}
-            {activeEvent && (
-              <div className="mx-3 mt-2 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-3 py-2 flex items-start gap-2">
-                <TbInfoCircle className="h-3.5 w-3.5 text-ua-blue mt-0.5 flex-shrink-0" />
-                <div className="min-w-0">
-                  <span className="text-[11px] font-semibold text-ua-blue">
-                    {activeEvent.label}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground ml-1.5">
-                    {formatDateShort(activeEvent.date)}
-                  </span>
-                  <p className="text-[10px] text-foreground/80 mt-0.5 leading-snug">
-                    {activeEvent.description}
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Controls row */}
             <div className="flex items-center gap-2.5 px-4 pt-3 sm:gap-3">
@@ -581,16 +561,6 @@ export default function TimelineScrubber({
                   </button>
                 ))}
               </div>
-
-              <div className="flex-1" />
-
-              {/* Collapse button */}
-              <button
-                onClick={() => setCollapsed(true)}
-                className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <TbChevronDown className="h-4 w-4" />
-              </button>
             </div>
 
             {/* Scrollable timeline */}
@@ -689,7 +659,7 @@ export default function TimelineScrubber({
                               handleJumpToEvent(labelInfo.date);
                             }}
                             className={cn(
-                              "text-[10px] whitespace-nowrap leading-none mt-0.5",
+                              "text-[12px] whitespace-nowrap leading-none mt-0.5",
                               "transition-colors",
                               isLabelActive
                                 ? "text-ua-yellow font-semibold"
@@ -706,8 +676,6 @@ export default function TimelineScrubber({
               </div>
             </div>
 
-          </>
-        )}
       </div>
     </div>
   );
