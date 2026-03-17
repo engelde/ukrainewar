@@ -13,6 +13,7 @@ import {
   TbTimeline,
 } from "react-icons/tb";
 import { KEY_EVENTS } from "@/data/events";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
@@ -634,21 +635,39 @@ export default function TimelineScrubber({
 
                 {/* Event marker dots */}
                 {eventPositionsPx.map((event) => (
-                  <button
-                    key={event.date}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleJumpToEvent(event.date);
-                    }}
-                    className={cn(
-                      "absolute top-1.5 -translate-x-1/2 rounded-full transition-all z-10",
-                      activeEvent?.date === event.date
-                        ? "w-2 h-3 bg-ua-yellow"
-                        : "w-1.5 h-2.5 bg-ua-yellow/50 hover:bg-ua-yellow hover:h-3"
-                    )}
-                    style={{ left: `${event.px}px` }}
-                    title={`${event.label}: ${event.description} (${formatDateShort(event.date)})`}
-                  />
+                  <Tooltip key={event.date}>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJumpToEvent(event.date);
+                          }}
+                          className={cn(
+                            "absolute top-1.5 -translate-x-1/2 rounded-full transition-all z-10",
+                            activeEvent?.date === event.date
+                              ? "w-2 h-3 bg-ua-yellow"
+                              : "w-1.5 h-2.5 bg-ua-yellow/50 hover:bg-ua-yellow hover:h-3"
+                          )}
+                          style={{ left: `${event.px}px` }}
+                        />
+                      }
+                    />
+                    <TooltipContent
+                      side="top"
+                      className="max-w-[280px] bg-background/95 backdrop-blur-lg border border-border/60 text-foreground px-3 py-2"
+                    >
+                      <p className="text-[11px] font-semibold text-ua-yellow mb-0.5">
+                        {event.label}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground leading-snug">
+                        {event.description}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground/60 mt-1">
+                        {formatDateShort(event.date)}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 ))}
 
                 {/* Playhead (current date indicator) */}

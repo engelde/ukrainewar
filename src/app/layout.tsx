@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, DM_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -139,7 +140,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmMono.variable} antialiased overflow-hidden`}
       >
-        <NuqsAdapter>{children}</NuqsAdapter>
+        <NuqsAdapter><TooltipProvider>{children}</TooltipProvider></NuqsAdapter>
       </body>
     </html>
   );

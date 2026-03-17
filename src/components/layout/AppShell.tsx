@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useQueryState, parseAsString } from "nuqs";
-import { cn } from "@/lib/utils";
 import type { CasualtyData, MapLayers, EquipmentMarker } from "@/lib/types";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import Header, { Footer } from "@/components/layout/Header";
@@ -16,6 +15,7 @@ import EventSidebar from "@/components/layout/EventSidebar";
 import { MAJOR_BATTLES } from "@/data/battles";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import ResetButton from "@/components/layout/ResetButton";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -34,7 +34,6 @@ interface AppShellProps {
 }
 
 export default function AppShell({ casualtyData }: AppShellProps) {
-  // URL state — timeline date persisted in query string
   const [urlDate, setUrlDate] = useQueryState("t", parseAsString.withOptions({ shallow: true, throttleMs: 500 }));
 
   const [layers, setLayers] = useState<MapLayers>({
@@ -47,10 +46,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     battles: true,
   });
 
-  const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(
-    null
-  );
-
+  const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
   const [spendingOpen, setSpendingOpen] = useState(true);
@@ -58,9 +54,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
-  const [eventSidebarOpen, setEventSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Historical casualty data for timeline scrubbing
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
   const fetchControllerRef = useRef<AbortController | null>(null);
   const lastFetchedDate = useRef<string | null>(null);
@@ -79,7 +74,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const handleTimelineDateChange = useCallback((date: string) => {
     setTerritoryDate(date);
-    // Sync to URL — use today's date as sentinel to clear param
     const today = new Date();
     const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
     if (date >= todayStr) {
@@ -89,34 +83,26 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     }
   }, [setUrlDate]);
 
-  // Fetch historical loss data when timeline date changes
   useEffect(() => {
-    // Abort previous request
     if (fetchControllerRef.current) {
       fetchControllerRef.current.abort();
     }
-
     if (!territoryDate) {
       lastFetchedDate.current = null;
       return;
     }
-
-    // Check if we're on the latest date (today) — use live data
     const today = new Date();
     const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
     if (territoryDate >= todayStr) {
       lastFetchedDate.current = null;
       return;
     }
-
-    // Skip if we already fetched this exact date
     if (lastFetchedDate.current === territoryDate) return;
 
     const controller = new AbortController();
     fetchControllerRef.current = controller;
     const dateToFetch = territoryDate;
 
-    // Short debounce to batch rapid updates during playback
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/casualties/history?date=${dateToFetch}`, {
@@ -128,7 +114,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           setHistoricalData(data);
         }
       } catch {
-        // Aborted or failed — ignore
+        // Aborted or failed
       }
     }, 30);
 
@@ -145,15 +131,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSpendingOpen((prev) => !prev);
   }, []);
 
-  const handleToggleEventSidebar = useCallback(() => {
-    setEventSidebarOpen((prev) => !prev);
-  }, []);
-
   const handleEventClick = useCallback((date: string) => {
     handleTimelineDateChange(date);
   }, [handleTimelineDateChange]);
 
-  // Reset everything to defaults
   const handleReset = useCallback(() => {
     setTerritoryDate(null);
     setUrlDate(null);
@@ -164,7 +145,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setStatsCollapsed(false);
     setLayersCollapsed(false);
     setTimelineKey(prev => prev + 1);
-    setEventSidebarOpen(false);
+    setSidebarOpen(false);
     setLayers({
       territory: true,
       equipment: true,
@@ -176,15 +157,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     });
   }, [setUrlDate]);
 
-  // Use historical data when timeline is scrubbed to a past date
-  // Keep showing last historical data during playback to avoid flashing
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
   const isViewingPast = !!territoryDate && territoryDate < todayStr;
   const displayData = isViewingPast ? (historicalData ?? casualtyData) : casualtyData;
 
   const warDay = (() => {
-    const start = new Date(2022, 1, 24); // Feb 24, 2022
+    const start = new Date(2022, 1, 24);
     const current = territoryDate
       ? new Date(parseInt(territoryDate.slice(0, 4)), parseInt(territoryDate.slice(4, 6)) - 1, parseInt(territoryDate.slice(6, 8)))
       : new Date();
@@ -192,19 +171,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   })();
 
   return (
-    <>
+    <SidebarProvider defaultOpen={false} open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <EventSidebar
-        isOpen={eventSidebarOpen}
-        onClose={() => setEventSidebarOpen(false)}
         onEventClick={handleEventClick}
         currentDate={territoryDate}
       />
-      <main
-        className={cn(
-          "relative h-screen overflow-hidden transition-all duration-300 ease-in-out",
-          eventSidebarOpen ? "sm:ml-96 sm:w-[calc(100vw-24rem)] w-screen" : "w-screen ml-0"
-        )}
-      >
+      <SidebarInset className="relative h-screen overflow-hidden">
         <MapView
           layers={layers}
           onMarkerClick={handleMarkerClick}
@@ -212,99 +184,95 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           battles={MAJOR_BATTLES}
           flyTo={flyToTarget}
         />
-        <Header
-          onToggleEvents={handleToggleEventSidebar}
-          eventsOpen={eventSidebarOpen}
-        />
+        <Header />
         <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
 
-      {/* Expanded panels — draggable */}
-      {displayData && !statsCollapsed && (
-        <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
-          <StatsOverlay
-            data={displayData}
-            isHistorical={isViewingPast && !!historicalData}
-            collapsed={false}
-            onCollapse={() => setStatsCollapsed(true)}
-          />
-        </DraggablePanel>
-      )}
-      {!layersCollapsed && (
-        <DraggablePanel className="fixed left-4 bottom-[155px] z-30 sm:left-6 sm:bottom-[240px]">
-          <LayerControls
-            layers={layers}
-            onToggle={handleToggleLayer}
-            collapsed={false}
-            onCollapse={() => setLayersCollapsed(true)}
-          />
-        </DraggablePanel>
-      )}
-      {selectedMarker && (
-        <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
-      )}
-      {humanitarianOpen && (
-        <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
-          <HumanitarianPanel
-            isOpen={true}
-            onToggle={handleToggleHumanitarian}
-            timelineDate={territoryDate ?? undefined}
-          />
-        </DraggablePanel>
-      )}
-      {spendingOpen && (
-        <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[303px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
-          <SpendingPanel
-            isOpen={true}
-            onToggle={handleToggleSpending}
-            timelineDate={territoryDate ?? undefined}
-          />
-        </DraggablePanel>
-      )}
+        {displayData && !statsCollapsed && (
+          <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+            <StatsOverlay
+              data={displayData}
+              isHistorical={isViewingPast && !!historicalData}
+              collapsed={false}
+              onCollapse={() => setStatsCollapsed(true)}
+            />
+          </DraggablePanel>
+        )}
+        {!layersCollapsed && (
+          <DraggablePanel className="fixed left-4 bottom-[155px] z-30 sm:left-6 sm:bottom-[240px]">
+            <LayerControls
+              layers={layers}
+              onToggle={handleToggleLayer}
+              collapsed={false}
+              onCollapse={() => setLayersCollapsed(true)}
+            />
+          </DraggablePanel>
+        )}
+        {selectedMarker && (
+          <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />
+        )}
+        {humanitarianOpen && (
+          <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+            <HumanitarianPanel
+              isOpen={true}
+              onToggle={handleToggleHumanitarian}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
+        {spendingOpen && (
+          <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[303px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+            <SpendingPanel
+              isOpen={true}
+              onToggle={handleToggleSpending}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
 
-      <TimelineScrubber
-        key={timelineKey}
-        onDateChange={handleTimelineDateChange}
-        initialDate={urlDate}
-        dockSlot={
-          (statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed) ? (
-            <>
-              {statsCollapsed && displayData && (
-                <StatsOverlay
-                  data={displayData}
-                  isHistorical={isViewingPast && !!historicalData}
-                  collapsed={true}
-                  onExpand={() => setStatsCollapsed(false)}
-                />
-              )}
-              {!humanitarianOpen && (
-                <HumanitarianPanel
-                  isOpen={false}
-                  onToggle={handleToggleHumanitarian}
-                  timelineDate={territoryDate ?? undefined}
-                />
-              )}
-              {!spendingOpen && (
-                <SpendingPanel
-                  isOpen={false}
-                  onToggle={handleToggleSpending}
-                  timelineDate={territoryDate ?? undefined}
-                />
-              )}
-              {layersCollapsed && (
-                <LayerControls
-                  layers={layers}
-                  onToggle={handleToggleLayer}
-                  collapsed={true}
-                  onExpand={() => setLayersCollapsed(false)}
-                />
-              )}
-            </>
-          ) : undefined
-        }
-      />
+        <TimelineScrubber
+          key={timelineKey}
+          onDateChange={handleTimelineDateChange}
+          initialDate={urlDate}
+          dockSlot={
+            (statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed) ? (
+              <>
+                {statsCollapsed && displayData && (
+                  <StatsOverlay
+                    data={displayData}
+                    isHistorical={isViewingPast && !!historicalData}
+                    collapsed={true}
+                    onExpand={() => setStatsCollapsed(false)}
+                  />
+                )}
+                {!humanitarianOpen && (
+                  <HumanitarianPanel
+                    isOpen={false}
+                    onToggle={handleToggleHumanitarian}
+                    timelineDate={territoryDate ?? undefined}
+                  />
+                )}
+                {!spendingOpen && (
+                  <SpendingPanel
+                    isOpen={false}
+                    onToggle={handleToggleSpending}
+                    timelineDate={territoryDate ?? undefined}
+                  />
+                )}
+                {layersCollapsed && (
+                  <LayerControls
+                    layers={layers}
+                    onToggle={handleToggleLayer}
+                    collapsed={true}
+                    onExpand={() => setLayersCollapsed(false)}
+                  />
+                )}
+              </>
+            ) : undefined
+          }
+        />
 
-      <Footer />
-      </main>
-    </>
+        <Footer />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
