@@ -48,5 +48,12 @@
     "typescript": "^5",
     "wrangler": "^4.74.0",
     "xlsx": "^0.18.5"
-  }
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "David Engel (https://github.com/engelde)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/engelde/ukrainewar.git"
+  },
+  "homepage": "https://ukrainewar.app"
 }
