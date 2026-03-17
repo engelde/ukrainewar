@@ -7,7 +7,7 @@ import Sparkline from "./Sparkline";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { GiTank, GiRocket, GiHelicopter, GiBattleship } from "react-icons/gi";
-import { TbUsers, TbBomb, TbDrone, TbRadar, TbPlane, TbTruck, TbShieldChevron } from "react-icons/tb";
+import { TbUsers, TbBomb, TbDrone, TbRadar, TbPlane, TbTruck, TbShieldChevron, TbChevronDown } from "react-icons/tb";
 
 interface StatsEntry {
   key: string;
@@ -184,62 +184,97 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
         collapsed && "w-auto"
       )}
     >
-      {/* Header — also serves as drag handle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className={cn(
-          "drag-handle flex items-center gap-2 rounded-t-lg px-3 py-2 cursor-grab active:cursor-grabbing",
-          "bg-background/80 backdrop-blur-xl",
-          "border border-b-0 border-border/50",
-          "text-xs font-semibold uppercase tracking-wider",
-          isHistorical ? "text-ua-yellow" : "text-ua-blue",
-          "hover:bg-background/90 transition-colors",
-          collapsed && "rounded-b-lg border-b"
-        )}
-      >
-        {!isHistorical && (
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
-          </span>
-        )}
-        {isHistorical && (
-          <span className="relative flex h-2 w-2">
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
-          </span>
-        )}
-        <span>Russian Losses</span>
-        <span className="ml-auto text-muted-foreground">
-          Day {warDay}
-        </span>
-        <svg
-          className={cn(
-            "h-3 w-3 text-muted-foreground transition-transform",
-            collapsed && "rotate-180"
-          )}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-
-      {/* Stats list */}
-      {!collapsed && (
+      {/* Collapsed state — compact bar with expand indicator */}
+      {collapsed && (
         <div
           className={cn(
-            "flex flex-col rounded-b-lg",
+            "flex items-center rounded-lg",
             "bg-background/80 backdrop-blur-xl",
-            "border border-t-0 border-border/50",
+            "border border-border/50",
             "overflow-hidden"
           )}
         >
+          <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
+            {!isHistorical && (
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
+              </span>
+            )}
+            {isHistorical && (
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
+              </span>
+            )}
+            <span className={cn(
+              "text-[10px] font-semibold uppercase tracking-wider",
+              isHistorical ? "text-ua-yellow" : "text-ua-blue"
+            )}>
+              Russian Losses
+            </span>
+            <span className="text-[10px] text-muted-foreground ml-auto">
+              Day {warDay}
+            </span>
+          </div>
+          <button
+            onClick={() => setCollapsed(false)}
+            className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <TbChevronDown className="h-3 w-3 rotate-180" />
+          </button>
+        </div>
+      )}
+
+      {/* Expanded state */}
+      {!collapsed && (
+        <>
+          {/* Header — drag handle with separate collapse button */}
+          <div
+            className={cn(
+              "flex items-center rounded-t-lg",
+              "bg-background/80 backdrop-blur-xl",
+              "border border-b-0 border-border/50",
+              "overflow-hidden"
+            )}
+          >
+            <div className={cn(
+              "drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1",
+              "text-xs font-semibold uppercase tracking-wider",
+              isHistorical ? "text-ua-yellow" : "text-ua-blue"
+            )}>
+              {!isHistorical && (
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
+                </span>
+              )}
+              {isHistorical && (
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
+                </span>
+              )}
+              <span>Russian Losses</span>
+              <span className="ml-auto text-muted-foreground">
+                Day {warDay}
+              </span>
+            </div>
+            <button
+              onClick={() => setCollapsed(true)}
+              className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <TbChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Stats list */}
+          <div
+            className={cn(
+              "flex flex-col rounded-b-lg",
+              "bg-background/80 backdrop-blur-xl",
+              "border border-t-0 border-border/50",
+              "overflow-hidden"
+            )}
+          >
           {stats.map((stat) => {
             const isExpanded = expandedKey === stat.key;
             const trendValues = getTrendValues(stat.trendKey);
@@ -316,6 +351,7 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

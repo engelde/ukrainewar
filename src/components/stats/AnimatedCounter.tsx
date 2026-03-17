@@ -14,8 +14,8 @@ export default function AnimatedCounter({
   duration = 2000,
   className,
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(value);
-  const previousValue = useRef(value);
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValue = useRef(0);
   const animationRef = useRef<number | null>(null);
   const lastChangeTime = useRef(0);
 

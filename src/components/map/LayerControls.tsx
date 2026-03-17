@@ -61,6 +61,32 @@ export default function LayerControls({
 }: LayerControlsProps) {
   const [collapsed, setCollapsed] = useState(false);
 
+  if (collapsed) {
+    return (
+      <div
+        className={cn(
+          "flex items-center rounded-lg",
+          "bg-background/80 backdrop-blur-xl",
+          "border border-border/50",
+          "overflow-hidden"
+        )}
+      >
+        <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
+          <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Layers
+          </span>
+        </div>
+        <button
+          onClick={() => setCollapsed(false)}
+          className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <TbChevronDown className="h-3 w-3 rotate-180" />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -71,23 +97,21 @@ export default function LayerControls({
         "max-h-[calc(100vh-10rem)]"
       )}
     >
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="drag-handle flex items-center gap-2 px-3 py-2 border-b border-border/30 hover:bg-surface-elevated/50 transition-colors cursor-grab active:cursor-grabbing"
-      >
-        <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Layers
-        </span>
-        <TbChevronDown
-          className={cn(
-            "h-3 w-3 text-muted-foreground ml-auto transition-transform",
-            collapsed && "rotate-180"
-          )}
-        />
-      </button>
-      {!collapsed &&
-        LAYER_CONFIG.map((layer) => (
+      <div className="flex items-center border-b border-border/30">
+        <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
+          <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Layers
+          </span>
+        </div>
+        <button
+          onClick={() => setCollapsed(true)}
+          className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <TbChevronDown className="h-3 w-3" />
+        </button>
+      </div>
+      {LAYER_CONFIG.map((layer) => (
           <button
             key={layer.key}
             onClick={() => onToggle(layer.key)}
