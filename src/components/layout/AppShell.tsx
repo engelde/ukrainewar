@@ -223,7 +223,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         </DraggablePanel>
       )}
       {spendingOpen && (
-        <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[314px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
+        <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[368px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
           <SpendingPanel
             isOpen={true}
             onToggle={handleToggleSpending}

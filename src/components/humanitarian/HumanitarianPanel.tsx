@@ -382,17 +382,24 @@ export default function HumanitarianPanel({
       <div className={cn("border-b border-border/20", loading && "hidden")}>
         <div className="flex items-center gap-2 px-3 py-2">
           <TbUsers className="h-3.5 w-3.5 text-destruction" />
-          <div>
+          <div className="flex-1">
             <div className="text-xs text-foreground">
               Civilian Casualties
               {isHistorical && (
                 <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
               )}
             </div>
-            <div className="text-[9px] text-muted-foreground">
-              {currentCasualties.killed.toLocaleString()}+ killed · {currentCasualties.injured.toLocaleString()}+ injured
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <div>
+                <span className="text-sm font-semibold text-foreground font-mono">{currentCasualties.killed.toLocaleString()}+</span>
+                <span className="text-[9px] text-muted-foreground ml-1">killed</span>
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-foreground font-mono">{currentCasualties.injured.toLocaleString()}+</span>
+                <span className="text-[9px] text-muted-foreground ml-1">injured</span>
+              </div>
             </div>
-            <div className="text-[9px] text-muted-foreground/60">
+            <div className="text-[9px] text-muted-foreground/60 mt-0.5">
               Source: OHCHR{casualties ? ` (as of ${casualties.cumulativeAsOfDate.slice(0, 7)})` : ""}
             </div>
           </div>

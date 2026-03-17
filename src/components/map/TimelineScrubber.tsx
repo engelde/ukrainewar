@@ -499,10 +499,10 @@ export default function TimelineScrubber({
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={jumpToStart}
-                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
                   title="Jump to start"
                 >
-                  <TbPlayerSkipBackFilled className="h-3.5 w-3.5" />
+                  <TbPlayerSkipBackFilled className="h-4.5 w-4.5" />
                 </button>
                 <button
                   onClick={() => { if (!holdFiredRef.current) handleStepBack(); }}
@@ -510,23 +510,23 @@ export default function TimelineScrubber({
                   onMouseUp={handleStepUp}
                   onMouseLeave={handleStepUp}
                   disabled={currentIndex <= 0}
-                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
-                  <TbChevronLeft className="h-4 w-4" />
+                  <TbChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   onClick={togglePlay}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                    "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
                     isPlaying
                       ? "bg-ua-blue/20 text-ua-blue"
                       : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {isPlaying ? (
-                    <TbPlayerPauseFilled className="h-4 w-4" />
+                    <TbPlayerPauseFilled className="h-5 w-5" />
                   ) : (
-                    <TbPlayerPlayFilled className="h-4 w-4" />
+                    <TbPlayerPlayFilled className="h-5 w-5" />
                   )}
                 </button>
                 <button
@@ -535,16 +535,16 @@ export default function TimelineScrubber({
                   onMouseUp={handleStepUp}
                   onMouseLeave={handleStepUp}
                   disabled={currentIndex >= dates.length - 1}
-                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
-                  <TbChevronRight className="h-4 w-4" />
+                  <TbChevronRight className="h-5 w-5" />
                 </button>
                 <button
                   onClick={jumpToEnd}
-                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+                  className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
                   title="Jump to today"
                 >
-                  <TbPlayerSkipForwardFilled className="h-3.5 w-3.5" />
+                  <TbPlayerSkipForwardFilled className="h-4.5 w-4.5" />
                 </button>
               </div>
 
@@ -552,8 +552,8 @@ export default function TimelineScrubber({
               <button
                 onClick={cycleSpeed}
                 className={cn(
-                  "flex h-7 items-center justify-center rounded-md px-2 transition-colors",
-                  "text-[10px] font-mono font-semibold",
+                  "flex h-9 items-center justify-center rounded-md px-2.5 transition-colors",
+                  "text-xs font-mono font-semibold",
                   isPlaying
                     ? "bg-ua-blue/15 text-ua-blue"
                     : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"

@@ -3,11 +3,16 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { DATA_SOURCES } from "@/lib/constants";
-import { TbInfoCircle, TbDatabase, TbExternalLink, TbX } from "react-icons/tb";
+import { TbInfoCircle, TbDatabase, TbExternalLink, TbX, TbBrandGithub } from "react-icons/tb";
 
 type NavItem = "about" | "sources" | null;
 
-export default function NavMenu() {
+interface NavMenuProps {
+  mobile?: boolean;
+  onClose?: () => void;
+}
+
+function NavContent({ onItemClick }: { onItemClick?: () => void }) {
   const [active, setActive] = useState<NavItem>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +42,7 @@ export default function NavMenu() {
         )}
       >
         <TbInfoCircle className="h-3 w-3" />
-        <span className="hidden sm:inline">About</span>
+        <span>About</span>
       </button>
       <button
         onClick={() => setActive(active === "sources" ? null : "sources")}
@@ -51,8 +56,22 @@ export default function NavMenu() {
         )}
       >
         <TbDatabase className="h-3 w-3" />
-        <span className="hidden sm:inline">Sources</span>
+        <span>Sources</span>
       </button>
+      <a
+        href="https://github.com/engelde/uawar"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          "flex items-center gap-1 rounded-md px-2 py-1",
+          "text-[10px] font-semibold uppercase tracking-wider",
+          "transition-colors",
+          "text-muted-foreground/70 hover:text-muted-foreground"
+        )}
+      >
+        <TbBrandGithub className="h-3 w-3" />
+        <span>GitHub</span>
+      </a>
 
       {/* Dropdown panels */}
       {active && (
@@ -71,7 +90,7 @@ export default function NavMenu() {
               {active === "about" ? "About" : "Data Sources"}
             </span>
             <button
-              onClick={() => setActive(null)}
+              onClick={() => { setActive(null); onItemClick?.(); }}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <TbX className="h-3.5 w-3.5" />
@@ -122,4 +141,129 @@ export default function NavMenu() {
       )}
     </div>
   );
+}
+
+function MobileSidebar({ onClose }: { onClose: () => void }) {
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 sm:hidden">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div
+        ref={sidebarRef}
+        className={cn(
+          "absolute left-0 top-0 bottom-0 w-64",
+          "bg-background/95 backdrop-blur-xl",
+          "border-r border-border/50",
+          "shadow-[4px_0_20px_rgba(0,0,0,0.4)]",
+          "animate-in slide-in-from-left duration-200",
+          "flex flex-col"
+        )}
+      >
+        {/* Sidebar header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+          <div className="flex items-center gap-2">
+            <div className="flex h-5 w-1 flex-col overflow-hidden rounded-full">
+              <div className="h-1/2 bg-ua-blue" />
+              <div className="h-1/2 bg-ua-yellow" />
+            </div>
+            <span className="text-sm font-bold tracking-tight text-foreground">
+              UKRAINE WAR TRACKER
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <TbX className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Sidebar nav */}
+        <div className="flex flex-col py-2">
+          <SidebarSection title="About">
+            <div className="space-y-2 px-4 pb-3">
+              <p className="text-[11px] text-foreground/80 leading-relaxed">
+                An interactive tracker for the Russo-Ukrainian War, visualizing
+                territory control, military losses, humanitarian impact, and
+                international aid from February 2022 to the present.
+              </p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Navigate the timeline to explore the war&apos;s progression.
+                Toggle map layers to view territory, equipment losses, battles,
+                and conflict events. All data updates daily from official sources.
+              </p>
+            </div>
+          </SidebarSection>
+
+          <SidebarSection title="Data Sources">
+            <div className="flex flex-col gap-0.5 px-2 pb-3">
+              {DATA_SOURCES.map((source) => (
+                <a
+                  key={source.name}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-surface-elevated/50 transition-colors group"
+                >
+                  <div>
+                    <div className="text-[10px] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
+                      {source.name}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground/60">
+                      {source.description}
+                    </div>
+                  </div>
+                  <TbExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-ua-blue transition-colors flex-shrink-0" />
+                </a>
+              ))}
+            </div>
+          </SidebarSection>
+
+          <a
+            href="https://github.com/engelde/uawar"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2.5 text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30 transition-colors"
+          >
+            <TbBrandGithub className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-wider">GitHub</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-border/20">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 w-full px-4 py-2.5 text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30 transition-colors"
+      >
+        {title === "About" ? <TbInfoCircle className="h-4 w-4" /> : <TbDatabase className="h-4 w-4" />}
+        <span className="text-xs font-semibold uppercase tracking-wider">{title}</span>
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
+export default function NavMenu({ mobile, onClose }: NavMenuProps) {
+  if (mobile && onClose) {
+    return <MobileSidebar onClose={onClose} />;
+  }
+  return <NavContent />;
 }
