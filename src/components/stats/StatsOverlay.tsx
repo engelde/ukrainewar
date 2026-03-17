@@ -7,7 +7,7 @@ import Sparkline from "./Sparkline";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { GiTank, GiRocket, GiHelicopter, GiBattleship } from "react-icons/gi";
-import { TbUsers, TbBomb, TbDrone, TbRadar, TbPlane, TbTruck, TbShieldChevron, TbChevronDown } from "react-icons/tb";
+import { TbUsers, TbBomb, TbDrone, TbRadar, TbPlane, TbTruck, TbShieldChevron, TbChevronDown, TbSkull } from "react-icons/tb";
 
 interface StatsEntry {
   key: string;
@@ -141,7 +141,6 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
   const stats = mapCasualtyData(data);
-  const warDay = data.day;
 
   useEffect(() => {
     let cancelled = false;
@@ -197,8 +196,8 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
           <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
             {!isHistorical && (
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destruction opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-destruction" />
               </span>
             )}
             {isHistorical && (
@@ -208,12 +207,10 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             )}
             <span className={cn(
               "text-[10px] font-semibold uppercase tracking-wider",
-              "text-ua-blue"
+              "text-destruction"
             )}>
+              <TbSkull className="h-3.5 w-3.5 inline mr-1" />
               Russian Losses
-            </span>
-            <span className="text-[10px] text-muted-foreground ml-auto">
-              Day {warDay}
             </span>
           </div>
           <button
@@ -240,12 +237,12 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             <div className={cn(
               "drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1",
               "text-xs font-semibold uppercase tracking-wider",
-              "text-ua-blue"
+              "text-destruction"
             )}>
               {!isHistorical && (
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ua-blue opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-blue" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destruction opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-destruction" />
                 </span>
               )}
               {isHistorical && (
@@ -253,10 +250,8 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-ua-yellow" />
                 </span>
               )}
+              <TbSkull className="h-3.5 w-3.5" />
               <span>Russian Losses</span>
-              <span className="ml-auto text-muted-foreground">
-                Day {warDay}
-              </span>
             </div>
             <button
               onClick={() => setCollapsed(true)}
@@ -351,10 +346,10 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             );
           })}
         </div>
-          <div className="px-3 py-1 border-t border-border/30">
-            <div className="text-[8px] text-muted-foreground/50">
-              Source: Ukrainian Ministry of Defence
-            </div>
+          <div className="px-3 py-1.5 border-t border-border/30">
+            <a href="https://www.mil.gov.ua" target="_blank" rel="noopener noreferrer" className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors">
+              Source: Ukrainian Ministry of Defence ↗
+            </a>
           </div>
         </>
       )}

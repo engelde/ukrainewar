@@ -11,6 +11,7 @@ import {
   TbInfoCircle,
   TbPlayerSkipBackFilled,
   TbPlayerSkipForwardFilled,
+  TbTimeline,
 } from "react-icons/tb";
 
 interface TimelineScrubberProps {
@@ -390,14 +391,6 @@ export default function TimelineScrubber({
     return Math.abs(currentIndex - event.index) <= 5;
   });
 
-  const warStart = new Date("2022-02-24");
-  const currentDateObj = new Date(
-    `${currentDate.slice(0, 4)}-${currentDate.slice(4, 6)}-${currentDate.slice(6, 8)}`
-  );
-  const warDay = Math.floor(
-    (currentDateObj.getTime() - warStart.getTime()) / 86400000
-  ) + 1;
-
   // Year boundaries in pixels
   const yearTicksPx = YEAR_MARKS
     .map((y) => {
@@ -445,6 +438,7 @@ export default function TimelineScrubber({
             )}
           >
             <TbChevronDown className="h-3 w-3 text-muted-foreground rotate-180 transition-transform" />
+            <TbTimeline className="h-3.5 w-3.5" />
             <span>Timeline</span>
             <span className="text-[10px] font-mono text-muted-foreground ml-auto">
               {formatDateDisplay(currentDate)}
@@ -478,6 +472,7 @@ export default function TimelineScrubber({
               {/* Date info */}
               <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px]">
                 <div className="flex items-center gap-2">
+                  <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
                     Timeline
                   </span>
@@ -486,11 +481,6 @@ export default function TimelineScrubber({
                   <span className="text-sm font-mono text-foreground font-medium">
                     {formatDateDisplay(currentDate)}
                   </span>
-                  {currentIndex < dates.length - 1 && (
-                    <span className="text-[9px] text-ua-yellow/70 font-mono">
-                      Day {warDay}
-                    </span>
-                  )}
                   {currentIndex === dates.length - 1 && (
                     <span className="text-[9px] text-capture font-mono">
                       Today

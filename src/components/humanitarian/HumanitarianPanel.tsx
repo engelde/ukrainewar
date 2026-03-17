@@ -448,8 +448,13 @@ export default function HumanitarianPanel({
 
       {/* Sources */}
       <div className={cn("px-3 py-1.5 border-t border-border/30", loading && "hidden")}>
-        <div className="text-[9px] text-muted-foreground/60">
-          Sources: UNHCR · OCHA/FTS · OHCHR
+        <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+          <span>Sources:</span>
+          <a href="https://data.unhcr.org" target="_blank" rel="noopener noreferrer" className="hover:text-ua-blue transition-colors">UNHCR ↗</a>
+          <span>·</span>
+          <a href="https://fts.unocha.org" target="_blank" rel="noopener noreferrer" className="hover:text-ua-blue transition-colors">OCHA/FTS ↗</a>
+          <span>·</span>
+          <a href="https://www.ohchr.org" target="_blank" rel="noopener noreferrer" className="hover:text-ua-blue transition-colors">OHCHR ↗</a>
         </div>
       </div>
     </div>

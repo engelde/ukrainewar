@@ -12,7 +12,6 @@ import TimelineScrubber from "@/components/map/TimelineScrubber";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
 import { MAJOR_BATTLES } from "@/data/battles";
-import DataSourcesPanel from "@/components/layout/DataSourcesPanel";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import ResetButton from "@/components/layout/ResetButton";
 
@@ -166,6 +165,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const isViewingPast = !!territoryDate && territoryDate < todayStr;
   const displayData = (isViewingPast && historicalData) ? historicalData : casualtyData;
 
+  const warDay = (() => {
+    const start = new Date(2022, 1, 24); // Feb 24, 2022
+    const current = territoryDate
+      ? new Date(parseInt(territoryDate.slice(0, 4)), parseInt(territoryDate.slice(4, 6)) - 1, parseInt(territoryDate.slice(6, 8)))
+      : new Date();
+    return Math.floor((current.getTime() - start.getTime()) / 86400000) + 1;
+  })();
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <MapView
@@ -176,7 +183,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         flyTo={flyToTarget}
       />
       <Header />
-      <ResetButton onReset={handleReset} />
+      <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
       {displayData && (
         <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
           <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />
@@ -198,7 +205,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           timelineDate={territoryDate ?? undefined}
         />
       </DraggablePanel>
-      <DraggablePanel className="fixed right-4 top-[280px] z-30 sm:right-6 sm:top-[300px] max-w-[calc(100vw-2rem)] sm:max-w-xs">
+      <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[344px] sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
         <SpendingPanel
           isOpen={spendingOpen}
           onToggle={handleToggleSpending}
@@ -210,9 +217,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         onDateChange={handleTimelineDateChange}
         initialDate={urlDate}
       />
-      <DraggablePanel className="fixed left-4 bottom-[130px] z-40 sm:left-6 sm:bottom-[135px]">
-        <DataSourcesPanel />
-      </DraggablePanel>
+
       <Footer />
     </main>
   );
