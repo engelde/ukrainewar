@@ -1,0 +1,10 @@
+name = "uawar-data-refresh"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["0 6 * * *"]  # Daily at 6:00 AM UTC
+
+[vars]
+APP_URL = "https://uawar.app"

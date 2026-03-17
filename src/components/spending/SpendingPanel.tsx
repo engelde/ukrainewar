@@ -277,6 +277,15 @@ export default function SpendingPanel({
           )}
         </div>
       )}
+
+      {/* Source footer */}
+      {data && (
+        <div className="px-2.5 pb-2 pt-0.5">
+          <div className="text-[8px] text-muted-foreground/50">
+            Source: {data.source.name} · {data.source.release}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -121,6 +121,7 @@ export default function MapView({
   const map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false);
   const equipmentDataRef = useRef<EquipmentMarker[]>([]);
+  const fetchedMonthsRef = useRef<Set<string>>(new Set());
   const acledDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
   const battlePopupRef = useRef<maplibregl.Popup | null>(null);
@@ -1075,6 +1076,66 @@ export default function MapView({
     if (!map.current || !loaded || !territoryDate) return;
     loadTerritoryData(map.current);
   }, [loaded, territoryDate, loadTerritoryData]);
+
+  // Fetch historical equipment data when timeline moves to a new month
+  useEffect(() => {
+    if (!loaded || !territoryDate) return;
+    const month = `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}`;
+    if (month < "2022-02" || fetchedMonthsRef.current.has(month)) return;
+
+    // Mark as fetched immediately to prevent duplicate requests
+    fetchedMonthsRef.current.add(month);
+
+    fetch(`/api/losses/month?month=${month}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.losses?.length) return;
+        const existingIds = new Set(equipmentDataRef.current.map((m) => m.id));
+        const newMarkers: EquipmentMarker[] = data.losses
+          .filter(
+            (l: { geo?: string | null; id: number }) =>
+              l.geo && l.geo.includes(",") && !existingIds.has(l.id)
+          )
+          .map(
+            (l: {
+              id: number;
+              type: string;
+              model: string;
+              status: string;
+              date: string;
+              nearest_location: string | null;
+              geo: string;
+            }) => {
+              const [lat, lng] = l.geo.split(",").map(Number);
+              return {
+                id: l.id,
+                type: l.type,
+                model: l.model,
+                status: l.status,
+                date: l.date,
+                location: l.nearest_location,
+                lat,
+                lng,
+              };
+            }
+          )
+          .filter(
+            (m: { lat: number; lng: number }) =>
+              !isNaN(m.lat) && !isNaN(m.lng)
+          );
+
+        if (newMarkers.length > 0) {
+          equipmentDataRef.current = [
+            ...equipmentDataRef.current,
+            ...newMarkers,
+          ].sort((a, b) => a.date.localeCompare(b.date));
+        }
+      })
+      .catch(() => {
+        // Remove from fetched set so it can be retried
+        fetchedMonthsRef.current.delete(month);
+      });
+  }, [loaded, territoryDate]);
 
   // Filter equipment markers by timeline date
   useEffect(() => {

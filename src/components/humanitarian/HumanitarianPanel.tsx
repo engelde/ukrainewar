@@ -173,7 +173,7 @@ export default function HumanitarianPanel({
         const [refRes, fundRes, casRes] = await Promise.all([
           fetch("/api/humanitarian/refugees"),
           fetch("/api/humanitarian/funding"),
-          fetch("/data/civilian-casualties.json"),
+          fetch("/api/humanitarian/civilian-casualties"),
         ]);
         if (refRes.ok) setRefugees(await refRes.json());
         if (fundRes.ok) setFunding(await fundRes.json());
