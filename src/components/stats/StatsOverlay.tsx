@@ -272,15 +272,17 @@ export default function StatsOverlay({ data, isHistorical, collapsed = false, on
                   <span className="min-w-[85px] text-left text-xs text-muted-foreground sm:min-w-[100px]">
                     {stat.label}
                   </span>
-                  <AnimatedCounter
-                    value={stat.total}
-                    className="text-sm font-bold text-foreground tabular-nums"
-                  />
-                  {stat.daily > 0 && (
-                    <span className="ml-auto text-[10px] font-medium text-destruction">
-                      +{stat.daily.toLocaleString()}
-                    </span>
-                  )}
+                  <span className="ml-auto flex items-center gap-1.5">
+                    {stat.daily > 0 && (
+                      <span className="text-[10px] font-medium text-destruction">
+                        +{stat.daily.toLocaleString()}
+                      </span>
+                    )}
+                    <AnimatedCounter
+                      value={stat.total}
+                      className="text-sm font-bold text-foreground tabular-nums text-right"
+                    />
+                  </span>
                 </button>
                 {/* Expanded sparkline */}
                 {isExpanded && (
