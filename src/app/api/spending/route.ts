@@ -58,11 +58,11 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
     (a, b) => (b.total as number) - (a.total as number)
   );
 
-  // Monthly allocations
+  // Monthly allocations — try dedicated sheet first, fall back to aggregating main data
   const allocSheetName = Object.keys(wb.Sheets).find((s) =>
     s.toLowerCase().includes("allocation")
   );
-  const byMonth: Record<string, unknown>[] = [];
+  let byMonth: Record<string, unknown>[] = [];
   if (allocSheetName) {
     const allocSheet = XLSX.utils.sheet_to_json<unknown[]>(
       wb.Sheets[allocSheetName],
@@ -75,7 +75,6 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
       if (typeof row[1] === "number" && row[1] > 40000) {
         date = excelDateToISO(row[1]);
       } else if (typeof row[1] === "string") {
-        // Handle text dates like "2022-02", "Feb 2022", etc.
         const m = row[1].match(/(\d{4})-(\d{2})/);
         if (m) date = `${m[1]}-${m[2]}`;
       }
@@ -90,6 +89,38 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
         byMonth.push({ date, military, humanitarian, financial, total });
       }
     }
+  }
+
+  // Fallback: aggregate monthly from main data if sheet wasn't found or produced no results
+  if (byMonth.length === 0) {
+    const monthBuckets: Record<string, { military: number; humanitarian: number; financial: number }> = {};
+    for (const r of mainData) {
+      const val = (r.tot_sub_activity_value_EUR as number) || 0;
+      if (val <= 0) continue;
+      const dateRaw = r.announcement_date as string | number | undefined;
+      let ym: string | null = null;
+      if (typeof dateRaw === "number" && dateRaw > 40000) {
+        ym = excelDateToISO(dateRaw);
+      } else if (typeof dateRaw === "string") {
+        const m = dateRaw.match(/(\d{4})-(\d{2})/);
+        if (m) ym = `${m[1]}-${m[2]}`;
+      }
+      if (!ym || ym < "2022-02") continue;
+      if (!monthBuckets[ym]) monthBuckets[ym] = { military: 0, humanitarian: 0, financial: 0 };
+      const type = ((r.aid_type_general as string) || "").trim();
+      if (type === "Military") monthBuckets[ym].military += val;
+      else if (type === "Financial") monthBuckets[ym].financial += val;
+      else if (type === "Humanitarian") monthBuckets[ym].humanitarian += val;
+    }
+    byMonth = Object.entries(monthBuckets)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, d]) => ({
+        date,
+        military: round(d.military),
+        humanitarian: round(d.humanitarian),
+        financial: round(d.financial),
+        total: round(d.military + d.humanitarian + d.financial),
+      }));
   }
 
   // Totals

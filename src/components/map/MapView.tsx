@@ -1053,7 +1053,7 @@ export default function MapView({
           features: oblastFeatures.map((f) => {
             const name = (f.properties as { name: string }).name;
             const oblastData = data.oblasts.find((o) => o.name === name);
-            const total = oblastData
+            const total = oblastData?.monthly
               ? oblastData.monthly
                   .filter((m) => m.year >= 2022)
                   .reduce((sum, m) => sum + m.fatalities, 0)
@@ -1063,7 +1063,7 @@ export default function MapView({
               properties: {
                 ...f.properties,
                 fatalities: total,
-                events: oblastData
+                events: oblastData?.monthly
                   ? oblastData.monthly
                       .filter((m) => m.year >= 2022)
                       .reduce((sum, m) => sum + m.events, 0)
@@ -1493,7 +1493,7 @@ export default function MapView({
           let fatalities = 0;
           let events = 0;
 
-          if (oblastData) {
+          if (oblastData?.monthly) {
             if (year && month) {
               oblastData.monthly
                 .filter((m) => m.year < year || (m.year === year && monthIndex(m.month) <= month))
