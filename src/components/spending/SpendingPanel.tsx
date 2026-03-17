@@ -111,7 +111,7 @@ export default function SpendingPanel({
         <div className="drag-handle flex items-center gap-1.5 px-2.5 py-1.5 cursor-grab active:cursor-grabbing flex-1">
           <TbCurrencyEuro className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Aid & Spending
+            Bilateral Aid
           </span>
         </div>
         <button
@@ -142,7 +142,7 @@ export default function SpendingPanel({
         <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
           <TbCurrencyEuro className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/80">
-            Aid & Spending
+            Bilateral Aid
           </span>
         </div>
         <button

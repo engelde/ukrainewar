@@ -69,6 +69,13 @@ const LAYER_CONFIG: {
     description: "Regional fatality intensity",
     Icon: TbMap,
   },
+  {
+    key: "battles",
+    label: "Major Battles",
+    color: "bg-red-500",
+    description: "Key battle locations",
+    Icon: TbSwords,
+  },
 ];
 
 export default function LayerControls({

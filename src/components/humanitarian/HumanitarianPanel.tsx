@@ -413,12 +413,15 @@ export default function HumanitarianPanel({
             <TbCoin className="h-3.5 w-3.5 text-ua-yellow" />
             <div className="text-left">
               <div className="text-xs text-foreground">
-                Humanitarian Funding
+                UN Humanitarian Appeals
               </div>
               <div className="text-[9px] text-muted-foreground">
                 {funding
                   ? `${formatUSD(funding.summary.total_funded_usd)} of ${formatUSD(funding.summary.total_required_usd)}`
                   : "Loading..."}
+              </div>
+              <div className="text-[8px] text-muted-foreground/60">
+                UN OCHA Flash &amp; Regional Appeals
               </div>
             </div>
           </div>

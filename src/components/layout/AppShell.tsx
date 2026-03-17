@@ -11,10 +11,7 @@ import DetailPanel from "@/components/map/DetailPanel";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
-import BattlesPanel, {
-  MAJOR_BATTLES,
-  type Battle,
-} from "@/components/battles/BattlesPanel";
+import { MAJOR_BATTLES } from "@/data/battles";
 import DataSourcesPanel from "@/components/layout/DataSourcesPanel";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import ResetButton from "@/components/layout/ResetButton";
@@ -46,6 +43,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     border: true,
     conflicts: true,
     heatmap: true,
+    battles: true,
   });
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(
@@ -55,8 +53,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
   const [spendingOpen, setSpendingOpen] = useState(true);
-  const [battlesOpen, setBattlesOpen] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+  const [timelineKey, setTimelineKey] = useState(0);
 
   // Historical casualty data for timeline scrubbing
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
@@ -142,19 +140,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSpendingOpen((prev) => !prev);
   }, []);
 
-  const handleToggleBattles = useCallback(() => {
-    setBattlesOpen((prev) => !prev);
-  }, []);
-
-  const handleBattleClick = useCallback(
-    (battle: Battle) => {
-      setTerritoryDate(battle.startDate);
-      setUrlDate(battle.startDate);
-      setFlyToTarget({ lat: battle.lat, lng: battle.lng, zoom: 9 });
-    },
-    [setUrlDate]
-  );
-
   // Reset everything to defaults
   const handleReset = useCallback(() => {
     setTerritoryDate(null);
@@ -163,7 +148,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSelectedMarker(null);
     setHumanitarianOpen(true);
     setSpendingOpen(true);
-    setBattlesOpen(true);
+    setTimelineKey(prev => prev + 1);
     setLayers({
       territory: true,
       equipment: true,
@@ -171,6 +156,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       border: true,
       conflicts: true,
       heatmap: true,
+      battles: true,
     });
   }, [setUrlDate]);
 
@@ -219,15 +205,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           timelineDate={territoryDate ?? undefined}
         />
       </DraggablePanel>
-      <DraggablePanel className="fixed left-4 top-[220px] z-30 sm:left-6 sm:top-[240px] max-w-[calc(100vw-2rem)] sm:max-w-xs">
-        <BattlesPanel
-          isOpen={battlesOpen}
-          onToggle={handleToggleBattles}
-          timelineDate={territoryDate ?? undefined}
-          onBattleClick={handleBattleClick}
-        />
-      </DraggablePanel>
       <TimelineScrubber
+        key={timelineKey}
         onDateChange={handleTimelineDateChange}
         initialDate={urlDate}
       />

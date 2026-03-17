@@ -10,6 +10,7 @@ import {
   TbChevronDown,
   TbInfoCircle,
   TbPlayerSkipBackFilled,
+  TbPlayerSkipForwardFilled,
 } from "react-icons/tb";
 
 interface TimelineScrubberProps {
@@ -156,6 +157,53 @@ export default function TimelineScrubber({
   const jumpToStart = useCallback(() => {
     setCurrentIndex(0);
     setIsPlaying(false);
+  }, []);
+
+  // Jump to end (today)
+  const jumpToEnd = useCallback(() => {
+    setCurrentIndex(dates.length - 1);
+    setIsPlaying(false);
+  }, [dates.length]);
+
+  // Hold-to-advance refs
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const holdFiredRef = useRef(false);
+
+  const handleStepBackDown = useCallback(() => {
+    holdFiredRef.current = false;
+    holdTimerRef.current = setTimeout(() => {
+      holdFiredRef.current = true;
+      const currentDateStr = dates[currentIndex] || '';
+      const prevEvent = [...KEY_EVENTS].reverse().find(e => e.date < currentDateStr);
+      if (prevEvent) {
+        const idx = dates.findIndex(d => d >= prevEvent.date);
+        if (idx >= 0) { setCurrentIndex(idx); setIsPlaying(false); }
+      } else {
+        setCurrentIndex(0); setIsPlaying(false);
+      }
+    }, 500);
+  }, [dates, currentIndex]);
+
+  const handleStepForwardDown = useCallback(() => {
+    holdFiredRef.current = false;
+    holdTimerRef.current = setTimeout(() => {
+      holdFiredRef.current = true;
+      const currentDateStr = dates[currentIndex] || '';
+      const nextEvent = KEY_EVENTS.find(e => e.date > currentDateStr);
+      if (nextEvent) {
+        const idx = dates.findIndex(d => d >= nextEvent.date);
+        if (idx >= 0) { setCurrentIndex(idx); setIsPlaying(false); }
+      } else {
+        setCurrentIndex(dates.length - 1); setIsPlaying(false);
+      }
+    }, 500);
+  }, [dates, currentIndex]);
+
+  const handleStepUp = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
@@ -433,11 +481,11 @@ export default function TimelineScrubber({
             )}
 
             {/* Controls row */}
-            <div className="flex items-center gap-2 px-3 pt-2 sm:gap-3">
+            <div className="flex items-center gap-2.5 px-4 pt-3 sm:gap-3">
               {/* Date info */}
               <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px]">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
                     Timeline
                   </span>
                   {!hasTerritoryData && (
@@ -447,7 +495,7 @@ export default function TimelineScrubber({
                   )}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-mono text-foreground font-medium">
+                  <span className="text-sm font-mono text-foreground font-medium">
                     {formatDateDisplay(currentDate)}
                   </span>
                   {currentIndex < dates.length - 1 && (
@@ -473,7 +521,10 @@ export default function TimelineScrubber({
                   <TbPlayerSkipBackFilled className="h-3.5 w-3.5" />
                 </button>
                 <button
-                  onClick={handleStepBack}
+                  onClick={() => { if (!holdFiredRef.current) handleStepBack(); }}
+                  onMouseDown={handleStepBackDown}
+                  onMouseUp={handleStepUp}
+                  onMouseLeave={handleStepUp}
                   disabled={currentIndex <= 0}
                   className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
@@ -495,11 +546,21 @@ export default function TimelineScrubber({
                   )}
                 </button>
                 <button
-                  onClick={handleStepForward}
+                  onClick={() => { if (!holdFiredRef.current) handleStepForward(); }}
+                  onMouseDown={handleStepForwardDown}
+                  onMouseUp={handleStepUp}
+                  onMouseLeave={handleStepUp}
                   disabled={currentIndex >= dates.length - 1}
                   className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
                   <TbChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={jumpToEnd}
+                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+                  title="Jump to today"
+                >
+                  <TbPlayerSkipForwardFilled className="h-3.5 w-3.5" />
                 </button>
               </div>
 
@@ -551,13 +612,13 @@ export default function TimelineScrubber({
             {/* Scrollable timeline */}
             <div
               ref={scrollContainerRef}
-              className="overflow-x-auto overflow-y-hidden scrollbar-none mx-3 mb-2 mt-1.5 select-none"
+              className="overflow-x-auto overflow-y-hidden scrollbar-none mx-4 mb-3 mt-2 select-none"
               onWheel={handleWheel}
               onMouseDown={handleMouseDown}
             >
               <div
                 className="relative cursor-crosshair"
-                style={{ width: `${totalWidth}px`, height: "65px" }}
+                style={{ width: `${totalWidth}px`, height: "75px" }}
                 onClick={handleTimelineClick}
               >
                 {/* Track line */}
@@ -582,7 +643,7 @@ export default function TimelineScrubber({
                     style={{ left: `${tick.px}px` }}
                   >
                     <div className="w-px h-6 bg-border/40" />
-                    <span className="absolute top-7 -translate-x-1/2 text-[8px] text-muted-foreground/50 whitespace-nowrap">
+                    <span className="absolute top-7 -translate-x-1/2 text-[9px] text-muted-foreground/50 whitespace-nowrap">
                       {tick.year}
                     </span>
                   </div>
@@ -655,7 +716,7 @@ export default function TimelineScrubber({
                               handleJumpToEvent(labelInfo.date);
                             }}
                             className={cn(
-                              "text-[9px] whitespace-nowrap leading-none mt-0.5",
+                              "text-[10px] whitespace-nowrap leading-none mt-0.5",
                               "transition-colors",
                               isLabelActive
                                 ? "text-ua-yellow font-semibold"

@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MAP_CENTER, MAP_ZOOM, MAP_STYLE } from "@/lib/constants";
 import type { MapLayers, EquipmentMarker } from "@/lib/types";
-import type { Battle } from "@/components/battles/BattlesPanel";
+import type { Battle } from "@/data/battles";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
 import ukraineOblasts from "@/data/ukraine-oblasts.json";
@@ -121,6 +121,7 @@ export default function MapView({
   const map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false);
   const equipmentDataRef = useRef<EquipmentMarker[]>([]);
+  const [equipmentVersion, setEquipmentVersion] = useState(0);
   const fetchedMonthsRef = useRef<Set<string>>(new Set());
   const acledDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
@@ -791,11 +792,12 @@ export default function MapView({
         })
           .setLngLat(coords)
           .setHTML(
-            `<div style="font-family: system-ui; color: #e8e8ed; padding: 4px;">
-              <div style="font-weight: 600; font-size: 12px; color: #fca5a5; margin-bottom: 4px;">${props.name}</div>
-              <div style="font-size: 10px; color: #8888a0; margin-bottom: 4px;">${props.dateRange}</div>
-              <div style="font-size: 10px; color: #b0b0c0; line-height: 1.4;">${props.description}</div>
-              ${props.outcome ? `<div style="font-size: 10px; margin-top: 4px; color: ${props.outcome?.includes("Ukrainian") ? "#48bb78" : props.outcome?.includes("Russian") ? "#e53e3e" : "#ffd500"}; font-weight: 500;">${props.outcome}</div>` : ""}
+            `<div style="max-width:280px">
+              <div style="font-weight:700;font-size:13px;color:#fbbf24;margin-bottom:4px">${props.name}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">${props.dateRange}</div>
+              <div style="font-size:11px;color:#d1d5db;margin-bottom:6px;line-height:1.4">${props.description}</div>
+              ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>Outcome:</strong> ${props.outcome}</div>` : ''}
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">${props.significance}</div>
             </div>`
           )
           .addTo(mapInstance);
@@ -1065,11 +1067,11 @@ export default function MapView({
         map.current.setLayoutProperty(
           layer,
           "visibility",
-          "visible"
+          layers.battles ? "visible" : "none"
         );
       }
     });
-  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border, layers.conflicts, layers.heatmap]);
+  }, [loaded, layers.territory, layers.frontline, layers.equipment, layers.border, layers.conflicts, layers.heatmap, layers.battles]);
 
   // Update territory when timeline date changes
   useEffect(() => {
@@ -1129,6 +1131,8 @@ export default function MapView({
             ...equipmentDataRef.current,
             ...newMarkers,
           ].sort((a, b) => a.date.localeCompare(b.date));
+          // Trigger re-filter of equipment markers
+          setEquipmentVersion((v) => v + 1);
         }
       })
       .catch(() => {
@@ -1172,7 +1176,7 @@ export default function MapView({
     };
 
     source.setData(geojson);
-  }, [loaded, territoryDate]);
+  }, [loaded, territoryDate, equipmentVersion]);
 
   // Filter ACLED conflict events by timeline date
   useEffect(() => {
