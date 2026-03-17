@@ -183,17 +183,23 @@ const DEEPSTATE_START = "20240708";
 interface MapViewProps {
   layers: MapLayers;
   onMarkerClick?: (marker: EquipmentMarker) => void;
+  onMoveEnd?: (center: [number, number], zoom: number) => void;
   territoryDate?: string | null;
   battles?: Battle[];
   flyTo?: { lat: number; lng: number; zoom?: number } | null;
+  initialCenter?: [number, number];
+  initialZoom?: number;
 }
 
 export default function MapView({
   layers,
   onMarkerClick,
+  onMoveEnd,
   territoryDate,
   battles = [],
   flyTo: flyToTarget,
+  initialCenter,
+  initialZoom,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -205,6 +211,8 @@ export default function MapView({
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
   const battlePopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
+  const onMoveEndRef = useRef(onMoveEnd);
+  useEffect(() => { onMoveEndRef.current = onMoveEnd; }, [onMoveEnd]);
   const acledRegionalRef = useRef<AcledRegionalData | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
@@ -1164,8 +1172,8 @@ export default function MapView({
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: MAP_STYLE,
-      center: MAP_CENTER,
-      zoom: MAP_ZOOM,
+      center: initialCenter ?? MAP_CENTER,
+      zoom: initialZoom ?? MAP_ZOOM,
       minZoom: 4,
       maxZoom: 16,
       attributionControl: false,
@@ -1199,6 +1207,13 @@ export default function MapView({
           loadBattleMarkers(map.current, battles);
         }
       }
+    });
+
+    map.current.on("moveend", () => {
+      if (!map.current) return;
+      const center = map.current.getCenter();
+      const zoom = map.current.getZoom();
+      onMoveEndRef.current?.([center.lng, center.lat], zoom);
     });
 
     return () => {

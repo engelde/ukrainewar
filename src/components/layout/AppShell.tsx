@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useQueryState, parseAsString } from "nuqs";
+import { useQueryState, parseAsString, parseAsFloat } from "nuqs";
+import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
 import type { CasualtyData, MapLayers, EquipmentMarker } from "@/lib/types";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import Header, { Footer } from "@/components/layout/Header";
@@ -35,6 +36,9 @@ interface AppShellProps {
 
 export default function AppShell({ casualtyData }: AppShellProps) {
   const [urlDate, setUrlDate] = useQueryState("t", parseAsString.withOptions({ shallow: true, throttleMs: 500 }));
+  const [urlLng, setUrlLng] = useQueryState("lng", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
+  const [urlLat, setUrlLat] = useQueryState("lat", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
+  const [urlZoom, setUrlZoom] = useQueryState("z", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
 
   const [layers, setLayers] = useState<MapLayers>({
     territory: true,
@@ -131,6 +135,22 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSpendingOpen((prev) => !prev);
   }, []);
 
+  const handleMapMoveEnd = useCallback((center: [number, number], zoom: number) => {
+    const [lng, lat] = center;
+    const roundedLng = Math.round(lng * 100) / 100;
+    const roundedLat = Math.round(lat * 100) / 100;
+    const roundedZoom = Math.round(zoom * 10) / 10;
+
+    // Only store in URL if different from defaults
+    const isDefaultLng = Math.abs(roundedLng - MAP_CENTER[0]) < 0.1;
+    const isDefaultLat = Math.abs(roundedLat - MAP_CENTER[1]) < 0.1;
+    const isDefaultZoom = Math.abs(roundedZoom - MAP_ZOOM) < 0.2;
+
+    setUrlLng(isDefaultLng ? null : roundedLng);
+    setUrlLat(isDefaultLat ? null : roundedLat);
+    setUrlZoom(isDefaultZoom ? null : roundedZoom);
+  }, [setUrlLng, setUrlLat, setUrlZoom]);
+
   const handleEventClick = useCallback((date: string) => {
     handleTimelineDateChange(date);
   }, [handleTimelineDateChange]);
@@ -138,6 +158,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const handleReset = useCallback(() => {
     setTerritoryDate(null);
     setUrlDate(null);
+    setUrlLng(null);
+    setUrlLat(null);
+    setUrlZoom(null);
     setFlyToTarget(null);
     setSelectedMarker(null);
     setHumanitarianOpen(true);
@@ -155,7 +178,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       heatmap: true,
       battles: true,
     });
-  }, [setUrlDate]);
+  }, [setUrlDate, setUrlLng, setUrlLat, setUrlZoom]);
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
@@ -180,9 +203,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         <MapView
           layers={layers}
           onMarkerClick={handleMarkerClick}
+          onMoveEnd={handleMapMoveEnd}
           territoryDate={territoryDate}
           battles={MAJOR_BATTLES}
           flyTo={flyToTarget}
+          initialCenter={urlLng != null && urlLat != null ? [urlLng, urlLat] : undefined}
+          initialZoom={urlZoom ?? undefined}
         />
         <Header />
         <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
