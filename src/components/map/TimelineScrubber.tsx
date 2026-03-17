@@ -175,7 +175,7 @@ export default function TimelineScrubber({
     <div
       className={cn(
         "fixed bottom-12 left-1/2 -translate-x-1/2 z-30",
-        "w-[calc(100%-2rem)] max-w-3xl",
+        "w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-3xl",
         "sm:bottom-14",
         "rounded-lg",
         "bg-background/85 backdrop-blur-xl",
@@ -270,7 +270,7 @@ export default function TimelineScrubber({
                 <button
                   key={event.date}
                   onClick={() => handleJumpToEvent(event.date)}
-                  className="absolute top-1/2 -translate-y-1/2 w-1.5 h-3 bg-ua-yellow/60 rounded-full pointer-events-auto hover:bg-ua-yellow transition-colors"
+                  className="absolute top-1/2 -translate-y-1/2 w-2 h-4 sm:w-1.5 sm:h-3 bg-ua-yellow/60 rounded-full pointer-events-auto hover:bg-ua-yellow transition-colors"
                   style={{ left: `${event.position}%` }}
                   title={`${event.label}: ${event.description} (${formatDateShort(event.date)})`}
                 />
@@ -293,8 +293,8 @@ export default function TimelineScrubber({
           </span>
         </div>
 
-        {/* Key event labels */}
-        <div className="flex gap-2 mt-1.5 flex-wrap">
+        {/* Key event labels — hidden on very small screens */}
+        <div className="hidden sm:flex gap-2 mt-1.5 flex-wrap">
           {eventPositions.map((event) => (
             <button
               key={event.date}

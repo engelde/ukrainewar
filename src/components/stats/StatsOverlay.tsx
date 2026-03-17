@@ -181,6 +181,7 @@ export default function StatsOverlay({ data }: StatsOverlayProps) {
       className={cn(
         "fixed right-3 top-14 z-30 flex flex-col transition-all duration-300",
         "sm:right-4 sm:top-16",
+        "max-w-[calc(100vw-1.5rem)] sm:max-w-xs",
         collapsed && "w-auto"
       )}
     >

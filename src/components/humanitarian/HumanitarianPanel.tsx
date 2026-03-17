@@ -152,17 +152,22 @@ export default function HumanitarianPanel({
         if (fundRes.ok) setFunding(await fundRes.json());
       } catch {
         // Data loads silently on error
+      } finally {
+        setLoading(false);
       }
     }
     fetchData();
   }, [isOpen]);
+
+  const [loading, setLoading] = useState(true);
 
   if (!isOpen) {
     return (
       <button
         onClick={onToggle}
         className={cn(
-          "fixed right-3 top-1/2 -translate-y-1/2 z-30",
+          "fixed right-3 bottom-28 z-30",
+          "sm:right-4 sm:bottom-32",
           "flex items-center gap-1.5 px-2 py-3",
           "rounded-lg",
           "bg-background/80 backdrop-blur-xl",
@@ -186,8 +191,8 @@ export default function HumanitarianPanel({
       className={cn(
         "fixed right-3 top-14 z-30",
         "sm:right-4 sm:top-16",
-        "w-64",
-        "max-h-[calc(100vh-12rem)]",
+        "w-[calc(100vw-1.5rem)] sm:w-64",
+        "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
         "rounded-lg",
         "bg-background/85 backdrop-blur-xl",
@@ -212,8 +217,23 @@ export default function HumanitarianPanel({
         </button>
       </div>
 
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="px-3 py-3 space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-2 animate-pulse">
+              <div className="h-3.5 w-3.5 rounded bg-border/30" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-24 rounded bg-border/30" />
+                <div className="h-4 w-16 rounded bg-border/20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Refugees Section */}
-      <div className="border-b border-border/20">
+      <div className={cn("border-b border-border/20", loading && "hidden")}>
         <button
           onClick={() =>
             setExpandedSection(
@@ -265,7 +285,7 @@ export default function HumanitarianPanel({
       </div>
 
       {/* IDPs Section */}
-      <div className="border-b border-border/20">
+      <div className={cn("border-b border-border/20", loading && "hidden")}>
         <button
           onClick={() =>
             setExpandedSection(expandedSection === "idps" ? null : "idps")
@@ -293,7 +313,7 @@ export default function HumanitarianPanel({
         </button>
         {expandedSection === "idps" && refugees && (
           <div className="px-3 pb-2.5">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {refugees.yearly
                 .filter((y: { year: number }) => y.year >= 2022)
                 .map(
@@ -313,7 +333,7 @@ export default function HumanitarianPanel({
                         {formatNumber(y.idps)}
                       </div>
                       {y.returned_idps > 0 && (
-                        <div className="text-[8px] text-capture">
+                        <div className="text-[9px] text-capture">
                           ↩ {formatNumber(y.returned_idps)} returned
                         </div>
                       )}
@@ -326,7 +346,7 @@ export default function HumanitarianPanel({
       </div>
 
       {/* Civilian Casualties placeholder */}
-      <div className="border-b border-border/20">
+      <div className={cn("border-b border-border/20", loading && "hidden")}>
         <div className="flex items-center gap-2 px-3 py-2">
           <TbUsers className="h-3.5 w-3.5 text-destruction" />
           <div>
@@ -334,7 +354,7 @@ export default function HumanitarianPanel({
             <div className="text-[9px] text-muted-foreground">
               11,743+ killed · 25,970+ injured
             </div>
-            <div className="text-[8px] text-muted-foreground/60">
+            <div className="text-[9px] text-muted-foreground/60">
               Source: OHCHR (as of Dec 2024)
             </div>
           </div>
@@ -342,7 +362,7 @@ export default function HumanitarianPanel({
       </div>
 
       {/* Humanitarian Funding */}
-      <div>
+      <div className={cn(loading && "hidden")}>
         <button
           onClick={() =>
             setExpandedSection(
@@ -386,8 +406,8 @@ export default function HumanitarianPanel({
       </div>
 
       {/* Sources */}
-      <div className="px-3 py-1.5 border-t border-border/30">
-        <div className="text-[8px] text-muted-foreground/60">
+      <div className={cn("px-3 py-1.5 border-t border-border/30", loading && "hidden")}>
+        <div className="text-[9px] text-muted-foreground/60">
           Sources: UNHCR · OCHA/FTS · OHCHR
         </div>
       </div>

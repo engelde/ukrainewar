@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +11,14 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0A0A0F",
+};
 
 export const metadata: Metadata = {
   title: "Ukraine War Tracker — uawar.app",
@@ -27,13 +35,28 @@ export const metadata: Metadata = {
     "conflict",
     "data",
   ],
+  metadataBase: new URL("https://uawar.app"),
   openGraph: {
     title: "Ukraine War Tracker",
     description:
-      "Real-time data visualization of the Russo-Ukrainian war",
+      "Real-time data visualization of the Russo-Ukrainian war — equipment losses, territory control, humanitarian data",
     url: "https://uawar.app",
     siteName: "Ukraine War Tracker",
     type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ukraine War Tracker",
+    description:
+      "Real-time data visualization of the Russo-Ukrainian war",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  other: {
+    "theme-color": "#0A0A0F",
   },
 };
 

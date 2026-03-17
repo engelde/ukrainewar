@@ -22,7 +22,7 @@ export default function Header() {
 
 export function Footer() {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-30 px-4 py-2 sm:px-6">
+    <footer className="fixed bottom-0 left-0 right-0 z-30 px-4 py-2 sm:px-6 hidden sm:block">
       <div className="flex items-center gap-1 flex-wrap bg-background/60 backdrop-blur-xl rounded-lg px-3 py-1.5 border border-border/30 max-w-fit">
         <span className="text-[10px] text-muted-foreground mr-1">Sources:</span>
         {DATA_SOURCES.map((source, i) => (

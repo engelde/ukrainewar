@@ -69,7 +69,8 @@ export default function LayerControls({
         "flex flex-col rounded-lg",
         "bg-background/80 backdrop-blur-xl",
         "border border-border/50",
-        "overflow-hidden"
+        "overflow-hidden",
+        "max-h-[calc(100vh-10rem)]"
       )}
     >
       <div className="px-3 py-2 border-b border-border/30">

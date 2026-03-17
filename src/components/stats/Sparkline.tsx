@@ -44,10 +44,9 @@ export default function Sparkline({
 
   return (
     <svg
-      width={width}
-      height={height}
       viewBox={`0 0 ${width} ${height}`}
       className={cn("overflow-visible", className)}
+      preserveAspectRatio="none"
     >
       {/* Gradient fill under line */}
       <defs>
