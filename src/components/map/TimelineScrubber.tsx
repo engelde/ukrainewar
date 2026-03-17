@@ -11,7 +11,6 @@ import {
   TbPlayerSkipBackFilled,
   TbPlayerSkipForwardFilled,
   TbTimeline,
-  TbCalendarEvent,
 } from "react-icons/tb";
 import { KEY_EVENTS } from "@/data/events";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -597,20 +596,23 @@ export default function TimelineScrubber({
                 ))}
               </div>
 
-              {/* All Events toggle */}
+              {/* Spacer to push Events button to right */}
+              <div className="flex-1" />
+
+              {/* Events toggle — far right */}
               {onToggleEvents && (
                 <button
                   onClick={onToggleEvents}
+                  title="Toggle event sidebar"
                   className={cn(
-                    "flex h-7 items-center gap-1 rounded-md px-2 ml-1 transition-colors",
+                    "flex h-7 items-center rounded-md px-2.5 transition-colors",
                     "text-[10px] font-semibold uppercase tracking-wider",
                     eventsOpen
                       ? "bg-ua-yellow/15 text-ua-yellow"
                       : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated"
                   )}
                 >
-                  <TbCalendarEvent className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">All Events</span>
+                  Events
                 </button>
               )}
             </div>

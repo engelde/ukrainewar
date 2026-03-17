@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useQueryState, parseAsString, parseAsFloat } from "nuqs";
+import { useQueryState, parseAsString, parseAsFloat, parseAsBoolean } from "nuqs";
 import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
 import type { CasualtyData, MapLayers, EquipmentMarker } from "@/lib/types";
 import StatsOverlay from "@/components/stats/StatsOverlay";
@@ -14,6 +14,7 @@ import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
 import EventSidebar from "@/components/layout/EventSidebar";
 import { MAJOR_BATTLES } from "@/data/battles";
+import { KEY_EVENTS } from "@/data/events";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import ResetButton from "@/components/layout/ResetButton";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -41,6 +42,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [urlLng, setUrlLng] = useQueryState("lng", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
   const [urlLat, setUrlLat] = useQueryState("lat", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
   const [urlZoom, setUrlZoom] = useQueryState("z", parseAsFloat.withOptions({ shallow: true, throttleMs: 1000 }));
+  const [urlEvents, setUrlEvents] = useQueryState("events", parseAsBoolean.withOptions({ shallow: true }));
 
   const [layers, setLayers] = useState<MapLayers>({
     territory: true,
@@ -60,18 +62,28 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(urlEvents === true);
 
-  // Open panels on desktop after first render
+  // Sync sidebar state to URL
+  useEffect(() => {
+    setUrlEvents(sidebarOpen ? true : null);
+  }, [sidebarOpen, setUrlEvents]);
+
+  // Open panels and sidebar defaults after first render
   useEffect(() => {
     if (!isMobile) {
       setHumanitarianOpen(true);
       setSpendingOpen(true);
     }
+    // Open sidebar by default on XL screens if no URL preference set
+    if (urlEvents === null && typeof window !== "undefined" && window.innerWidth >= 1280) {
+      setSidebarOpen(true);
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
   const fetchControllerRef = useRef<AbortController | null>(null);
+  const resetPendingRef = useRef(false);
   const lastFetchedDate = useRef<string | null>(null);
 
   const handleToggleLayer = useCallback((layer: keyof MapLayers) => {
@@ -146,6 +158,19 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   }, []);
 
   const handleMapMoveEnd = useCallback((center: [number, number], zoom: number) => {
+    // Skip URL updates during reset flyTo animation
+    if (resetPendingRef.current) {
+      const [lng, lat] = center;
+      const isDefault = Math.abs(lng - MAP_CENTER[0]) < 0.5 && Math.abs(lat - MAP_CENTER[1]) < 0.5;
+      if (isDefault) {
+        resetPendingRef.current = false;
+        setUrlLng(null);
+        setUrlLat(null);
+        setUrlZoom(null);
+      }
+      return;
+    }
+
     const [lng, lat] = center;
     const roundedLng = Math.round(lng * 100) / 100;
     const roundedLat = Math.round(lat * 100) / 100;
@@ -163,6 +188,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const handleEventClick = useCallback((date: string) => {
     handleTimelineDateChange(date);
+    const event = KEY_EVENTS.find((e) => e.date === date);
+    if (event?.lat != null && event?.lng != null) {
+      setFlyToTarget({ lat: event.lat, lng: event.lng, zoom: 9 });
+    }
   }, [handleTimelineDateChange]);
 
   const handleToggleSidebar = useCallback(() => {
@@ -170,12 +199,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   }, []);
 
   const handleReset = useCallback(() => {
+    resetPendingRef.current = true;
     setTerritoryDate(null);
     setUrlDate(null);
     setUrlLng(null);
     setUrlLat(null);
     setUrlZoom(null);
-    setFlyToTarget(null);
+    setUrlEvents(null);
+    setFlyToTarget({ lat: MAP_CENTER[1], lng: MAP_CENTER[0], zoom: MAP_ZOOM });
     setSelectedMarker(null);
     setHumanitarianOpen(true);
     setSpendingOpen(true);
@@ -192,7 +223,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       heatmap: true,
       battles: true,
     });
-  }, [setUrlDate, setUrlLng, setUrlLat, setUrlZoom]);
+  }, [setUrlDate, setUrlLng, setUrlLat, setUrlZoom, setUrlEvents]);
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
@@ -205,6 +236,19 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       ? new Date(parseInt(territoryDate.slice(0, 4)), parseInt(territoryDate.slice(4, 6)) - 1, parseInt(territoryDate.slice(6, 8)))
       : new Date();
     return Math.floor((current.getTime() - start.getTime()) / 86400000) + 1;
+  })();
+
+  // Find the active event for the current date (within 3 days)
+  const activeMapEvent = (() => {
+    if (!territoryDate) return null;
+    const currentDateNum = parseInt(territoryDate);
+    for (const event of KEY_EVENTS) {
+      const eventDateNum = parseInt(event.date);
+      if (Math.abs(currentDateNum - eventDateNum) <= 3 && event.lat != null && event.lng != null) {
+        return { label: event.label, description: event.description, lat: event.lat, lng: event.lng };
+      }
+    }
+    return null;
   })();
 
   return (
@@ -223,6 +267,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           flyTo={flyToTarget}
           initialCenter={urlLng != null && urlLat != null ? [urlLng, urlLat] : undefined}
           initialZoom={urlZoom ?? undefined}
+          activeEvent={activeMapEvent}
         />
         <Header />
         <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />

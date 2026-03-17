@@ -189,6 +189,7 @@ interface MapViewProps {
   flyTo?: { lat: number; lng: number; zoom?: number } | null;
   initialCenter?: [number, number];
   initialZoom?: number;
+  activeEvent?: { label: string; description: string; lat: number; lng: number } | null;
 }
 
 export default function MapView({
@@ -200,6 +201,7 @@ export default function MapView({
   flyTo: flyToTarget,
   initialCenter,
   initialZoom,
+  activeEvent,
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -211,6 +213,7 @@ export default function MapView({
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
   const battlePopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
+  const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
   useEffect(() => { onMoveEndRef.current = onMoveEnd; }, [onMoveEnd]);
   const acledRegionalRef = useRef<AcledRegionalData | null>(null);
@@ -1566,6 +1569,107 @@ export default function MapView({
       essential: true,
     });
   }, [loaded, flyToTarget]);
+
+  // Active event marker on map
+  useEffect(() => {
+    if (!map.current || !loaded) return;
+
+    // Remove existing marker
+    if (eventMarkerRef.current) {
+      eventMarkerRef.current.remove();
+      eventMarkerRef.current = null;
+    }
+
+    if (!activeEvent) return;
+
+    // Create pulsing marker element
+    const el = document.createElement("div");
+    el.className = "event-marker-pin";
+    el.innerHTML = `
+      <div style="
+        position: relative;
+        width: 28px;
+        height: 28px;
+      ">
+        <div style="
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: oklch(0.85 0.18 85);
+          opacity: 0.3;
+          animation: event-pulse 2s ease-out infinite;
+        "></div>
+        <div style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: oklch(0.85 0.18 85);
+          border: 2px solid oklch(0.15 0 0);
+          box-shadow: 0 0 8px oklch(0.85 0.18 85 / 0.6);
+        "></div>
+      </div>
+    `;
+
+    // Inject pulse animation if not already present
+    if (!document.getElementById("event-pulse-style")) {
+      const style = document.createElement("style");
+      style.id = "event-pulse-style";
+      style.textContent = `
+        @keyframes event-pulse {
+          0% { transform: scale(1); opacity: 0.3; }
+          100% { transform: scale(3); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    const popup = new maplibregl.Popup({
+      offset: 20,
+      closeButton: false,
+      closeOnClick: false,
+      className: "event-marker-popup",
+    }).setHTML(`
+      <div style="
+        background: oklch(0.15 0 0 / 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid oklch(0.3 0 0);
+        border-radius: 8px;
+        padding: 8px 12px;
+        max-width: 240px;
+      ">
+        <div style="
+          font-size: 12px;
+          font-weight: 600;
+          color: oklch(0.85 0.18 85);
+          margin-bottom: 2px;
+        ">${activeEvent.label}</div>
+        <div style="
+          font-size: 10px;
+          color: oklch(0.65 0 0);
+          line-height: 1.4;
+        ">${activeEvent.description}</div>
+      </div>
+    `);
+
+    const marker = new maplibregl.Marker({ element: el, anchor: "center" })
+      .setLngLat([activeEvent.lng, activeEvent.lat])
+      .setPopup(popup)
+      .addTo(map.current);
+
+    marker.togglePopup();
+    eventMarkerRef.current = marker;
+
+    return () => {
+      if (eventMarkerRef.current) {
+        eventMarkerRef.current.remove();
+        eventMarkerRef.current = null;
+      }
+    };
+  }, [loaded, activeEvent]);
 
   return (
     <>
