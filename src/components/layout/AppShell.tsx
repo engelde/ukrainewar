@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useQueryState, parseAsString } from "nuqs";
 import type { CasualtyData, MapLayers, EquipmentMarker } from "@/lib/types";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import Header, { Footer } from "@/components/layout/Header";
@@ -16,6 +17,7 @@ import BattlesPanel, {
 } from "@/components/battles/BattlesPanel";
 import DataSourcesPanel from "@/components/layout/DataSourcesPanel";
 import DraggablePanel from "@/components/ui/DraggablePanel";
+import ResetButton from "@/components/layout/ResetButton";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -34,6 +36,9 @@ interface AppShellProps {
 }
 
 export default function AppShell({ casualtyData }: AppShellProps) {
+  // URL state — timeline date persisted in query string
+  const [urlDate, setUrlDate] = useQueryState("t", parseAsString.withOptions({ shallow: true, throttleMs: 500 }));
+
   const [layers, setLayers] = useState<MapLayers>({
     territory: true,
     equipment: true,
@@ -47,7 +52,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     null
   );
 
-  const [territoryDate, setTerritoryDate] = useState<string | null>(null);
+  const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
   const [humanitarianOpen, setHumanitarianOpen] = useState(true);
   const [spendingOpen, setSpendingOpen] = useState(true);
   const [battlesOpen, setBattlesOpen] = useState(true);
@@ -72,7 +77,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const handleTimelineDateChange = useCallback((date: string) => {
     setTerritoryDate(date);
-  }, []);
+    // Sync to URL — use today's date as sentinel to clear param
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+    if (date >= todayStr) {
+      setUrlDate(null);
+    } else {
+      setUrlDate(date);
+    }
+  }, [setUrlDate]);
 
   // Fetch historical loss data when timeline date changes
   useEffect(() => {
@@ -136,10 +149,30 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const handleBattleClick = useCallback(
     (battle: Battle) => {
       setTerritoryDate(battle.startDate);
+      setUrlDate(battle.startDate);
       setFlyToTarget({ lat: battle.lat, lng: battle.lng, zoom: 9 });
     },
-    []
+    [setUrlDate]
   );
+
+  // Reset everything to defaults
+  const handleReset = useCallback(() => {
+    setTerritoryDate(null);
+    setUrlDate(null);
+    setFlyToTarget(null);
+    setSelectedMarker(null);
+    setHumanitarianOpen(true);
+    setSpendingOpen(true);
+    setBattlesOpen(true);
+    setLayers({
+      territory: true,
+      equipment: true,
+      frontline: true,
+      border: true,
+      conflicts: true,
+      heatmap: true,
+    });
+  }, [setUrlDate]);
 
   // Use historical data when timeline is scrubbed to a past date
   const today = new Date();
@@ -157,12 +190,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         flyTo={flyToTarget}
       />
       <Header />
+      <ResetButton onReset={handleReset} />
       {displayData && (
         <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs">
           <StatsOverlay data={displayData} isHistorical={isViewingPast && !!historicalData} />
         </DraggablePanel>
       )}
-      <DraggablePanel className="fixed left-4 bottom-[175px] z-30 sm:left-6 sm:bottom-[185px]">
+      <DraggablePanel className="fixed left-4 bottom-[165px] z-30 sm:left-6 sm:bottom-[170px]">
         <LayerControls
           layers={layers}
           onToggle={handleToggleLayer}
@@ -194,8 +228,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       </DraggablePanel>
       <TimelineScrubber
         onDateChange={handleTimelineDateChange}
+        initialDate={urlDate}
       />
-      <DraggablePanel className="fixed left-4 bottom-[140px] z-40 sm:left-6 sm:bottom-[150px]">
+      <DraggablePanel className="fixed left-4 bottom-[130px] z-40 sm:left-6 sm:bottom-[135px]">
         <DataSourcesPanel />
       </DraggablePanel>
       <Footer />

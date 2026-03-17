@@ -9,10 +9,12 @@ import {
   TbChevronRight,
   TbChevronDown,
   TbInfoCircle,
+  TbPlayerSkipBackFilled,
 } from "react-icons/tb";
 
 interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
+  initialDate?: string | null;
 }
 
 // Key events in the war for timeline markers
@@ -60,11 +62,19 @@ const KEY_EVENTS: { date: string; label: string; description: string }[] = [
   { date: "20250818", label: "DC summit", description: "Trump hosts Zelenskyy and European/NATO leaders at White House; cautious optimism, no breakthrough" },
 ];
 
+const SPEED_OPTIONS = [
+  { label: "0.5×", ms: 800 },
+  { label: "1×", ms: 400 },
+  { label: "2×", ms: 200 },
+  { label: "4×", ms: 100 },
+  { label: "8×", ms: 50 },
+];
+
 function formatDateDisplay(dateStr: string): string {
-  const y = dateStr.slice(0, 4);
   const m = dateStr.slice(4, 6);
   const d = dateStr.slice(6, 8);
-  return `${y}-${m}-${d}`;
+  const y = dateStr.slice(0, 4);
+  return `${m}/${d}/${y}`;
 }
 
 function formatDateShort(dateStr: string): string {
@@ -91,20 +101,34 @@ function generateDateRange(): string[] {
 }
 
 const TERRITORY_DATA_START = "20240708";
-const PIXELS_PER_DAY = 5;
+const PIXELS_PER_DAY = 2;
+
+const YEAR_MARKS = ["2022", "2023", "2024", "2025", "2026"];
 
 export default function TimelineScrubber({
   onDateChange,
+  initialDate,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
-  const [currentIndex, setCurrentIndex] = useState<number>(
-    () => generateDateRange().length - 1
-  );
+  const [currentIndex, setCurrentIndex] = useState<number>(() => {
+    if (initialDate) {
+      const allDates = generateDateRange();
+      const idx = allDates.findIndex((d) => d >= initialDate);
+      if (idx >= 0) return idx;
+    }
+    return generateDateRange().length - 1;
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [speedIndex, setSpeedIndex] = useState(1); // default 1× (400ms)
   const playIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isInitialScroll = useRef(true);
+
+  // Drag-to-scroll state
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragScrollLeft = useRef(0);
 
   // Notify parent when index changes
   useEffect(() => {
@@ -113,9 +137,25 @@ export default function TimelineScrubber({
     }
   }, [currentIndex, dates, onDateChange]);
 
-  // Play/pause animation
+  // Play/pause — if at the end, restart from beginning
   const togglePlay = useCallback(() => {
-    setIsPlaying((prev) => !prev);
+    setIsPlaying((prev) => {
+      if (!prev) {
+        // Starting playback
+        setCurrentIndex((idx) => {
+          if (idx >= dates.length - 1) return 0; // at end → restart
+          return idx;
+        });
+        return true;
+      }
+      return false;
+    });
+  }, [dates.length]);
+
+  // Jump to start
+  const jumpToStart = useCallback(() => {
+    setCurrentIndex(0);
+    setIsPlaying(false);
   }, []);
 
   useEffect(() => {
@@ -128,7 +168,7 @@ export default function TimelineScrubber({
           }
           return prev + 1;
         });
-      }, 400);
+      }, SPEED_OPTIONS[speedIndex].ms);
     }
 
     return () => {
@@ -137,10 +177,11 @@ export default function TimelineScrubber({
         playIntervalRef.current = null;
       }
     };
-  }, [isPlaying, dates.length]);
+  }, [isPlaying, dates.length, speedIndex]);
 
   const handleTimelineClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isDragging.current) return;
       const target = e.target as HTMLElement;
       if (target.closest("button")) return;
 
@@ -154,6 +195,40 @@ export default function TimelineScrubber({
       setIsPlaying(false);
     },
     [dates.length]
+  );
+
+  // Drag-to-scroll handlers for desktop
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button")) return;
+
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      isDragging.current = false;
+      dragStartX.current = e.clientX;
+      dragScrollLeft.current = container.scrollLeft;
+
+      const handleMouseMove = (ev: MouseEvent) => {
+        const dx = ev.clientX - dragStartX.current;
+        if (Math.abs(dx) > 3) isDragging.current = true;
+        container.scrollLeft = dragScrollLeft.current - dx;
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        // Reset drag flag after click event fires
+        requestAnimationFrame(() => {
+          isDragging.current = false;
+        });
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    []
   );
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -174,6 +249,18 @@ export default function TimelineScrubber({
     [dates]
   );
 
+  const handleJumpToYear = useCallback(
+    (year: string) => {
+      const targetDate = year === "2022" ? "20220224" : `${year}0101`;
+      const idx = dates.findIndex((d) => d >= targetDate);
+      if (idx >= 0) {
+        setCurrentIndex(idx);
+        setIsPlaying(false);
+      }
+    },
+    [dates]
+  );
+
   const handleStepBack = useCallback(() => {
     setCurrentIndex((prev) => Math.max(0, prev - 1));
     setIsPlaying(false);
@@ -183,6 +270,10 @@ export default function TimelineScrubber({
     setCurrentIndex((prev) => Math.min(dates.length - 1, prev + 1));
     setIsPlaying(false);
   }, [dates.length]);
+
+  const cycleSpeed = useCallback(() => {
+    setSpeedIndex((prev) => (prev + 1) % SPEED_OPTIONS.length);
+  }, []);
 
   // Auto-scroll to keep playhead visible
   useEffect(() => {
@@ -230,7 +321,7 @@ export default function TimelineScrubber({
 
   // All labels with two-row collision-free layout
   const labelRows = (() => {
-    const MIN_LABEL_GAP = 85;
+    const MIN_LABEL_GAP = 55;
     const rows: { date: string; label: string; px: number; row: number }[] = [];
     let lastRow0 = -MIN_LABEL_GAP;
     let lastRow1 = -MIN_LABEL_GAP;
@@ -261,13 +352,22 @@ export default function TimelineScrubber({
   ) + 1;
 
   // Year boundaries in pixels
-  const yearTicksPx = ["2022", "2023", "2024", "2025", "2026"]
+  const yearTicksPx = YEAR_MARKS
     .map((y) => {
       if (y === "2022") return { year: y, px: 0 };
       const idx = dates.indexOf(`${y}0101`);
       return idx >= 0 ? { year: y, px: idx * PIXELS_PER_DAY } : null;
     })
     .filter(Boolean) as { year: string; px: number }[];
+
+  // Which years are available for jump buttons
+  const availableYears = YEAR_MARKS.filter((y) => {
+    if (y === "2022") return true;
+    return dates.indexOf(`${y}0101`) >= 0;
+  });
+
+  // Current year from the timeline
+  const currentYear = currentDate.slice(0, 4);
 
   const hasTerritoryData = currentDate >= TERRITORY_DATA_START;
   const territoryStartPx = (() => {
@@ -279,7 +379,7 @@ export default function TimelineScrubber({
     <div
       className={cn(
         "fixed bottom-0 left-0 right-0 z-30",
-        "px-4 pb-3 sm:px-6 sm:pb-4"
+        "px-4 pb-1.5 sm:px-6 sm:pb-2"
       )}
     >
       <div
@@ -333,9 +433,9 @@ export default function TimelineScrubber({
             )}
 
             {/* Controls row */}
-            <div className="flex items-center gap-3 px-3 pt-2">
+            <div className="flex items-center gap-2 px-3 pt-2 sm:gap-3">
               {/* Date info */}
-              <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[140px]">
+              <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px]">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
                     Timeline
@@ -366,9 +466,16 @@ export default function TimelineScrubber({
               {/* Transport controls */}
               <div className="flex items-center gap-0.5">
                 <button
+                  onClick={jumpToStart}
+                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+                  title="Jump to start"
+                >
+                  <TbPlayerSkipBackFilled className="h-3.5 w-3.5" />
+                </button>
+                <button
                   onClick={handleStepBack}
                   disabled={currentIndex <= 0}
-                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
                   <TbChevronLeft className="h-4 w-4" />
                 </button>
@@ -390,10 +497,44 @@ export default function TimelineScrubber({
                 <button
                   onClick={handleStepForward}
                   disabled={currentIndex >= dates.length - 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
                 >
                   <TbChevronRight className="h-4 w-4" />
                 </button>
+              </div>
+
+              {/* Speed control */}
+              <button
+                onClick={cycleSpeed}
+                className={cn(
+                  "flex h-7 items-center justify-center rounded-md px-2 transition-colors",
+                  "text-[10px] font-mono font-semibold",
+                  isPlaying
+                    ? "bg-ua-blue/15 text-ua-blue"
+                    : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground"
+                )}
+                title="Playback speed"
+              >
+                {SPEED_OPTIONS[speedIndex].label}
+              </button>
+
+              {/* Year jump buttons — desktop only */}
+              <div className="hidden sm:flex items-center gap-0.5 ml-1">
+                {availableYears.map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => handleJumpToYear(y)}
+                    className={cn(
+                      "flex h-6 items-center justify-center rounded px-1.5 transition-colors",
+                      "text-[9px] font-mono",
+                      currentYear === y
+                        ? "bg-ua-blue/15 text-ua-blue font-semibold"
+                        : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                    )}
+                  >
+                    {y}
+                  </button>
+                ))}
               </div>
 
               <div className="flex-1" />
@@ -410,12 +551,13 @@ export default function TimelineScrubber({
             {/* Scrollable timeline */}
             <div
               ref={scrollContainerRef}
-              className="overflow-x-auto overflow-y-hidden scrollbar-none mx-3 mb-3 mt-1.5"
+              className="overflow-x-auto overflow-y-hidden scrollbar-none mx-3 mb-2 mt-1.5 select-none"
               onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
             >
               <div
                 className="relative cursor-crosshair"
-                style={{ width: `${totalWidth}px`, height: "55px" }}
+                style={{ width: `${totalWidth}px`, height: "65px" }}
                 onClick={handleTimelineClick}
               >
                 {/* Track line */}
@@ -501,7 +643,7 @@ export default function TimelineScrubber({
                           <div
                             className={cn(
                               "w-px",
-                              labelInfo.row === 0 ? "h-1.5" : "h-4",
+                              labelInfo.row === 0 ? "h-2" : "h-5",
                               isLabelActive
                                 ? "bg-ua-yellow/50"
                                 : "bg-border/40"
@@ -513,11 +655,11 @@ export default function TimelineScrubber({
                               handleJumpToEvent(labelInfo.date);
                             }}
                             className={cn(
-                              "text-[7px] whitespace-nowrap leading-none mt-0.5",
+                              "text-[9px] whitespace-nowrap leading-none mt-0.5",
                               "transition-colors",
                               isLabelActive
                                 ? "text-ua-yellow font-semibold"
-                                : "text-muted-foreground/60 hover:text-muted-foreground"
+                                : "text-muted-foreground/70 hover:text-muted-foreground"
                             )}
                           >
                             {labelInfo.label}

@@ -208,7 +208,7 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             )}
             <span className={cn(
               "text-[10px] font-semibold uppercase tracking-wider",
-              isHistorical ? "text-ua-yellow" : "text-ua-blue"
+              "text-ua-blue"
             )}>
               Russian Losses
             </span>
@@ -240,7 +240,7 @@ export default function StatsOverlay({ data, isHistorical }: StatsOverlayProps) 
             <div className={cn(
               "drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1",
               "text-xs font-semibold uppercase tracking-wider",
-              isHistorical ? "text-ua-yellow" : "text-ua-blue"
+              "text-ua-blue"
             )}>
               {!isHistorical && (
                 <span className="relative flex h-2 w-2">
