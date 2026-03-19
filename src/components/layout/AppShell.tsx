@@ -107,7 +107,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   }, []);
 
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
-  const fetchControllerRef = useRef<AbortController | null>(null);
   const resetPendingRef = useRef(false);
   const lastFetchedDate = useRef<string | null>(null);
 
@@ -139,6 +138,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   // Fetch historical casualty data when timeline date changes (debounced for playback)
   const casualtyDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const casualtyAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
     if (!territoryDate) {
       lastFetchedDate.current = null;
@@ -152,16 +152,20 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     }
     if (lastFetchedDate.current === territoryDate) return;
 
-    // Cancel pending debounce timer
+    // Cancel only the pending debounce timer — do NOT abort in-flight requests
+    // so that a fetch that already started can still complete
     if (casualtyDebounceRef.current) {
       clearTimeout(casualtyDebounceRef.current);
     }
 
     const dateToFetch = territoryDate;
-    const controller = new AbortController();
-    fetchControllerRef.current = controller;
 
     casualtyDebounceRef.current = setTimeout(async () => {
+      // Abort previous in-flight request only when a new one is about to fire
+      casualtyAbortRef.current?.abort();
+      const controller = new AbortController();
+      casualtyAbortRef.current = controller;
+
       try {
         const res = await fetch(`/api/casualties/history?date=${dateToFetch}`, {
           signal: controller.signal,
@@ -178,7 +182,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
     return () => {
       clearTimeout(casualtyDebounceRef.current!);
-      controller.abort();
     };
   }, [territoryDate]);
 
