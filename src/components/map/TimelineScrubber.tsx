@@ -85,7 +85,12 @@ export default function TimelineScrubber({
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(2); // default 1× (200ms)
-  const [showPlayHint, setShowPlayHint] = useState(true);
+  const [showPlayHint, setShowPlayHint] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !new URLSearchParams(window.location.search).has("played");
+    }
+    return true;
+  });
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Daily losses waveform data
@@ -177,7 +182,13 @@ export default function TimelineScrubber({
 
   // Play/pause — if at the end, restart from beginning
   const togglePlay = useCallback(() => {
-    setShowPlayHint(false);
+    if (showPlayHint) {
+      setShowPlayHint(false);
+      // Persist that the user has played at least once
+      const url = new URL(window.location.href);
+      url.searchParams.set("played", "1");
+      window.history.replaceState({}, "", url.toString());
+    }
     setIsPlaying((prev) => {
       if (!prev) {
         // Starting playback
@@ -189,7 +200,7 @@ export default function TimelineScrubber({
       }
       return false;
     });
-  }, [dates.length]);
+  }, [dates.length, showPlayHint]);
 
   // Jump to start
   const jumpToStart = useCallback(() => {
@@ -487,8 +498,8 @@ export default function TimelineScrubber({
           "transition-all duration-300",
         )}
       >
-        {/* Event info card — shown when near key events */}
-        {activeEvent && (
+        {/* Event info card — shown when near key events (hidden when sidebar is open) */}
+        {activeEvent && !eventsOpen && (
           <div className="mx-3 mt-2.5 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-4 py-2.5 flex items-start gap-2.5">
             <TbInfoCircle className="h-4 w-4 text-ua-blue mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
@@ -532,6 +543,9 @@ export default function TimelineScrubber({
             <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-0">
               <Calendar
                 mode="single"
+                captionLayout="dropdown"
+                startMonth={new Date(2022, 1)}
+                endMonth={new Date()}
                 selected={(() => {
                   const y = parseInt(currentDate.slice(0, 4), 10);
                   const m = parseInt(currentDate.slice(4, 6), 10) - 1;
@@ -600,7 +614,7 @@ export default function TimelineScrubber({
                 )}
               </button>
               {showPlayHint && !isPlaying && (
-                <span className="absolute inset-0 rounded-md animate-ping bg-ua-blue/25 pointer-events-none" />
+                <span className="absolute inset-0 rounded-md bg-ua-blue/25 pointer-events-none animate-[ping_1s_ease-in-out_3_forwards]" />
               )}
             </div>
             <button

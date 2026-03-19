@@ -1298,7 +1298,7 @@ export default function MapView({
 
   // Update territory when timeline date changes (debounced)
   useEffect(() => {
-    if (!map.current || !loaded || !territoryDate) return;
+    if (!map.current || !loaded) return;
     const timer = setTimeout(() => {
       if (map.current?.isStyleLoaded()) loadTerritoryData(map.current);
     }, 200);
