@@ -8,6 +8,7 @@ import {
   TbCalendarEvent,
   TbFilter,
   TbFlag,
+  TbFlame,
   TbShieldCheckered,
   TbSword,
   TbUsers,
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 
 export type EventCategory =
   | "battle"
+  | "conflict"
   | "territorial"
   | "political"
   | "military"
@@ -50,6 +52,12 @@ export const EVENT_CATEGORIES: EventCategoryInfo[] = [
     label: "events.categories.battle",
     icon: <TbSword className="h-3.5 w-3.5" />,
     color: "text-destruction",
+  },
+  {
+    id: "conflict",
+    label: "events.categories.conflict",
+    icon: <TbFlame className="h-3.5 w-3.5" />,
+    color: "text-damage",
   },
   {
     id: "territorial",
@@ -87,19 +95,30 @@ export function getEventCategory(label: string): EventCategory {
   const lower = label.toLowerCase();
   if (lower.includes("offensive") || lower.includes("battle") || lower.includes("siege"))
     return "battle";
+  // ACLED conflict events (clashes, strikes, shelling, civilian attacks)
+  if (
+    lower.includes("major clash:") ||
+    lower.includes("armed clash:") ||
+    lower.includes("air/drone strike:") ||
+    lower.includes("shelling/artillery:") ||
+    lower.includes("civilian attack:")
+  )
+    return "conflict";
   if (
     lower.includes("falls") ||
     lower.includes("captured") ||
     lower.includes("occupied") ||
     lower.includes("recaptured") ||
-    lower.includes("liberated")
+    lower.includes("liberated") ||
+    lower.includes("territory transfer:")
   )
     return "territorial";
   if (
     lower.includes("summit") ||
     lower.includes("election") ||
     lower.includes("inaugurated") ||
-    lower.includes("ceasefire")
+    lower.includes("ceasefire") ||
+    lower.includes("agreement:")
   )
     return "political";
   if (
@@ -126,6 +145,17 @@ export function getEventIcon(label: string) {
   const lower = label.toLowerCase();
   if (lower.includes("offensive") || lower.includes("battle") || lower.includes("siege"))
     return <TbSword className="h-4 w-4 text-destruction" />;
+  // ACLED conflict events
+  if (
+    lower.includes("major clash:") ||
+    lower.includes("armed clash:") ||
+    lower.includes("air/drone strike:") ||
+    lower.includes("shelling/artillery:") ||
+    lower.includes("civilian attack:")
+  )
+    return <TbFlame className="h-4 w-4 text-damage" />;
+  if (lower.includes("territory transfer:")) return <TbFlag className="h-4 w-4 text-capture" />;
+  if (lower.includes("agreement:")) return <TbUsers className="h-4 w-4 text-ua-yellow" />;
   if (
     lower.includes("falls") ||
     lower.includes("captured") ||

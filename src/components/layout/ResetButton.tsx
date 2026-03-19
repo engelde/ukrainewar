@@ -16,10 +16,10 @@ export default function ResetButton({ onReset, warDay, isHistorical }: ResetButt
       {warDay !== undefined && (
         <div
           className={cn(
-            "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5",
+            "flex items-center gap-2 rounded-lg px-3 py-2",
             "bg-background/70 backdrop-blur-xl",
-            "border border-border/40",
-            "text-[10px] font-semibold uppercase tracking-wider font-mono",
+            "border border-ua-yellow/30",
+            "text-xs font-bold uppercase tracking-wider font-mono",
             "text-ua-yellow",
           )}
         >

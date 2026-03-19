@@ -85,6 +85,7 @@
     "footerHint": "Натисніть на подію, щоб перейти до цієї дати на хронології",
     "categories": {
       "battle": "Битви",
+      "conflict": "Конфлікт",
       "territorial": "Територія",
       "political": "Політика",
       "military": "Військові",

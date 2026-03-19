@@ -11,6 +11,8 @@ import {
   TbPlayerSkipForwardFilled,
   TbTimeline,
 } from "react-icons/tb";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WarEvent } from "@/data/events";
 import { getMonthsShort, t } from "@/i18n";
@@ -83,6 +85,8 @@ export default function TimelineScrubber({
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(2); // default 1× (200ms)
+  const [showPlayHint, setShowPlayHint] = useState(true);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Daily losses waveform data
   const [dailyLosses, setDailyLosses] = useState<Map<string, number>>(new Map());
@@ -173,6 +177,7 @@ export default function TimelineScrubber({
 
   // Play/pause — if at the end, restart from beginning
   const togglePlay = useCallback(() => {
+    setShowPlayHint(false);
     setIsPlaying((prev) => {
       if (!prev) {
         // Starting playback
@@ -502,23 +507,60 @@ export default function TimelineScrubber({
 
         {/* Controls row */}
         <div className="flex items-center gap-2.5 px-4 pt-3 sm:gap-3">
-          {/* Date info */}
-          <div className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px]">
-            <div className="flex items-center gap-2">
-              <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
-                {t("timeline.title")}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-mono text-foreground font-medium">
-                {formatDateDisplay(currentDate)}
-              </span>
-              {currentIndex === dates.length - 1 && (
-                <span className="text-[9px] text-capture font-mono">{t("common.today")}</span>
-              )}
-            </div>
-          </div>
+          {/* Date info — click to open calendar picker */}
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger
+              render={
+                <button className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px] rounded-md hover:bg-surface-elevated/50 transition-colors px-1.5 py-1 -mx-1.5 -my-1 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
+                      {t("timeline.title")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-mono text-foreground font-medium">
+                      {formatDateDisplay(currentDate)}
+                    </span>
+                    {currentIndex === dates.length - 1 && (
+                      <span className="text-[9px] text-capture font-mono">{t("common.today")}</span>
+                    )}
+                  </div>
+                </button>
+              }
+            />
+            <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={(() => {
+                  const y = parseInt(currentDate.slice(0, 4), 10);
+                  const m = parseInt(currentDate.slice(4, 6), 10) - 1;
+                  const d = parseInt(currentDate.slice(6, 8), 10);
+                  return new Date(y, m, d);
+                })()}
+                onSelect={(date) => {
+                  if (!date) return;
+                  const y = date.getFullYear();
+                  const m = String(date.getMonth() + 1).padStart(2, "0");
+                  const d = String(date.getDate()).padStart(2, "0");
+                  const dateStr = `${y}${m}${d}`;
+                  const idx = dates.findIndex((dd) => dd >= dateStr);
+                  if (idx >= 0) {
+                    setCurrentIndex(idx);
+                    setIsPlaying(false);
+                  }
+                  setCalendarOpen(false);
+                }}
+                disabled={[{ before: new Date(2022, 1, 24) }, { after: new Date() }]}
+                defaultMonth={(() => {
+                  const y = parseInt(currentDate.slice(0, 4), 10);
+                  const m = parseInt(currentDate.slice(4, 6), 10) - 1;
+                  return new Date(y, m, 1);
+                })()}
+                className="bg-background/95 backdrop-blur-xl border border-border/40 rounded-lg"
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* Transport controls */}
           <div className="flex items-center gap-0.5">
@@ -541,21 +583,26 @@ export default function TimelineScrubber({
             >
               <TbChevronLeft className="h-5 w-5" />
             </button>
-            <button
-              onClick={togglePlay}
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
-                isPlaying
-                  ? "bg-ua-blue/20 text-ua-blue"
-                  : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
+            <div className="relative">
+              <button
+                onClick={togglePlay}
+                className={cn(
+                  "relative z-10 flex h-10 w-10 items-center justify-center rounded-md transition-colors",
+                  isPlaying
+                    ? "bg-ua-blue/20 text-ua-blue"
+                    : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {isPlaying ? (
+                  <TbPlayerPauseFilled className="h-5 w-5" />
+                ) : (
+                  <TbPlayerPlayFilled className="h-5 w-5" />
+                )}
+              </button>
+              {showPlayHint && !isPlaying && (
+                <span className="absolute inset-0 rounded-md animate-ping bg-ua-blue/25 pointer-events-none" />
               )}
-            >
-              {isPlaying ? (
-                <TbPlayerPauseFilled className="h-5 w-5" />
-              ) : (
-                <TbPlayerPlayFilled className="h-5 w-5" />
-              )}
-            </button>
+            </div>
             <button
               onClick={() => {
                 if (!holdFiredRef.current) handleStepForward();

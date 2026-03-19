@@ -85,6 +85,7 @@
     "footerHint": "Click an event to jump to that date on the timeline",
     "categories": {
       "battle": "Battles",
+      "conflict": "Conflict",
       "territorial": "Territory",
       "political": "Political",
       "military": "Military",
