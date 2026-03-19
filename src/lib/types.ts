@@ -75,6 +75,7 @@ export interface EquipmentMarker {
   location: string | null;
   lng: number;
   lat: number;
+  category?: string;
 }
 
 export interface MapLayers {

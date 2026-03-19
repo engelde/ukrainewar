@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { WARSPOTTING_API } from "@/lib/constants";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
+import { CACHE_TTL, WARSPOTTING_API } from "@/lib/constants";
+
+const CACHE_KEY = "losses-trend";
 
 const headers = {
   "User-Agent": "UkraineWarTracker/1.0 (ukrainewar.app)",
@@ -11,61 +14,116 @@ interface Loss {
   type: string;
 }
 
+interface TrendData {
+  dates: string[];
+  totalTrend: { date: string; count: number }[];
+  typeTrends: Record<string, { date: string; count: number }[]>;
+}
+
+let inflightPromise: Promise<TrendData> | null = null;
+
+async function fetchTrend(): Promise<TrendData> {
+  const res = await fetch(`${WARSPOTTING_API}/losses/russia/recent/`, {
+    headers,
+    next: { revalidate: 21600 },
+  });
+
+  if (!res.ok) throw new Error(`WarSpotting API returned ${res.status}`);
+
+  const data = await res.json();
+  const losses: Loss[] = data.losses || [];
+
+  const byDate: Record<string, number> = {};
+  const byDateAndType: Record<string, Record<string, number>> = {};
+
+  for (const loss of losses) {
+    if (!loss.date) continue;
+    const date = loss.date.split("T")[0];
+    byDate[date] = (byDate[date] || 0) + 1;
+
+    if (!byDateAndType[date]) byDateAndType[date] = {};
+    const type = normalizeType(loss.type);
+    byDateAndType[date][type] = (byDateAndType[date][type] || 0) + 1;
+  }
+
+  const dates = Object.keys(byDate).sort();
+  const totalTrend = dates.map((d) => ({ date: d, count: byDate[d] }));
+
+  const typeTrends: Record<string, { date: string; count: number }[]> = {};
+  const allTypes = new Set<string>();
+  for (const dateData of Object.values(byDateAndType)) {
+    for (const type of Object.keys(dateData)) allTypes.add(type);
+  }
+
+  for (const type of allTypes) {
+    typeTrends[type] = dates.map((d) => ({
+      date: d,
+      count: byDateAndType[d]?.[type] || 0,
+    }));
+  }
+
+  return { dates, totalTrend, typeTrends };
+}
+
+function refreshInBackground() {
+  if (inflightPromise) return;
+  inflightPromise = fetchTrend()
+    .then(async (data) => {
+      await cacheSet(CACHE_KEY, data, CACHE_TTL.LOSSES_RECENT);
+      return data;
+    })
+    .catch((err) => {
+      console.error("[losses/trend] Background refresh failed:", err);
+      throw err;
+    })
+    .finally(() => {
+      inflightPromise = null;
+    });
+}
+
 export async function GET() {
   try {
-    const res = await fetch(`${WARSPOTTING_API}/losses/russia/recent/`, {
-      headers,
-      next: { revalidate: 21600 },
-    });
+    const cached = await cacheGet<TrendData>(CACHE_KEY);
 
-    if (!res.ok) {
-      return NextResponse.json({ error: "Failed to fetch losses" }, { status: res.status });
-    }
-
-    const data = await res.json();
-    const losses: Loss[] = data.losses || [];
-
-    // Group by date
-    const byDate: Record<string, number> = {};
-    const byDateAndType: Record<string, Record<string, number>> = {};
-
-    for (const loss of losses) {
-      if (!loss.date) continue;
-      const date = loss.date.split("T")[0];
-      byDate[date] = (byDate[date] || 0) + 1;
-
-      if (!byDateAndType[date]) byDateAndType[date] = {};
-      const type = normalizeType(loss.type);
-      byDateAndType[date][type] = (byDateAndType[date][type] || 0) + 1;
-    }
-
-    // Sort dates and build trend arrays
-    const dates = Object.keys(byDate).sort();
-    const totalTrend = dates.map((d) => ({ date: d, count: byDate[d] }));
-
-    // Build per-type trends
-    const typeTrends: Record<string, { date: string; count: number }[]> = {};
-    const allTypes = new Set<string>();
-    for (const dateData of Object.values(byDateAndType)) {
-      for (const type of Object.keys(dateData)) allTypes.add(type);
-    }
-
-    for (const type of allTypes) {
-      typeTrends[type] = dates.map((d) => ({
-        date: d,
-        count: byDateAndType[d]?.[type] || 0,
-      }));
-    }
-
-    return NextResponse.json(
-      { dates, totalTrend, typeTrends },
-      {
+    if (cached && isFresh(cached)) {
+      return NextResponse.json(cached.data, {
         headers: {
           "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=3600",
+          "X-Cache": "HIT",
         },
+      });
+    }
+
+    if (cached && isUsableStale(cached)) {
+      refreshInBackground();
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=21600",
+          "X-Cache": "STALE",
+        },
+      });
+    }
+
+    const trendData = await fetchTrend();
+    await cacheSet(CACHE_KEY, trendData, CACHE_TTL.LOSSES_RECENT);
+
+    return NextResponse.json(trendData, {
+      headers: {
+        "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=3600",
+        "X-Cache": "MISS",
       },
-    );
-  } catch {
+    });
+  } catch (error) {
+    const stale = await cacheGet<TrendData>(CACHE_KEY);
+    if (stale) {
+      return NextResponse.json(stale.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-STALE",
+          "X-Error": error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

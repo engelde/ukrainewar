@@ -1,14 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { WARSPOTTING_API } from "@/lib/constants";
+
+const PERSISTENT_TTL = 43200; // 12 hours
 
 const WS_HEADERS = {
   "User-Agent": "UkraineWarTracker/1.0 (ukrainewar.app)",
   Accept: "application/json",
 };
 
-// In-memory cache keyed by month (YYYY-MM)
+// In-memory cache keyed by month (YYYY-MM) — fast layer above persistent cache
 const monthCache = new Map<string, { losses: Record<string, unknown>[]; cachedAt: number }>();
-const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
+const MEM_CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
+
+// Dedup concurrent fetches per month
+const inflightPromises = new Map<string, Promise<Record<string, unknown>[]>>();
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -55,6 +61,24 @@ async function fetchMonth(yearMonth: string): Promise<Record<string, unknown>[]>
   return allLosses;
 }
 
+function refreshInBackground(cacheKey: string, month: string) {
+  if (inflightPromises.has(cacheKey)) return;
+  const p = fetchMonth(month)
+    .then(async (losses) => {
+      monthCache.set(month, { losses, cachedAt: Date.now() });
+      await cacheSet(cacheKey, losses, PERSISTENT_TTL);
+      return losses;
+    })
+    .catch((err) => {
+      console.error(`[losses/month] Background refresh failed for ${month}:`, err);
+      return [] as Record<string, unknown>[];
+    })
+    .finally(() => {
+      inflightPromises.delete(cacheKey);
+    });
+  inflightPromises.set(cacheKey, p);
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const month = searchParams.get("month"); // YYYY-MM format
@@ -66,31 +90,65 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Validate month is within war range
   if (month < "2022-02" || month > new Date().toISOString().slice(0, 7)) {
     return NextResponse.json({ error: "Month out of range (2022-02 to present)" }, { status: 400 });
   }
 
+  const cacheKey = `losses-month:${month}`;
+
   try {
+    // Layer 1: In-memory cache (fastest)
     const now = Date.now();
-    const cached = monthCache.get(month);
-    if (cached && now - cached.cachedAt < CACHE_TTL) {
+    const memCached = monthCache.get(month);
+    if (memCached && now - memCached.cachedAt < MEM_CACHE_TTL) {
       return NextResponse.json(
-        { month, count: cached.losses.length, losses: cached.losses },
+        { month, count: memCached.losses.length, losses: memCached.losses },
         {
           headers: {
             "Cache-Control": "public, s-maxage=43200, stale-while-revalidate=3600",
-            "X-Data-Source": "cache",
+            "X-Cache": "HIT",
           },
         },
       );
     }
 
+    // Layer 2: Persistent cache
+    const persistent = await cacheGet<Record<string, unknown>[]>(cacheKey);
+
+    if (persistent && isFresh(persistent)) {
+      monthCache.set(month, { losses: persistent.data, cachedAt: Date.now() });
+      return NextResponse.json(
+        { month, count: persistent.data.length, losses: persistent.data },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=43200, stale-while-revalidate=3600",
+            "X-Cache": "HIT",
+          },
+        },
+      );
+    }
+
+    if (persistent && isUsableStale(persistent)) {
+      monthCache.set(month, { losses: persistent.data, cachedAt: Date.now() });
+      refreshInBackground(cacheKey, month);
+      return NextResponse.json(
+        { month, count: persistent.data.length, losses: persistent.data },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=43200",
+            "X-Cache": "STALE",
+          },
+        },
+      );
+    }
+
+    // Layer 3: Cold fetch
     const losses = await fetchMonth(month);
 
     monthCache.set(month, { losses, cachedAt: now });
+    await cacheSet(cacheKey, losses, PERSISTENT_TTL);
 
-    // Evict oldest entries if cache grows too large (keep 12 months)
+    // Evict oldest in-memory entries (keep 12 months)
     if (monthCache.size > 12) {
       const entries = [...monthCache.entries()].sort((a, b) => a[1].cachedAt - b[1].cachedAt);
       for (let i = 0; i < entries.length - 12; i++) {
@@ -103,19 +161,35 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           "Cache-Control": "public, s-maxage=43200, stale-while-revalidate=3600",
-          "X-Data-Source": "fresh",
+          "X-Cache": "MISS",
         },
       },
     );
   } catch (error) {
-    const cached = monthCache.get(month);
-    if (cached) {
+    // Try in-memory stale first, then persistent stale
+    const memStale = monthCache.get(month);
+    if (memStale) {
       return NextResponse.json(
-        { month, count: cached.losses.length, losses: cached.losses },
+        { month, count: memStale.losses.length, losses: memStale.losses },
         {
           headers: {
             "Cache-Control": "public, s-maxage=3600",
-            "X-Data-Source": "stale-cache",
+            "X-Cache": "ERROR-STALE",
+            "X-Error": error instanceof Error ? error.message : "Unknown error",
+          },
+        },
+      );
+    }
+
+    const persistentStale = await cacheGet<Record<string, unknown>[]>(cacheKey);
+    if (persistentStale) {
+      return NextResponse.json(
+        { month, count: persistentStale.data.length, losses: persistentStale.data },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=3600",
+            "X-Cache": "ERROR-STALE",
+            "X-Error": error instanceof Error ? error.message : "Unknown error",
           },
         },
       );

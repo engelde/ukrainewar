@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 
 const ORC_LOSSES_URL =
   "https://raw.githubusercontent.com/lod-db/orc-losses/main/russian-losses.json";
+const PERSISTENT_TTL = 86400; // 24 hours
+const CACHE_KEY = "casualties-history";
 
 interface OrcLossEntry {
   date: string;
@@ -20,27 +23,66 @@ interface OrcLossEntry {
   missiles: number | null;
 }
 
-// Cache the full dataset in-memory for the life of the worker
+// In-memory cache — fast layer above persistent cache
 let cachedData: OrcLossEntry[] | null = null;
 let cacheTime = 0;
-const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours
+const MEM_CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours
 
-async function getHistoricalData(): Promise<OrcLossEntry[]> {
-  if (cachedData && Date.now() - cacheTime < CACHE_DURATION) {
-    return cachedData;
-  }
+let inflightPromise: Promise<OrcLossEntry[]> | null = null;
 
+async function fetchFromUpstream(): Promise<OrcLossEntry[]> {
   const res = await fetch(ORC_LOSSES_URL, {
     next: { revalidate: 14400 },
   });
-
-  if (!res.ok) throw new Error("Failed to fetch historical loss data");
-
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
   const data: OrcLossEntry[] = await res.json();
-  // Data comes newest-first; we want oldest-first for binary search
-  cachedData = data.reverse();
+  return data.reverse(); // oldest-first for binary search
+}
+
+async function getHistoricalData(): Promise<OrcLossEntry[]> {
+  // Layer 1: In-memory cache
+  if (cachedData && Date.now() - cacheTime < MEM_CACHE_DURATION) {
+    return cachedData;
+  }
+
+  // Layer 2: Persistent cache
+  const persistent = await cacheGet<OrcLossEntry[]>(CACHE_KEY);
+
+  if (persistent && isFresh(persistent)) {
+    cachedData = persistent.data;
+    cacheTime = Date.now();
+    return cachedData;
+  }
+
+  if (persistent && isUsableStale(persistent)) {
+    cachedData = persistent.data;
+    cacheTime = Date.now();
+    // Background refresh
+    if (!inflightPromise) {
+      inflightPromise = fetchFromUpstream()
+        .then(async (data) => {
+          cachedData = data;
+          cacheTime = Date.now();
+          await cacheSet(CACHE_KEY, data, PERSISTENT_TTL);
+          return data;
+        })
+        .catch((err) => {
+          console.error("[casualties/history] Background refresh failed:", err);
+          return cachedData || [];
+        })
+        .finally(() => {
+          inflightPromise = null;
+        });
+    }
+    return cachedData;
+  }
+
+  // Layer 3: Cold fetch
+  const data = await fetchFromUpstream();
+  cachedData = data;
   cacheTime = Date.now();
-  return cachedData;
+  await cacheSet(CACHE_KEY, data, PERSISTENT_TTL);
+  return data;
 }
 
 function findByDate(data: OrcLossEntry[], targetDate: string): OrcLossEntry | null {
@@ -73,7 +115,23 @@ export async function GET(request: Request) {
     );
   }
 
+  // Determine X-Cache status based on where data comes from
+  let xCache = "MISS";
+
   try {
+    // Check if we'll serve from cache
+    const memFresh = cachedData && Date.now() - cacheTime < MEM_CACHE_DURATION;
+    if (memFresh) {
+      xCache = "HIT";
+    } else {
+      const persistent = await cacheGet<OrcLossEntry[]>(CACHE_KEY);
+      if (persistent && isFresh(persistent)) {
+        xCache = "HIT";
+      } else if (persistent && isUsableStale(persistent)) {
+        xCache = "STALE";
+      }
+    }
+
     const data = await getHistoricalData();
     const entry = findByDate(data, date);
 
@@ -134,9 +192,73 @@ export async function GET(request: Request) {
     return NextResponse.json(response, {
       headers: {
         "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=43200",
+        "X-Cache": xCache,
       },
     });
-  } catch {
+  } catch (error) {
+    // Try serving any available stale data
+    if (cachedData) {
+      const entry = findByDate(cachedData, date);
+      if (entry) {
+        const entryIdx = cachedData.indexOf(entry);
+        const prevEntry = entryIdx > 0 ? cachedData[entryIdx - 1] : null;
+        const v = (val: number | null) => val ?? 0;
+        const delta = (curr: number | null, prev: number | null | undefined) =>
+          prev != null && curr != null ? Math.max(0, curr - prev) : 0;
+        const warStart = new Date("2022-02-24");
+        const entryDate = new Date(entry.date);
+        const warDay = Math.floor((entryDate.getTime() - warStart.getTime()) / 86400000) + 1;
+
+        return NextResponse.json(
+          {
+            day: warDay,
+            date: entry.date,
+            militaryPersonnel: [
+              delta(entry.personnel, prevEntry?.personnel),
+              v(entry.personnel),
+            ] as [number, number],
+            tank: [delta(entry.tanks, prevEntry?.tanks), v(entry.tanks)] as [number, number],
+            armoredCombatVehicle: [delta(entry.afvs, prevEntry?.afvs), v(entry.afvs)] as [
+              number,
+              number,
+            ],
+            artillerySystem: [delta(entry.artillery, prevEntry?.artillery), v(entry.artillery)] as [
+              number,
+              number,
+            ],
+            airDefenceSystem: [
+              delta(entry.airDefense, prevEntry?.airDefense),
+              v(entry.airDefense),
+            ] as [number, number],
+            mlrs: [
+              delta(entry.rocketSystems, prevEntry?.rocketSystems),
+              v(entry.rocketSystems),
+            ] as [number, number],
+            supplyVehicle: [
+              delta(entry.unarmoredVehicles, prevEntry?.unarmoredVehicles),
+              v(entry.unarmoredVehicles),
+            ] as [number, number],
+            jet: [
+              delta(entry.fixedWingAircraft, prevEntry?.fixedWingAircraft),
+              v(entry.fixedWingAircraft),
+            ] as [number, number],
+            copter: [
+              delta(entry.rotaryWingAircraft, prevEntry?.rotaryWingAircraft),
+              v(entry.rotaryWingAircraft),
+            ] as [number, number],
+            uav: [delta(entry.uavs, prevEntry?.uavs), v(entry.uavs)] as [number, number],
+            ship: [delta(entry.ships, prevEntry?.ships), v(entry.ships)] as [number, number],
+          },
+          {
+            headers: {
+              "Cache-Control": "public, s-maxage=3600",
+              "X-Cache": "ERROR-STALE",
+              "X-Error": error instanceof Error ? error.message : "Unknown error",
+            },
+          },
+        );
+      }
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

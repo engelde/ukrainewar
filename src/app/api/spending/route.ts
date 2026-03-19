@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 
 const KIEL_XLSX_URL =
   "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/62a94ad1-2d28-401e-afd0-8a8089b48f2a-Ukraine_Support_Tracker_Release_27.xlsx";
 
-const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_KEY = "spending-kiel";
+const TTL = 604800; // 7 days in seconds
+const MEM_TTL = TTL * 1000; // 7 days in ms
 
 let cachedData: Record<string, unknown> | null = null;
 let cachedAt = 0;
@@ -190,35 +193,107 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
   };
 }
 
+// Dedup concurrent fetches
+let inflightPromise: Promise<Record<string, unknown>> | null = null;
+
+async function fetchAndCache(): Promise<Record<string, unknown>> {
+  if (inflightPromise) return inflightPromise;
+  inflightPromise = (async () => {
+    const data = await processKielXLSX();
+    cachedData = data;
+    cachedAt = Date.now();
+    await cacheSet(CACHE_KEY, data, TTL);
+    return data;
+  })();
+  try {
+    return await inflightPromise;
+  } finally {
+    inflightPromise = null;
+  }
+}
+
+function refreshInBackground() {
+  if (inflightPromise) return;
+  fetchAndCache().catch((err) => {
+    console.error("[spending] Background refresh failed:", err);
+  });
+}
+
 export async function GET() {
   try {
+    // Fast in-memory layer
     const now = Date.now();
-    if (cachedData && now - cachedAt < CACHE_TTL) {
+    if (cachedData && now - cachedAt < MEM_TTL) {
       return NextResponse.json(cachedData, {
         headers: {
           "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+          "X-Cache": "HIT",
           "X-Data-Source": "cache",
         },
       });
     }
 
-    const data = await processKielXLSX();
-    cachedData = data;
-    cachedAt = now;
+    // Persistent cache layer
+    const cached = await cacheGet<Record<string, unknown>>(CACHE_KEY);
+
+    if (cached && isFresh(cached)) {
+      cachedData = cached.data;
+      cachedAt = cached.timestamp;
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+          "X-Cache": "HIT",
+          "X-Data-Source": "cache",
+        },
+      });
+    }
+
+    if (cached && isUsableStale(cached)) {
+      refreshInBackground();
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=604800",
+          "X-Cache": "STALE",
+          "X-Data-Source": "stale-cache",
+        },
+      });
+    }
+
+    // Cold start — must download and parse XLSX
+    const data = await fetchAndCache();
 
     return NextResponse.json(data, {
       headers: {
         "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+        "X-Cache": "MISS",
         "X-Data-Source": "fresh",
       },
     });
   } catch (error) {
-    // Fall back to cached data even if stale
+    const message = error instanceof Error ? error.message : "Failed to fetch spending data";
+    console.error("Kiel spending error:", message);
+
+    // Serve any stale persistent data on error
+    const stale = await cacheGet<Record<string, unknown>>(CACHE_KEY);
+    if (stale) {
+      return NextResponse.json(stale.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-STALE",
+          "X-Data-Source": "stale-cache",
+          "X-Error": message,
+        },
+      });
+    }
+
+    // Fall back to in-memory cached data even if stale
     if (cachedData) {
       return NextResponse.json(cachedData, {
         headers: {
           "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-STALE",
           "X-Data-Source": "stale-cache",
+          "X-Error": message,
         },
       });
     }
@@ -226,7 +301,7 @@ export async function GET() {
     return NextResponse.json(
       {
         error: "Failed to fetch spending data",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: message,
       },
       { status: 502 },
     );

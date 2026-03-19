@@ -39,7 +39,8 @@ The entire interface is built around an explorable map rendered in muted dark to
 - **Territory control** overlays showing Russian-occupied areas over time
 - **Frontline** visualization tracking the contact line
 - **Equipment loss markers** — geotagged, categorized, and filterable by type and status
-- **Conflict event heatmap** showing regional intensity
+- **Conflict event clusters** showing ACLED battle and violence data
+- **Conflict event heatmap** showing regional intensity by oblast
 - **Major battle locations** with historical context
 - **Ukraine border** and oblast boundary layers
 - All layers independently toggleable via layer controls
@@ -47,10 +48,10 @@ The entire interface is built around an explorable map rendered in muted dark to
 ### Central Timeline
 
 - Scrubable timeline spanning **February 24, 2022 to present**
-- **Playback controls** with adjustable speed (0.25× – 4×)
-- **38 key events** with descriptions and map coordinates
+- **Playback controls** with adjustable speed (0.25x to 4x)
+- **Dynamic key events** from Wikidata, ACLED, and curated editorial sources
 - **Waveform visualization** showing daily Russian loss intensity
-- Event hover tooltips with full details
+- Calendar picker for jumping to specific dates
 - URL state persistence — shareable timeline positions
 
 ### Live Statistics
@@ -61,17 +62,19 @@ The entire interface is built around an explorable map rendered in muted dark to
   - Ships/boats, supply vehicles
 - **Sparkline trend charts** showing recent daily trends
 - Data sourced from the Ukrainian Ministry of Defence
+- All statistics update dynamically during timeline playback
 
 ### Event Sidebar
 
-- Chronological event browser with **38 major war events**
+- Chronological event browser with dynamic events
 - Filterable by category: Battles, Territory, Political, Military, Humanitarian, Milestones
+- Filterable by conflict events from ACLED data
 - Click-to-navigate: selecting an event jumps the timeline and map
 - Auto-tracking during timeline playback
 
 ### Bilateral Aid Panel
 
-- **Kiel Institute Ukraine Support Tracker** data (Release 27)
+- **Kiel Institute Ukraine Support Tracker** data
 - Total aid breakdown: Military, Financial, Humanitarian (EUR billions)
 - **Top donor countries** ranked by total commitment (EU members highlighted)
 - **Monthly allocation trends** with cumulative totals
@@ -81,7 +84,8 @@ The entire interface is built around an explorable map rendered in muted dark to
 
 - **UNHCR refugee data** — total refugees by year, top destination countries, IDPs
 - **OCHA funding status** — humanitarian appeal requirements vs. actual funding
-- **Civilian casualty data** — by oblast and month (ACLED)
+- **Civilian casualty data** — OHCHR monthly statistics by oblast
+- All humanitarian data updates during timeline playback with year-based interpolation
 
 ### Equipment Loss Detail
 
@@ -127,6 +131,7 @@ This project aggregates data from the following authoritative sources. All data 
 | **Ukrainian Ministry of Defence** | Official daily personnel and equipment loss reports | [mil.gov.ua](https://www.mil.gov.ua) |
 | **DeepState Map** | Territory control and frontline GeoJSON data | [deepstatemap.live](https://deepstatemap.live) |
 | **ACLED** | Armed conflict event data — battles, civilian targeting, protests | [acleddata.com](https://acleddata.com) |
+| **Wikidata** | Structured data on named events, battles, and offensives (via SPARQL) | [wikidata.org](https://www.wikidata.org) |
 | **HDX / OCHA** | Humanitarian response data, civilian casualties, funding status | [data.humdata.org](https://data.humdata.org) |
 | **UNHCR** | Refugee and internally displaced persons statistics | [data.unhcr.org](https://data.unhcr.org) |
 | **Kiel Institute** | Ukraine Support Tracker — bilateral military, financial, and humanitarian aid | [ifw-kiel.de](https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/) |
@@ -134,13 +139,19 @@ This project aggregates data from the following authoritative sources. All data 
 
 ### Data Freshness
 
+All API responses use a multi-layer persistent caching system (file-based in development, Cloudflare KV in production) with stale-while-refresh semantics. A Cloudflare Worker cron runs every 6 hours to pre-warm all caches.
+
 | Dataset | Cache Duration | Update Frequency |
 |---------|---------------|-----------------|
 | Equipment stats | 1 hour | Hourly |
 | Recent losses | 6 hours | Multiple times daily |
 | Casualty reports | 4 hours | Daily |
 | Territory control | 12 hours | Daily |
-| Conflict events | 24 hours | Daily |
+| Conflict events (ACLED) | 24 hours | Daily |
+| Key events (Wikidata) | 24 hours | Community-edited |
+| Refugee/IDP data | 24 hours | Monthly |
+| Humanitarian funding | 24 hours | Monthly |
+| Civilian casualties | 24 hours | Monthly (OHCHR) |
 | Bilateral aid | 7 days | Monthly releases |
 | VIINA territory | Weekly | Weekly snapshots |
 
@@ -179,9 +190,11 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 | `npm run lint:fix` | Auto-fix linting issues |
 | `npm run format` | Format code with Biome |
 | `npm run typecheck` | TypeScript type checking |
-| `npm run data:update` | Process all data sources |
+| `npm run cache:warm` | Pre-warm persistent caches (ACLED data) |
+| `npm run data:update` | Process all static data sources |
 | `npm run build:worker` | Build for Cloudflare Workers |
 | `npm run deploy` | Deploy to Cloudflare Workers |
+| `npm run deploy:cron` | Deploy the data-refresh cron worker |
 
 ---
 
@@ -194,7 +207,11 @@ npm run build:worker
 npm run deploy
 ```
 
-A separate Cloudflare Worker handles scheduled data refresh via cron triggers.
+A separate Cloudflare Worker handles scheduled data refresh via cron triggers (every 6 hours), pre-warming all API caches.
+
+```bash
+npm run deploy:cron
+```
 
 ---
 
@@ -212,6 +229,27 @@ git commit -m "feat: add population displacement chart"
 
 # Commit types: feat, fix, docs, style, refactor, perf, test, build, ci, chore
 ```
+
+---
+
+## Methodology
+
+This project aggregates, cross-references, and visualizes publicly available conflict data. It does not generate original analysis or make claims beyond what the underlying sources report.
+
+- **Russian military losses** are displayed from the Ukrainian Ministry of Defence daily reports. These are official claims and may differ from independently verified counts. WarSpotting data provides a separate, OSINT-verified count that is typically 30–50% of official figures — both are displayed with clear source attribution.
+- **Territory control** is derived from DeepState Map's daily GeoJSON releases, with coverage from July 2024 onward. Earlier periods use VIINA territorial assessments where available.
+- **Conflict events** are sourced from ACLED's geocoded event database, filtered for events with 5+ fatalities. Key events combine Wikidata SPARQL queries with curated editorial selections for political and diplomatic milestones.
+- **Humanitarian data** comes from UNHCR (refugees/IDPs), OCHA (funding appeals), and OHCHR (civilian casualties). Refugee and IDP figures are available as yearly snapshots; civilian casualties are monthly.
+- **Bilateral aid** data is from the Kiel Institute's Ukraine Support Tracker, which tracks committed and disbursed military, financial, and humanitarian aid from 41 donor countries.
+
+### Data Limitations
+
+- OHCHR civilian casualty figures are considered conservative minimums — actual figures are likely higher
+- ACLED free-tier access has a 12-month recency restriction; older data may be limited
+- Territory GeoJSON is only available from July 2024; earlier frontline positions are approximated
+- Equipment loss markers only appear where geolocation data is available (a subset of confirmed losses)
+- Refugee and IDP data updates yearly, not monthly — during timeline playback, the most recent available year's figures are shown
+- Humanitarian funding data reflects UN-coordinated appeals only, not total global aid
 
 ---
 

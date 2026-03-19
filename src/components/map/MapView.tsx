@@ -513,6 +513,7 @@ export default function MapView({
                 location: l.nearest_location,
                 lat,
                 lng,
+                category: normalizeEquipmentCategory(l.type),
               };
             },
           )
@@ -542,7 +543,7 @@ export default function MapView({
               status: m.status,
               date: m.date,
               location: m.location || "",
-              category: normalizeEquipmentCategory(m.type),
+              category: m.category || normalizeEquipmentCategory(m.type),
             },
           })),
         };
@@ -1080,7 +1081,7 @@ export default function MapView({
       if (!mapInstance.getSource("acled-heatmap")) {
         mapInstance.addSource("acled-heatmap", {
           type: "geojson",
-          data: structuredClone(geoWithData),
+          data: geoWithData,
         });
 
         const heatmapVis = layersRef.current.heatmap ? "visible" : "none";
@@ -1460,7 +1461,7 @@ export default function MapView({
               status: mk.status,
               date: mk.date,
               location: mk.location || "",
-              category: normalizeEquipmentCategory(mk.type),
+              category: mk.category || "other",
             },
           })),
         });
@@ -1499,31 +1500,29 @@ export default function MapView({
         const year = territoryDate ? parseInt(territoryDate.slice(0, 4), 10) : null;
         const month = territoryDate ? parseInt(territoryDate.slice(4, 6), 10) : null;
 
+        // Build lookup map once instead of O(n) .find() per oblast
+        const oblastMap = new Map(data.oblasts.map((o) => [o.name, o]));
+
         const geoWithData: GeoJSON.FeatureCollection = {
           type: "FeatureCollection",
           features: oblastFeatures.map((f) => {
             const name = (f.properties as { name: string }).name;
-            const oblastData = data.oblasts.find((o) => o.name === name);
+            const oblastData = oblastMap.get(name);
             let fatalities = 0;
             let events = 0;
 
             if (oblastData?.monthly) {
-              if (year && month) {
-                oblastData.monthly
-                  .filter(
-                    (mk) => mk.year < year || (mk.year === year && monthIndex(mk.month) <= month),
-                  )
-                  .forEach((mk) => {
+              for (const mk of oblastData.monthly) {
+                if (year && month) {
+                  const mi = monthIndex(mk.month);
+                  if (mk.year < year || (mk.year === year && mi <= month)) {
                     fatalities += mk.fatalities;
                     events += mk.events;
-                  });
-              } else {
-                fatalities = oblastData.monthly
-                  .filter((mk) => mk.year >= 2022)
-                  .reduce((sum, mk) => sum + mk.fatalities, 0);
-                events = oblastData.monthly
-                  .filter((mk) => mk.year >= 2022)
-                  .reduce((sum, mk) => sum + mk.events, 0);
+                  }
+                } else if (mk.year >= 2022) {
+                  fatalities += mk.fatalities;
+                  events += mk.events;
+                }
               }
             }
 
@@ -1531,7 +1530,7 @@ export default function MapView({
           }),
         };
 
-        heatmapSource.setData(structuredClone(geoWithData));
+        heatmapSource.setData(geoWithData);
       }
     }, 150);
 

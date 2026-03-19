@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import {
   TbBuildingBank,
   TbChevronDown,
@@ -65,7 +65,7 @@ interface SpendingPanelProps {
   timelineDate?: string;
 }
 
-export default function SpendingPanel({ isOpen, onToggle, timelineDate }: SpendingPanelProps) {
+function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelProps) {
   const [data, setData] = useState<SpendingData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>("trend");
   const [loading, setLoading] = useState(true);
@@ -297,6 +297,9 @@ export default function SpendingPanel({ isOpen, onToggle, timelineDate }: Spendi
     </div>
   );
 }
+
+const SpendingPanel = memo(SpendingPanelInner);
+export default SpendingPanel;
 
 function AidTypeRow({
   icon,

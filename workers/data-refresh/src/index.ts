@@ -1,19 +1,11 @@
 /**
- * Cloudflare Worker — Daily Data Refresh
+ * Cloudflare Worker — Data Refresh
  *
- * Runs on a cron schedule to:
+ * Runs every 6 hours to:
  * 1. Pre-warm the ACLED persistent cache via /api/cache/refresh (slow API, ~45s)
- * 2. Warm other API endpoint in-memory caches by hitting them
+ * 2. Warm all other API endpoint caches by hitting them
  *
- * Endpoints warmed:
- * - /api/cache/refresh     (ACLED map data → persistent cache, 24h TTL)
- * - /api/acled/regional    (HDX XLSX files → persistent cache, 24h TTL)
- * - /api/events            (Wikidata SPARQL + ACLED + curated → persistent cache, 24h TTL)
- * - /api/spending          (Kiel Institute XLSX → 7-day cache)
- * - /api/casualties        (MoD daily losses → 4h cache)
- * - /api/humanitarian/refugees           (UNHCR → 24h cache)
- * - /api/humanitarian/funding            (OCHA FTS → 24h cache)
- * - /api/humanitarian/civilian-casualties (OHCHR → 24h cache)
+ * All endpoints now use persistent multi-layer caching (file dev / KV prod).
  *
  * Deploy: cd workers/data-refresh && npx wrangler deploy
  */
@@ -29,9 +21,15 @@ const GET_ENDPOINTS = [
   "/api/events",
   "/api/spending",
   "/api/casualties",
+  "/api/casualties/history",
+  "/api/casualties/daily-totals",
+  "/api/losses/stats",
+  "/api/losses/recent",
+  "/api/losses/trend",
   "/api/humanitarian/refugees",
   "/api/humanitarian/funding",
   "/api/humanitarian/civilian-casualties",
+  "/api/territory",
 ];
 
 export default {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import {
   TbChevronDown,
   TbChevronUp,
@@ -151,11 +151,7 @@ function getCumulativeCasualties(
   return { killed, injured };
 }
 
-export default function HumanitarianPanel({
-  isOpen,
-  onToggle,
-  timelineDate,
-}: HumanitarianPanelProps) {
+function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: HumanitarianPanelProps) {
   const [refugees, setRefugees] = useState<RefugeeData | null>(null);
   const [funding, setFunding] = useState<FundingData | null>(null);
   const [casualties, setCasualties] = useState<CivilianCasualtiesData | null>(null);
@@ -187,11 +183,49 @@ export default function HumanitarianPanel({
 
   const today = new Date().toISOString().replace(/-/g, "").slice(0, 8);
   const isHistorical = !!timelineDate && timelineDate !== today;
+  const timelineYear = timelineDate ? parseInt(timelineDate.slice(0, 4), 10) : null;
 
   const currentCasualties = useMemo(() => {
     if (!casualties) return { killed: 13883, injured: 41378 };
     return getCumulativeCasualties(casualties, isHistorical ? timelineDate : undefined);
   }, [casualties, timelineDate, isHistorical]);
+
+  // Interpolate refugees/IDPs to timeline year
+  const currentRefugees = useMemo(() => {
+    if (!refugees) return null;
+    if (!isHistorical || !timelineYear) return refugees.summary;
+    const yearData = refugees.yearly
+      .filter((y) => y.year <= timelineYear)
+      .sort((a, b) => b.year - a.year);
+    if (yearData.length === 0)
+      return {
+        total_refugees: 0,
+        total_idps: 0,
+        total_countries: refugees.summary.total_countries,
+        latest_year: timelineYear,
+      };
+    const closest = yearData[0];
+    return {
+      total_refugees: closest.refugees,
+      total_idps: closest.idps,
+      total_countries: refugees.summary.total_countries,
+      latest_year: closest.year,
+    };
+  }, [refugees, timelineYear, isHistorical]);
+
+  // Interpolate funding to timeline year
+  const currentFunding = useMemo(() => {
+    if (!funding) return null;
+    if (!isHistorical || !timelineYear) return funding.summary;
+    const filtered = funding.appeals.filter((a) => a.year <= timelineYear);
+    const total_required = filtered.reduce((s, a) => s + a.requirements_usd, 0);
+    const total_funded = filtered.reduce((s, a) => s + a.funding_usd, 0);
+    return {
+      total_required_usd: total_required,
+      total_funded_usd: total_funded,
+      overall_pct: total_required > 0 ? (total_funded / total_required) * 100 : 0,
+    };
+  }, [funding, timelineYear, isHistorical]);
 
   if (!isOpen) {
     return (
@@ -272,9 +306,14 @@ export default function HumanitarianPanel({
           <div className="flex items-center gap-2">
             <TbWorld className="h-3.5 w-3.5 text-ua-blue" />
             <div className="text-left">
-              <div className="text-xs text-foreground">{t("humanitarian.refugeesAbroad")}</div>
+              <div className="text-xs text-foreground">
+                {t("humanitarian.refugeesAbroad")}
+                {isHistorical && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
+                )}
+              </div>
               <div className="text-sm font-semibold text-foreground font-mono">
-                {refugees ? formatNumber(refugees.summary.total_refugees) : "..."}
+                {currentRefugees ? formatNumber(currentRefugees.total_refugees) : "..."}
               </div>
             </div>
           </div>
@@ -315,9 +354,14 @@ export default function HumanitarianPanel({
           <div className="flex items-center gap-2">
             <TbHome className="h-3.5 w-3.5 text-damage" />
             <div className="text-left">
-              <div className="text-xs text-foreground">{t("humanitarian.internallyDisplaced")}</div>
+              <div className="text-xs text-foreground">
+                {t("humanitarian.internallyDisplaced")}
+                {isHistorical && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
+                )}
+              </div>
               <div className="text-sm font-semibold text-foreground font-mono">
-                {refugees ? formatNumber(refugees.summary.total_idps) : "..."}
+                {currentRefugees ? formatNumber(currentRefugees.total_idps) : "..."}
               </div>
             </div>
           </div>
@@ -331,7 +375,10 @@ export default function HumanitarianPanel({
           <div className="px-3 pb-2.5">
             <div className="grid grid-cols-2 gap-2">
               {refugees.yearly
-                .filter((y: { year: number }) => y.year >= 2022)
+                .filter(
+                  (y: { year: number }) =>
+                    y.year >= 2022 && (!isHistorical || !timelineYear || y.year <= timelineYear),
+                )
                 .map((y: { year: number; idps: number; returned_idps: number }) => (
                   <div key={y.year} className="bg-surface-elevated/30 rounded px-2 py-1.5">
                     <div className="text-[9px] text-muted-foreground">{y.year}</div>
@@ -394,10 +441,13 @@ export default function HumanitarianPanel({
             <div className="text-left">
               <div className="text-xs text-foreground">
                 {t("humanitarian.unHumanitarianAppeals")}
+                {isHistorical && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
+                )}
               </div>
               <div className="text-[9px] text-muted-foreground">
-                {funding
-                  ? `${formatUSD(funding.summary.total_funded_usd)} of ${formatUSD(funding.summary.total_required_usd)}`
+                {currentFunding
+                  ? `${formatUSD(currentFunding.total_funded_usd)} of ${formatUSD(currentFunding.total_required_usd)}`
                   : `${t("common.loading")}`}
               </div>
               <div className="text-[8px] text-muted-foreground/60">
@@ -413,15 +463,17 @@ export default function HumanitarianPanel({
         </button>
         {expandedSection === "funding" && funding && (
           <div className="px-3 pb-2.5 space-y-2">
-            {funding.appeals.map((appeal) => (
-              <FundingBar
-                key={appeal.name}
-                label={`${appeal.year}`}
-                funded={appeal.funding_usd}
-                required={appeal.requirements_usd}
-                pct={appeal.funding_pct}
-              />
-            ))}
+            {funding.appeals
+              .filter((appeal) => !isHistorical || !timelineYear || appeal.year <= timelineYear)
+              .map((appeal) => (
+                <FundingBar
+                  key={appeal.name}
+                  label={`${appeal.year}`}
+                  funded={appeal.funding_usd}
+                  required={appeal.requirements_usd}
+                  pct={appeal.funding_pct}
+                />
+              ))}
           </div>
         )}
       </div>
@@ -461,3 +513,6 @@ export default function HumanitarianPanel({
     </div>
   );
 }
+
+const HumanitarianPanel = memo(HumanitarianPanelInner);
+export default HumanitarianPanel;
