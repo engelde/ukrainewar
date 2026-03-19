@@ -4,7 +4,7 @@ compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [triggers]
-crons = ["0 6 * * *"]  # Daily at 6:00 AM UTC
+crons = ["0 */6 * * *"]  # Every 6 hours
 
 [vars]
 APP_URL = "https://ukrainewar.app"

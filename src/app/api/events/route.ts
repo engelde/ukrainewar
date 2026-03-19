@@ -3,14 +3,15 @@ import type { WarEvent } from "@/data/events";
 import { KEY_EVENTS } from "@/data/events";
 import { SEED_EVENTS } from "@/data/events-seed";
 import { fetchAcledPages } from "@/lib/acled";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { CACHE_TTL } from "@/lib/constants";
 import type { AcledEvent } from "@/lib/types";
 
 const WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql";
+const CACHE_KEY = "events";
 
-// In-memory cache
-let cachedEvents: { data: WarEvent[]; timestamp: number } | null = null;
-const CACHE_DURATION_MS = CACHE_TTL.EVENTS * 1000; // 24 hours
+// Dedup concurrent requests
+let inflightEventsPromise: Promise<WarEvent[]> | null = null;
 
 /**
  * SPARQL query for events that are "part of" the 2022 Russian invasion of Ukraine (Q110999040).
@@ -156,27 +157,32 @@ async function fetchWikidataEvents(): Promise<WarEvent[]> {
 async function fetchAcledKeyEvents(): Promise<WarEvent[]> {
   const events: WarEvent[] = [];
 
+  // Use the recency cutoff as the end date (free tier: 12 months back)
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - 1);
+  const endDate = cutoff.toISOString().slice(0, 10);
+
   // High-fatality battles and explosions (≥30 killed)
-  const highFatality = await fetchAcledPages("2022-02-24", "2025-12-31", {
+  const highFatality = await fetchAcledPages("2022-02-24", endDate, {
     fatalities: "30",
     fatalities_where: ">=",
   });
 
   // Violence against civilians (≥5 killed)
-  const civilianViolence = await fetchAcledPages("2022-02-24", "2025-12-31", {
+  const civilianViolence = await fetchAcledPages("2022-02-24", endDate, {
     event_type: "Violence against civilians",
     fatalities: "5",
     fatalities_where: ">=",
   });
 
   // Agreements and POW exchanges
-  const agreements = await fetchAcledPages("2022-02-24", "2025-12-31", {
+  const agreements = await fetchAcledPages("2022-02-24", endDate, {
     event_type: "Strategic developments",
     sub_event_type: "Agreement",
   });
 
   // Non-violent territory transfers
-  const transfers = await fetchAcledPages("2022-02-24", "2025-12-31", {
+  const transfers = await fetchAcledPages("2022-02-24", endDate, {
     event_type: "Strategic developments",
     sub_event_type: "Non-violent transfer of territory",
   });
@@ -318,21 +324,58 @@ async function aggregateEvents(): Promise<WarEvent[]> {
 
 export async function GET() {
   try {
-    // Check cache
-    if (cachedEvents && Date.now() - cachedEvents.timestamp < CACHE_DURATION_MS) {
-      return NextResponse.json(cachedEvents.data, {
+    const cached = await cacheGet<WarEvent[]>(CACHE_KEY);
+
+    if (cached && isFresh(cached)) {
+      return NextResponse.json(cached.data, {
         headers: {
           "Cache-Control": `public, s-maxage=${CACHE_TTL.EVENTS}, stale-while-revalidate=3600`,
           "X-Cache": "HIT",
-          "X-Events-Count": String(cachedEvents.data.length),
+          "X-Events-Count": String(cached.data.length),
         },
       });
     }
 
-    const events = await aggregateEvents();
+    if (cached && isUsableStale(cached)) {
+      // Refresh in background, serve stale immediately
+      if (!inflightEventsPromise) {
+        inflightEventsPromise = aggregateEvents()
+          .then(async (events) => {
+            await cacheSet(CACHE_KEY, events, CACHE_TTL.EVENTS);
+            return events;
+          })
+          .catch((err) => {
+            console.error("[events] Background refresh failed:", err);
+            return cached.data;
+          })
+          .finally(() => {
+            inflightEventsPromise = null;
+          });
+      }
 
-    // Update cache
-    cachedEvents = { data: events, timestamp: Date.now() };
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": `public, s-maxage=3600, stale-while-revalidate=${CACHE_TTL.EVENTS}`,
+          "X-Cache": "STALE",
+          "X-Events-Count": String(cached.data.length),
+        },
+      });
+    }
+
+    // Cold start — fetch, cache, and respond
+    let events: WarEvent[];
+    if (inflightEventsPromise) {
+      events = await inflightEventsPromise;
+    } else {
+      inflightEventsPromise = aggregateEvents();
+      try {
+        events = await inflightEventsPromise;
+      } finally {
+        inflightEventsPromise = null;
+      }
+    }
+
+    await cacheSet(CACHE_KEY, events, CACHE_TTL.EVENTS);
 
     return NextResponse.json(events, {
       headers: {
@@ -345,7 +388,18 @@ export async function GET() {
     const message = error instanceof Error ? error.message : "Failed to fetch events";
     console.error("[events] API error:", message);
 
-    // Return fallback hardcoded events
+    // Try stale persistent cache before falling back to hardcoded
+    const stale = await cacheGet<WarEvent[]>(CACHE_KEY);
+    if (stale) {
+      return NextResponse.json(stale.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-STALE",
+          "X-Events-Count": String(stale.data.length),
+        },
+      });
+    }
+
     return NextResponse.json(KEY_EVENTS, {
       headers: {
         "Cache-Control": "public, s-maxage=3600",

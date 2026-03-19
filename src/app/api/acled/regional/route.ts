@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 
-const HDX_DATASETS = {
-  politicalViolence: {
-    url: "https://data.humdata.org/dataset/7b36830b-c033-4a06-b812-9940baec603b/resource/e122ca1c-9463-4e3a-8731-8a85fab2a15e/download/ukraine_hrp_political_violence_events_and_fatalities_by_month-year_as-of-11mar2026.xlsx",
-  },
-  civilianTargeting: {
-    url: "https://data.humdata.org/dataset/7b36830b-c033-4a06-b812-9940baec603b/resource/23755ad0-1d81-4b10-9e66-23b784ccd429/download/ukraine_hrp_civilian_targeting_events_and_fatalities_by_month-year_as-of-11mar2026.xlsx",
-  },
-  demonstrations: {
-    url: "https://data.humdata.org/dataset/7b36830b-c033-4a06-b812-9940baec603b/resource/0f040d73-471e-4535-bef1-59ac09faa63c/download/ukraine_hrp_demonstration_events_by_month-year_as-of-11mar2026.xlsx",
-  },
+const CACHE_KEY = "acled-regional";
+const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+
+const HDX_DATASET_ID = "ukraine-acled-conflict-data";
+const HDX_API = "https://data.humdata.org/api/3/action/package_show";
+
+// Resource IDs are stable even when filenames change
+const RESOURCE_IDS = {
+  politicalViolence: "e122ca1c-9463-4e3a-8731-8a85fab2a15e",
+  civilianTargeting: "23755ad0-1d81-4b10-9e66-23b784ccd429",
+  demonstrations: "0f040d73-471e-4535-bef1-59ac09faa63c",
 };
 
 const MONTH_TO_NUM: Record<string, string> = {
@@ -28,10 +30,8 @@ const MONTH_TO_NUM: Record<string, string> = {
   December: "12",
 };
 
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-let cachedData: Record<string, unknown> | null = null;
-let cachedAt = 0;
+// Dedup concurrent requests
+let inflightPromise: Promise<Record<string, unknown>> | null = null;
 
 interface AcledRow {
   Admin1?: string;
@@ -47,8 +47,30 @@ interface OblastData {
   months: Record<string, { events: number; fatalities: number; civilian: number; demos: number }>;
 }
 
+async function resolveResourceUrls(): Promise<Record<string, string>> {
+  const res = await fetch(`${HDX_API}?id=${HDX_DATASET_ID}`, {
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`HDX API failed: ${res.status}`);
+  const json = await res.json();
+  const resources = json.result?.resources || [];
+
+  const urls: Record<string, string> = {};
+  for (const r of resources) {
+    if (r.id === RESOURCE_IDS.politicalViolence) urls.politicalViolence = r.url;
+    else if (r.id === RESOURCE_IDS.civilianTargeting) urls.civilianTargeting = r.url;
+    else if (r.id === RESOURCE_IDS.demonstrations) urls.demonstrations = r.url;
+  }
+
+  if (!urls.politicalViolence || !urls.civilianTargeting || !urls.demonstrations) {
+    throw new Error("HDX dataset missing expected resources");
+  }
+
+  return urls;
+}
+
 async function downloadXLSX(url: string): Promise<AcledRow[]> {
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
   if (!res.ok) throw new Error(`HDX download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
@@ -121,10 +143,11 @@ function processRows(
 }
 
 async function processAcledData(): Promise<Record<string, unknown>> {
+  const urls = await resolveResourceUrls();
   const [pvData, ctData, demoData] = await Promise.all([
-    downloadXLSX(HDX_DATASETS.politicalViolence.url),
-    downloadXLSX(HDX_DATASETS.civilianTargeting.url),
-    downloadXLSX(HDX_DATASETS.demonstrations.url),
+    downloadXLSX(urls.politicalViolence),
+    downloadXLSX(urls.civilianTargeting),
+    downloadXLSX(urls.demonstrations),
   ]);
 
   const oblasts: Record<string, OblastData> = {};
@@ -232,9 +255,10 @@ async function processAcledData(): Promise<Record<string, unknown>> {
 
 export async function GET() {
   try {
-    const now = Date.now();
-    if (cachedData && now - cachedAt < CACHE_TTL) {
-      return NextResponse.json(cachedData, {
+    const cached = await cacheGet<Record<string, unknown>>(CACHE_KEY);
+
+    if (cached && isFresh(cached)) {
+      return NextResponse.json(cached.data, {
         headers: {
           "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=3600",
           "X-Data-Source": "cache",
@@ -242,9 +266,45 @@ export async function GET() {
       });
     }
 
-    const data = await processAcledData();
-    cachedData = data;
-    cachedAt = now;
+    if (cached && isUsableStale(cached)) {
+      // Refresh in background, serve stale immediately
+      if (!inflightPromise) {
+        inflightPromise = processAcledData()
+          .then(async (data) => {
+            await cacheSet(CACHE_KEY, data, CACHE_TTL_SECONDS);
+            return data;
+          })
+          .catch((err) => {
+            console.error("[acled/regional] Background refresh failed:", err);
+            return cached.data;
+          })
+          .finally(() => {
+            inflightPromise = null;
+          });
+      }
+
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+          "X-Data-Source": "stale",
+        },
+      });
+    }
+
+    // Cold start — fetch and cache
+    let data: Record<string, unknown>;
+    if (inflightPromise) {
+      data = await inflightPromise;
+    } else {
+      inflightPromise = processAcledData();
+      try {
+        data = await inflightPromise;
+      } finally {
+        inflightPromise = null;
+      }
+    }
+
+    await cacheSet(CACHE_KEY, data, CACHE_TTL_SECONDS);
 
     return NextResponse.json(data, {
       headers: {
@@ -253,11 +313,12 @@ export async function GET() {
       },
     });
   } catch (error) {
-    if (cachedData) {
-      return NextResponse.json(cachedData, {
+    const stale = await cacheGet<Record<string, unknown>>(CACHE_KEY);
+    if (stale) {
+      return NextResponse.json(stale.data, {
         headers: {
           "Cache-Control": "public, s-maxage=3600",
-          "X-Data-Source": "stale-cache",
+          "X-Data-Source": "error-stale",
         },
       });
     }

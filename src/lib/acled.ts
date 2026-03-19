@@ -4,6 +4,13 @@ import type { AcledEvent } from "@/lib/types";
 const ACLED_EMAIL = process.env.ACLED_EMAIL;
 const ACLED_PASSWORD = process.env.ACLED_PASSWORD;
 
+const ALL_FIELDS =
+  "event_id_cnty|event_date|event_type|sub_event_type|actor1|actor2|location|latitude|longitude|fatalities|notes|admin1";
+
+// Lighter field set for map rendering — drops the large `notes` column (~50% smaller response)
+const MAP_FIELDS =
+  "event_id_cnty|event_date|event_type|sub_event_type|actor1|actor2|location|latitude|longitude|fatalities|admin1";
+
 interface AcledApiRow {
   event_id_cnty: string;
   event_date: string;
@@ -15,7 +22,7 @@ interface AcledApiRow {
   latitude: string;
   longitude: string;
   fatalities: string;
-  notes: string;
+  notes?: string;
   admin1: string;
 }
 
@@ -60,6 +67,12 @@ export async function getAccessToken(): Promise<string> {
   return cachedToken.access_token;
 }
 
+interface FetchOptions {
+  extraParams?: Record<string, string>;
+  /** Use lightweight field set (no notes) for map rendering */
+  lightweight?: boolean;
+}
+
 /**
  * Fetch ACLED events for a specific date range with pagination.
  * Supports additional filter params (event_type, fatalities, etc).
@@ -67,12 +80,22 @@ export async function getAccessToken(): Promise<string> {
 export async function fetchAcledPages(
   start: string,
   end: string,
-  extraParams?: Record<string, string>,
+  extraParamsOrOpts?: Record<string, string> | FetchOptions,
 ): Promise<AcledEvent[]> {
+  // Support both legacy (extraParams only) and new (options) calling convention
+  const opts: FetchOptions =
+    extraParamsOrOpts && "lightweight" in extraParamsOrOpts
+      ? (extraParamsOrOpts as FetchOptions)
+      : { extraParams: extraParamsOrOpts as Record<string, string> | undefined };
+
   const token = await getAccessToken();
   const events: AcledEvent[] = [];
+  const seen = new Set<string>();
   let page = 0;
-  const limit = 5000;
+  // ACLED's offset-based pagination is broken when combined with filters
+  // (returns duplicates). Use a high limit to fetch everything in one request
+  // when possible, falling back to dedup-based pagination for large datasets.
+  const limit = 10000;
 
   while (true) {
     const params = new URLSearchParams({
@@ -81,9 +104,8 @@ export async function fetchAcledPages(
       event_date_where: "BETWEEN",
       limit: String(limit),
       offset: String(page * limit),
-      fields:
-        "event_id_cnty|event_date|event_type|sub_event_type|actor1|actor2|location|latitude|longitude|fatalities|notes|admin1",
-      ...extraParams,
+      fields: opts.lightweight ? MAP_FIELDS : ALL_FIELDS,
+      ...opts.extraParams,
     });
 
     const res = await fetch(`${ACLED_API}?${params.toString()}`, {
@@ -91,7 +113,8 @@ export async function fetchAcledPages(
         Authorization: `Bearer ${token}`,
         "User-Agent": "UkraineWarTracker/1.0",
       },
-      signal: AbortSignal.timeout(30000),
+      // ACLED API is slow (~20-25s per request); allow 90s
+      signal: AbortSignal.timeout(90000),
     });
 
     if (!res.ok) {
@@ -104,7 +127,12 @@ export async function fetchAcledPages(
 
     if (rows.length === 0) break;
 
+    let newEvents = 0;
     for (const row of rows) {
+      // Deduplicate — ACLED pagination can return duplicates with filters
+      if (seen.has(row.event_id_cnty)) continue;
+      seen.add(row.event_id_cnty);
+
       const lat = Number.parseFloat(row.latitude);
       const lng = Number.parseFloat(row.longitude);
       if (Number.isNaN(lat) || Number.isNaN(lng) || (lat === 0 && lng === 0)) continue;
@@ -123,8 +151,11 @@ export async function fetchAcledPages(
         notes: row.notes || "",
         admin1: row.admin1 || "",
       });
+      newEvents++;
     }
 
+    // Stop if no new unique events were found (pagination returning dupes)
+    if (newEvents === 0) break;
     if (rows.length < limit) break;
     page++;
   }
