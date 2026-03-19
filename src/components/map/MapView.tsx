@@ -358,14 +358,14 @@ export default function MapView({
       const useViina = territoryDate && territoryDate < DEEPSTATE_START;
       const fetchKey = `${territoryDate ?? "latest"}:${useViina ? "viina" : "deepstate"}`;
 
-      // Skip if already loading this exact date+source combo
+      // Skip if already successfully loaded this exact date+source combo
       if (lastTerritoryFetchRef.current === fetchKey) return;
-      lastTerritoryFetchRef.current = fetchKey;
 
-      // Abort any in-flight territory fetch
+      // Abort previous in-flight territory fetch only now (when a new one fires)
       territoryAbortRef.current?.abort();
       const controller = new AbortController();
       territoryAbortRef.current = controller;
+      lastTerritoryFetchRef.current = fetchKey;
 
       try {
         if (useViina) {
@@ -1310,13 +1310,27 @@ export default function MapView({
   ]);
 
   // Update territory when timeline date changes (debounced)
+  // Uses ref to avoid re-triggering on loadTerritoryData recreation
+  const territoryDebounceRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (!map.current || !loaded) return;
-    const timer = setTimeout(() => {
-      if (map.current?.isStyleLoaded()) loadTerritoryData(map.current);
+
+    if (territoryDebounceRef.current) {
+      clearTimeout(territoryDebounceRef.current);
+    }
+
+    territoryDebounceRef.current = setTimeout(() => {
+      if (map.current?.isStyleLoaded()) {
+        loadTerritoryDataRef.current(map.current);
+      }
     }, 200);
-    return () => clearTimeout(timer);
-  }, [loaded, territoryDate, loadTerritoryData]);
+
+    return () => {
+      if (territoryDebounceRef.current) {
+        clearTimeout(territoryDebounceRef.current);
+      }
+    };
+  }, [loaded, territoryDate]);
 
   // Fetch historical equipment data when timeline moves to a new month
   useEffect(() => {
