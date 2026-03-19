@@ -148,6 +148,7 @@ interface StatsOverlayProps {
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
+  timelineDate?: string;
 }
 
 export default function StatsOverlay({
@@ -156,6 +157,7 @@ export default function StatsOverlay({
   collapsed = false,
   onCollapse,
   onExpand,
+  timelineDate,
 }: StatsOverlayProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
@@ -180,19 +182,24 @@ export default function StatsOverlay({
     };
   }, []);
 
+  // Normalize timelineDate (YYYYMMDD) to ISO date (YYYY-MM-DD) for comparison
+  const cutoffDate = timelineDate
+    ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}-${timelineDate.slice(6, 8)}`
+    : null;
+
   const getTrendValues = (trendKey: string): number[] => {
     if (!trendData) return [];
-    if (trendKey === "_total") {
-      return trendData.totalTrend.map((d) => d.count);
-    }
-    const trend = trendData.typeTrends[trendKey];
-    if (!trend) return [];
-    return trend.map((d) => d.count);
+    const raw =
+      trendKey === "_total" ? trendData.totalTrend : (trendData.typeTrends[trendKey] ?? []);
+    const filtered = cutoffDate ? raw.filter((d) => d.date <= cutoffDate) : raw;
+    return filtered.map((d) => d.count);
   };
 
   const getTrendDates = (): string[] => {
     if (!trendData) return [];
-    return trendData.totalTrend.map((d) => d.date);
+    const raw = trendData.totalTrend;
+    const filtered = cutoffDate ? raw.filter((d) => d.date <= cutoffDate) : raw;
+    return filtered.map((d) => d.date);
   };
 
   return (

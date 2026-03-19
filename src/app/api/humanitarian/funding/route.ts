@@ -122,7 +122,7 @@ export async function GET() {
 
     if (cached && isFresh(cached)) {
       memCache = cached.data;
-      memCacheAt = cached.timestamp;
+      memCacheAt = Date.now();
       return NextResponse.json(cached.data, {
         headers: {
           "Cache-Control": `public, s-maxage=${TTL}, stale-while-revalidate=3600`,

@@ -345,6 +345,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
               isHistorical={isViewingPast && !!historicalData}
               collapsed={false}
               onCollapse={() => setStatsCollapsed(true)}
+              timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
@@ -396,6 +397,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                     isHistorical={isViewingPast && !!historicalData}
                     collapsed={true}
                     onExpand={() => setStatsCollapsed(false)}
+                    timelineDate={territoryDate ?? undefined}
                   />
                 )}
                 {!humanitarianOpen && (

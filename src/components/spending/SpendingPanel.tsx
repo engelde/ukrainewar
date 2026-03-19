@@ -104,6 +104,17 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
     return found;
   }, [data, timelineDate]);
 
+  // Filter monthly bar chart data to timeline position
+  const displayMonths = useMemo(() => {
+    if (!data?.byMonth) return [];
+    if (!timelineDate) return data.byMonth;
+    const norm =
+      timelineDate.length === 8
+        ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}`
+        : timelineDate.slice(0, 7);
+    return data.byMonth.filter((m) => m.date <= norm);
+  }, [data?.byMonth, timelineDate]);
+
   const displayTotals = timelineTotals || data?.totals;
 
   if (!isOpen) {
@@ -270,7 +281,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
               </button>
               {expandedSection === "trend" && (
                 <div className="mt-1.5">
-                  <MiniBarChart months={data.byMonth} />
+                  <MiniBarChart months={displayMonths} />
                 </div>
               )}
             </div>

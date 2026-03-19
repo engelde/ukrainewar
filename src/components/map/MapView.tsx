@@ -1226,6 +1226,8 @@ export default function MapView({
       acledPopupRef.current?.remove();
       battlePopupRef.current?.remove();
       heatmapPopupRef.current?.remove();
+      lastTerritoryFetchRef.current = null;
+      territoryAbortRef.current?.abort();
       map.current?.remove();
       map.current = null;
     };
