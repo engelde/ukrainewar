@@ -4,9 +4,9 @@ import dynamic from "next/dynamic";
 import { parseAsBoolean, parseAsFloat, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
+import DayTracker from "@/components/layout/DayTracker";
 import EventSidebar from "@/components/layout/EventSidebar";
 import Header, { Footer } from "@/components/layout/Header";
-import ResetButton from "@/components/layout/ResetButton";
 import DetailPanel from "@/components/map/DetailPanel";
 import LayerControls from "@/components/map/LayerControls";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
@@ -324,7 +324,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           activeEvent={activeMapEvent}
         />
         <Header eventsOpen={sidebarOpen} onToggleEvents={handleToggleSidebar} />
-        <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
+        <DayTracker
+          warDay={warDay}
+          territoryDate={territoryDate}
+          dates={events}
+          onDateChange={handleTimelineDateChange}
+        />
 
         {displayData && !statsCollapsed && (
           <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-xs">
@@ -372,6 +377,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}
           eventsOpen={sidebarOpen}
+          onReset={handleReset}
+          isHistorical={isViewingPast}
           dockSlot={
             statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed ? (
               <>

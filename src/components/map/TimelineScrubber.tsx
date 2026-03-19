@@ -9,6 +9,7 @@ import {
   TbPlayerPlayFilled,
   TbPlayerSkipBackFilled,
   TbPlayerSkipForwardFilled,
+  TbRefresh,
   TbTimeline,
 } from "react-icons/tb";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,6 +25,8 @@ interface TimelineScrubberProps {
   initialDate?: string | null;
   dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
+  onReset?: () => void;
+  isHistorical?: boolean;
 }
 
 const SPEED_OPTIONS = [
@@ -71,6 +74,8 @@ export default function TimelineScrubber({
   initialDate,
   dockSlot,
   eventsOpen,
+  onReset,
+  isHistorical,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -496,8 +501,8 @@ export default function TimelineScrubber({
           "transition-all duration-300",
         )}
       >
-        {/* Event info card — shown when near key events (hidden when sidebar is open) */}
-        {activeEvent && !eventsOpen && (
+        {/* Event info card — shown when near key events */}
+        {activeEvent && (
           <div className="mx-3 mt-2.5 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-4 py-2.5 flex items-start gap-2.5">
             <TbInfoCircle className="h-4 w-4 text-ua-blue mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
@@ -669,6 +674,23 @@ export default function TimelineScrubber({
               </button>
             ))}
           </div>
+
+          {/* Reset button — right side of controls */}
+          {isHistorical && onReset && (
+            <button
+              onClick={onReset}
+              className={cn(
+                "flex h-7 items-center gap-1.5 rounded-md px-2.5 ml-auto transition-colors",
+                "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
+                "hover:text-foreground hover:bg-surface-elevated",
+                "group",
+              )}
+              title={t("timeline.resetTooltip")}
+            >
+              <TbRefresh className="h-3 w-3 group-hover:rotate-180 transition-transform duration-300" />
+              <span className="hidden sm:inline">{t("common.reset")}</span>
+            </button>
+          )}
         </div>
 
         {/* Scrollable timeline */}

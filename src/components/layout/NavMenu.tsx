@@ -5,8 +5,8 @@ import {
   TbBrandGithub,
   TbDatabase,
   TbExternalLink,
+  TbFlag,
   TbInfoCircle,
-  TbTimeline,
   TbX,
 } from "react-icons/tb";
 import { t } from "@/i18n";
@@ -61,7 +61,7 @@ function NavContent({
             eventsOpen ? "text-ua-yellow" : "text-muted-foreground/70 hover:text-muted-foreground",
           )}
         >
-          <TbTimeline className="h-3 w-3" />
+          <TbFlag className="h-3 w-3" />
           <span>Events</span>
         </button>
       )}
@@ -250,7 +250,7 @@ function MobileSidebar({
                   : "text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30",
               )}
             >
-              <TbTimeline className="h-4 w-4" />
+              <TbFlag className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">Events</span>
             </button>
           )}
