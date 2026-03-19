@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import type { WarEvent } from "@/data/events";
 import { KEY_EVENTS } from "@/data/events";
 import { SEED_EVENTS } from "@/data/events-seed";
+import { fetchAcledPages } from "@/lib/acled";
 import { CACHE_TTL } from "@/lib/constants";
+import type { AcledEvent } from "@/lib/types";
 
 const WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql";
 
@@ -147,6 +149,83 @@ async function fetchWikidataEvents(): Promise<WarEvent[]> {
 }
 
 /**
+ * Fetch high-impact events from ACLED API and convert to WarEvent format.
+ * Filters for: battles with ≥30 fatalities, civilian violence with ≥5 fatalities,
+ * agreements, and non-violent territory transfers.
+ */
+async function fetchAcledKeyEvents(): Promise<WarEvent[]> {
+  const events: WarEvent[] = [];
+
+  // High-fatality battles and explosions (≥30 killed)
+  const highFatality = await fetchAcledPages("2022-02-24", "2025-12-31", {
+    fatalities: "30",
+    fatalities_where: ">=",
+  });
+
+  // Violence against civilians (≥5 killed)
+  const civilianViolence = await fetchAcledPages("2022-02-24", "2025-12-31", {
+    event_type: "Violence against civilians",
+    fatalities: "5",
+    fatalities_where: ">=",
+  });
+
+  // Agreements and POW exchanges
+  const agreements = await fetchAcledPages("2022-02-24", "2025-12-31", {
+    event_type: "Strategic developments",
+    sub_event_type: "Agreement",
+  });
+
+  // Non-violent territory transfers
+  const transfers = await fetchAcledPages("2022-02-24", "2025-12-31", {
+    event_type: "Strategic developments",
+    sub_event_type: "Non-violent transfer of territory",
+  });
+
+  const allAcled = [...highFatality, ...civilianViolence, ...agreements, ...transfers];
+
+  // Deduplicate by event_id
+  const seenIds = new Set<string>();
+  for (const ev of allAcled) {
+    if (seenIds.has(ev.event_id)) continue;
+    seenIds.add(ev.event_id);
+
+    const dateKey = ev.event_date.replace(/-/g, "");
+    if (dateKey < "20220224") continue;
+
+    // Build a concise label from sub_event_type + location
+    const label = buildAcledLabel(ev);
+    const description = ev.notes.length > 200 ? `${ev.notes.slice(0, 197)}...` : ev.notes;
+
+    events.push({
+      date: dateKey,
+      label,
+      description,
+      lat: ev.latitude,
+      lng: ev.longitude,
+    });
+  }
+
+  return events;
+}
+
+function buildAcledLabel(ev: AcledEvent): string {
+  const location = ev.location || ev.admin1 || "Ukraine";
+  if (ev.sub_event_type === "Agreement") {
+    return `Agreement: ${location}`;
+  }
+  if (ev.sub_event_type === "Non-violent transfer of territory") {
+    return `Territory transfer: ${location}`;
+  }
+  if (ev.event_type === "Violence against civilians") {
+    return `Civilian attack: ${location}`;
+  }
+  if (ev.fatalities >= 50) {
+    return `Major clash: ${location} (${ev.fatalities} killed)`;
+  }
+  return `${ev.sub_event_type}: ${location}`;
+}
+
+/**
  * Calculate distance between two points in km using the Haversine formula.
  */
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -165,25 +244,26 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 /**
  * Merge seed events into the Wikidata events, deduplicating by date + geo proximity.
  * Seed events take priority since they're curated.
+ * Additional sources (ACLED) are merged after with same dedup logic.
  */
-function mergeEvents(wikidata: WarEvent[], seed: WarEvent[]): WarEvent[] {
+function mergeEvents(wikidata: WarEvent[], seed: WarEvent[], acled: WarEvent[] = []): WarEvent[] {
   const merged = [...seed];
 
-  for (const wEvent of wikidata) {
-    const isDuplicate = merged.some((sEvent) => {
-      // Check date proximity (within 3 days)
-      const wDate = parseInt(wEvent.date, 10);
-      const sDate = parseInt(sEvent.date, 10);
-      if (Math.abs(wDate - sDate) > 3) return false;
+  // Merge Wikidata events (dedup against seed)
+  for (const event of [...wikidata, ...acled]) {
+    const isDuplicate = merged.some((existing) => {
+      const eDate = Number.parseInt(event.date, 10);
+      const mDate = Number.parseInt(existing.date, 10);
+      if (Math.abs(eDate - mDate) > 3) return false;
 
       // Check label similarity (case-insensitive substring match)
-      const wLabel = wEvent.label.toLowerCase();
-      const sLabel = sEvent.label.toLowerCase();
-      if (wLabel.includes(sLabel) || sLabel.includes(wLabel)) return true;
+      const eLabel = event.label.toLowerCase();
+      const mLabel = existing.label.toLowerCase();
+      if (eLabel.includes(mLabel) || mLabel.includes(eLabel)) return true;
 
       // Check geo proximity if both have coordinates
-      if (wEvent.lat != null && wEvent.lng != null && sEvent.lat != null && sEvent.lng != null) {
-        const dist = haversineKm(wEvent.lat, wEvent.lng, sEvent.lat, sEvent.lng);
+      if (event.lat != null && event.lng != null && existing.lat != null && existing.lng != null) {
+        const dist = haversineKm(event.lat, event.lng, existing.lat, existing.lng);
         if (dist < 50) return true;
       }
 
@@ -191,7 +271,7 @@ function mergeEvents(wikidata: WarEvent[], seed: WarEvent[]): WarEvent[] {
     });
 
     if (!isDuplicate) {
-      merged.push(wEvent);
+      merged.push(event);
     }
   }
 
@@ -200,16 +280,34 @@ function mergeEvents(wikidata: WarEvent[], seed: WarEvent[]): WarEvent[] {
 
 /**
  * Main event aggregation pipeline.
+ * Sources: Wikidata SPARQL + ACLED high-impact events + curated seed events.
  */
 async function aggregateEvents(): Promise<WarEvent[]> {
   try {
-    const wikidataEvents = await fetchWikidataEvents();
-    console.log(`[events] Wikidata: ${wikidataEvents.length} events`);
+    // Fetch Wikidata and ACLED in parallel
+    const [wikidataEvents, acledEvents] = await Promise.all([
+      fetchWikidataEvents().catch((err) => {
+        console.error("[events] Wikidata fetch failed:", err);
+        return [] as WarEvent[];
+      }),
+      fetchAcledKeyEvents().catch((err) => {
+        console.error("[events] ACLED fetch failed:", err);
+        return [] as WarEvent[];
+      }),
+    ]);
 
-    const merged = mergeEvents(wikidataEvents, SEED_EVENTS);
     console.log(
-      `[events] Merged: ${merged.length} events (${SEED_EVENTS.length} seed + ${wikidataEvents.length} wikidata, after dedup)`,
+      `[events] Wikidata: ${wikidataEvents.length}, ACLED: ${acledEvents.length}, Seed: ${SEED_EVENTS.length}`,
     );
+
+    const merged = mergeEvents(wikidataEvents, SEED_EVENTS, acledEvents);
+    console.log(`[events] Merged: ${merged.length} events (after dedup)`);
+
+    // If all external sources failed, use fallback
+    if (wikidataEvents.length === 0 && acledEvents.length === 0) {
+      console.warn("[events] All external sources failed, using fallback");
+      return KEY_EVENTS;
+    }
 
     return merged;
   } catch (error) {
