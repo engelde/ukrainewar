@@ -89,8 +89,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUrlEvents(sidebarOpen ? true : null);
   }, [sidebarOpen, setUrlEvents]);
 
-  // Open panels and sidebar defaults after first render
+  // Open panels and sidebar defaults after first render (mount only)
+  const didMountDefaultsRef = useRef(false);
   useEffect(() => {
+    if (didMountDefaultsRef.current) return;
+    didMountDefaultsRef.current = true;
+
     if (!isMobile) {
       setHumanitarianOpen(true);
       setSpendingOpen(true);
@@ -99,7 +103,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     if (urlEvents === null && typeof window !== "undefined" && window.innerWidth >= 1280) {
       setSidebarOpen(true);
     }
-  }, [isMobile, urlEvents]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
   const fetchControllerRef = useRef<AbortController | null>(null);

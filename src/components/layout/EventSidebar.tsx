@@ -219,7 +219,7 @@ export default function EventSidebar({
     if (activeRef.current) {
       activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, []);
+  }, [activeEventDate]);
 
   const handleEventClick = useCallback(
     (date: string) => {
