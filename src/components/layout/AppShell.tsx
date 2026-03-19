@@ -136,54 +136,61 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     [setUrlDate],
   );
 
-  // Fetch historical casualty data when timeline date changes (debounced for playback)
-  const casualtyDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  // Fetch historical casualty data when timeline date changes (throttled — leading + trailing)
+  const casualtyThrottleRef = useRef<NodeJS.Timeout | null>(null);
+  const casualtyPendingDate = useRef<string | null>(null);
   const casualtyAbortRef = useRef<AbortController | null>(null);
+
+  const fetchCasualties = useCallback(async (dateToFetch: string) => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+    if (dateToFetch >= todayStr) {
+      lastFetchedDate.current = null;
+      return;
+    }
+    if (lastFetchedDate.current === dateToFetch) return;
+
+    casualtyAbortRef.current?.abort();
+    const controller = new AbortController();
+    casualtyAbortRef.current = controller;
+
+    try {
+      const res = await fetch(`/api/casualties/history?date=${dateToFetch}`, {
+        signal: controller.signal,
+      });
+      if (res.ok && !controller.signal.aborted) {
+        const data = await res.json();
+        lastFetchedDate.current = dateToFetch;
+        setHistoricalData(data);
+      }
+    } catch {
+      // Aborted or failed
+    }
+  }, []);
+
   useEffect(() => {
     if (!territoryDate) {
       lastFetchedDate.current = null;
       return;
     }
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
-    if (territoryDate >= todayStr) {
-      lastFetchedDate.current = null;
-      return;
-    }
-    if (lastFetchedDate.current === territoryDate) return;
 
-    // Cancel only the pending debounce timer — do NOT abort in-flight requests
-    // so that a fetch that already started can still complete
-    if (casualtyDebounceRef.current) {
-      clearTimeout(casualtyDebounceRef.current);
-    }
-
-    const dateToFetch = territoryDate;
-
-    casualtyDebounceRef.current = setTimeout(async () => {
-      // Abort previous in-flight request only when a new one is about to fire
-      casualtyAbortRef.current?.abort();
-      const controller = new AbortController();
-      casualtyAbortRef.current = controller;
-
-      try {
-        const res = await fetch(`/api/casualties/history?date=${dateToFetch}`, {
-          signal: controller.signal,
-        });
-        if (res.ok && !controller.signal.aborted) {
-          const data = await res.json();
-          lastFetchedDate.current = dateToFetch;
-          setHistoricalData(data);
+    if (!casualtyThrottleRef.current) {
+      // Leading edge — fire immediately
+      fetchCasualties(territoryDate);
+      casualtyPendingDate.current = null;
+      casualtyThrottleRef.current = setTimeout(() => {
+        casualtyThrottleRef.current = null;
+        // Trailing edge — fire with latest date if changes came in
+        if (casualtyPendingDate.current) {
+          fetchCasualties(casualtyPendingDate.current);
+          casualtyPendingDate.current = null;
         }
-      } catch {
-        // Aborted or failed
-      }
-    }, 300);
-
-    return () => {
-      clearTimeout(casualtyDebounceRef.current!);
-    };
-  }, [territoryDate]);
+      }, 500);
+    } else {
+      // Already throttled — store latest date for trailing edge
+      casualtyPendingDate.current = territoryDate;
+    }
+  }, [territoryDate, fetchCasualties]);
 
   const handleToggleHumanitarian = useCallback(() => {
     setHumanitarianOpen((prev) => !prev);
@@ -377,6 +384,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}
           eventsOpen={sidebarOpen}
+          onToggleEvents={handleToggleSidebar}
           onReset={handleReset}
           isHistorical={isViewingPast}
           dockSlot={

@@ -1309,27 +1309,32 @@ export default function MapView({
     layers.battles,
   ]);
 
-  // Update territory when timeline date changes (debounced)
-  // Uses ref to avoid re-triggering on loadTerritoryData recreation
-  const territoryDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  // Update territory when timeline date changes (throttled — leading + trailing edge)
+  // Fires immediately on first change, then at most once per interval while changes keep coming
+  const territoryThrottleRef = useRef<NodeJS.Timeout | null>(null);
+  const territoryPendingRef = useRef(false);
   useEffect(() => {
     if (!map.current || !loaded) return;
 
-    if (territoryDebounceRef.current) {
-      clearTimeout(territoryDebounceRef.current);
-    }
-
-    territoryDebounceRef.current = setTimeout(() => {
+    const fire = () => {
+      territoryPendingRef.current = false;
       if (map.current?.isStyleLoaded()) {
         loadTerritoryDataRef.current(map.current);
       }
-    }, 200);
-
-    return () => {
-      if (territoryDebounceRef.current) {
-        clearTimeout(territoryDebounceRef.current);
-      }
     };
+
+    if (!territoryThrottleRef.current) {
+      // Leading edge — fire immediately
+      fire();
+      territoryThrottleRef.current = setTimeout(() => {
+        territoryThrottleRef.current = null;
+        // Trailing edge — fire again if changes came in during the wait
+        if (territoryPendingRef.current) fire();
+      }, 500);
+    } else {
+      // Already throttled — mark pending for trailing edge
+      territoryPendingRef.current = true;
+    }
   }, [loaded, territoryDate]);
 
   // Fetch historical equipment data when timeline moves to a new month

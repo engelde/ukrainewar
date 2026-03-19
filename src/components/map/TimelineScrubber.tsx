@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   TbChevronLeft,
   TbChevronRight,
+  TbFlag,
   TbInfoCircle,
   TbPlayerPauseFilled,
   TbPlayerPlayFilled,
@@ -25,6 +26,7 @@ interface TimelineScrubberProps {
   initialDate?: string | null;
   dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
+  onToggleEvents?: () => void;
   onReset?: () => void;
   isHistorical?: boolean;
 }
@@ -74,6 +76,7 @@ export default function TimelineScrubber({
   initialDate,
   dockSlot,
   eventsOpen,
+  onToggleEvents,
   onReset,
   isHistorical,
 }: TimelineScrubberProps) {
@@ -675,12 +678,33 @@ export default function TimelineScrubber({
             ))}
           </div>
 
-          {/* Reset button — right side of controls */}
+          {/* Spacer to push buttons to right */}
+          <div className="flex-1" />
+
+          {/* Events toggle */}
+          {onToggleEvents && (
+            <button
+              onClick={onToggleEvents}
+              title={t("timeline.toggleEvents")}
+              className={cn(
+                "flex h-7 items-center gap-1 rounded-md px-2.5 transition-colors",
+                "text-[10px] font-semibold uppercase tracking-wider",
+                eventsOpen
+                  ? "bg-ua-yellow/15 text-ua-yellow"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated",
+              )}
+            >
+              <TbFlag className="h-3 w-3" />
+              <span>{t("timeline.events")}</span>
+            </button>
+          )}
+
+          {/* Reset button */}
           {isHistorical && onReset && (
             <button
               onClick={onReset}
               className={cn(
-                "flex h-7 items-center gap-1.5 rounded-md px-2.5 ml-auto transition-colors",
+                "flex h-7 items-center gap-1.5 rounded-md px-2.5 transition-colors",
                 "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
                 "hover:text-foreground hover:bg-surface-elevated",
                 "group",
