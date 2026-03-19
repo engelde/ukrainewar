@@ -1358,144 +1358,120 @@ export default function MapView({
     return () => controller.abort();
   }, [loaded, territoryDate]);
 
-  // Filter equipment markers by timeline date (debounced)
+  // Batch-update all map sources when timeline date changes (single debounced effect)
+  const lastMapUpdateRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!map.current || !loaded) return;
 
     const timer = setTimeout(() => {
-      const source = map.current?.getSource("equipment") as maplibregl.GeoJSONSource | undefined;
-      if (!source || equipmentDataRef.current.length === 0) return;
+      const m = map.current;
+      if (!m) return;
 
       const timelineDateNorm = territoryDate
         ? `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}-${territoryDate.slice(6, 8)}`
         : null;
 
-      const filtered = timelineDateNorm
-        ? equipmentDataRef.current.filter((m) => m.date <= timelineDateNorm)
-        : equipmentDataRef.current;
+      // Skip if the normalised date hasn't actually changed
+      if (timelineDateNorm === lastMapUpdateRef.current) return;
+      lastMapUpdateRef.current = timelineDateNorm;
 
-      const geojson: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: filtered.map((m) => ({
-          type: "Feature" as const,
-          geometry: {
-            type: "Point" as const,
-            coordinates: [m.lng, m.lat],
-          },
-          properties: {
-            id: m.id,
-            type: m.type,
-            model: m.model,
-            status: m.status,
-            date: m.date,
-            location: m.location || "",
-            category: normalizeEquipmentCategory(m.type),
-          },
-        })),
-      };
+      // --- Equipment markers ---
+      const eqSource = m.getSource("equipment") as maplibregl.GeoJSONSource | undefined;
+      if (eqSource && equipmentDataRef.current.length > 0) {
+        const filtered = timelineDateNorm
+          ? equipmentDataRef.current.filter((mk) => mk.date <= timelineDateNorm)
+          : equipmentDataRef.current;
 
-      source.setData(geojson);
-    }, 80);
-
-    return () => clearTimeout(timer);
-  }, [loaded, territoryDate]);
-
-  // Filter ACLED conflict events by timeline date (debounced)
-  useEffect(() => {
-    if (!map.current || !loaded) return;
-
-    const timer = setTimeout(() => {
-      const source = map.current?.getSource("acled") as maplibregl.GeoJSONSource | undefined;
-      if (!source || !acledDataRef.current) return;
-
-      const timelineDateNorm = territoryDate
-        ? `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}-${territoryDate.slice(6, 8)}`
-        : null;
-
-      if (!timelineDateNorm) {
-        source.setData(acledDataRef.current);
-        return;
+        eqSource.setData({
+          type: "FeatureCollection",
+          features: filtered.map((mk) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [mk.lng, mk.lat] },
+            properties: {
+              id: mk.id,
+              type: mk.type,
+              model: mk.model,
+              status: mk.status,
+              date: mk.date,
+              location: mk.location || "",
+              category: normalizeEquipmentCategory(mk.type),
+            },
+          })),
+        });
       }
 
-      const filtered: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: acledDataRef.current.features.filter((f) => {
-          const date = f.properties?.date;
-          return date && date <= timelineDateNorm;
-        }),
-      };
+      // --- ACLED conflict events ---
+      const acledSource = m.getSource("acled") as maplibregl.GeoJSONSource | undefined;
+      if (acledSource && acledDataRef.current) {
+        if (!timelineDateNorm) {
+          acledSource.setData(acledDataRef.current);
+        } else {
+          acledSource.setData({
+            type: "FeatureCollection",
+            features: acledDataRef.current.features.filter((f) => {
+              const date = f.properties?.date;
+              return date && date <= timelineDateNorm;
+            }),
+          });
+        }
+      }
 
-      source.setData(filtered);
-    }, 80);
+      // --- Battle markers ---
+      if (battles.length > 0) {
+        const battleSource = m.getSource("battles") as maplibregl.GeoJSONSource | undefined;
+        if (battleSource) {
+          battleSource.setData(battleGeoJSON(battles, territoryDate));
+        }
+      }
 
-    return () => clearTimeout(timer);
-  }, [loaded, territoryDate]);
+      // --- ACLED heatmap ---
+      const heatmapSource = m.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
+      if (heatmapSource && acledRegionalRef.current) {
+        const data = acledRegionalRef.current;
+        const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
 
-  // Update battle markers based on timeline date (debounced)
-  useEffect(() => {
-    if (!map.current || !loaded || battles.length === 0) return;
-    const timer = setTimeout(() => {
-      const source = map.current?.getSource("battles") as maplibregl.GeoJSONSource | undefined;
-      if (!source) return;
-      source.setData(battleGeoJSON(battles, territoryDate));
-    }, 80);
+        const year = territoryDate ? parseInt(territoryDate.slice(0, 4), 10) : null;
+        const month = territoryDate ? parseInt(territoryDate.slice(4, 6), 10) : null;
+
+        const geoWithData: GeoJSON.FeatureCollection = {
+          type: "FeatureCollection",
+          features: oblastFeatures.map((f) => {
+            const name = (f.properties as { name: string }).name;
+            const oblastData = data.oblasts.find((o) => o.name === name);
+            let fatalities = 0;
+            let events = 0;
+
+            if (oblastData?.monthly) {
+              if (year && month) {
+                oblastData.monthly
+                  .filter(
+                    (mk) => mk.year < year || (mk.year === year && monthIndex(mk.month) <= month),
+                  )
+                  .forEach((mk) => {
+                    fatalities += mk.fatalities;
+                    events += mk.events;
+                  });
+              } else {
+                fatalities = oblastData.monthly
+                  .filter((mk) => mk.year >= 2022)
+                  .reduce((sum, mk) => sum + mk.fatalities, 0);
+                events = oblastData.monthly
+                  .filter((mk) => mk.year >= 2022)
+                  .reduce((sum, mk) => sum + mk.events, 0);
+              }
+            }
+
+            return { ...f, properties: { ...f.properties, fatalities, events } };
+          }),
+        };
+
+        heatmapSource.setData(structuredClone(geoWithData));
+      }
+    }, 150);
+
     return () => clearTimeout(timer);
   }, [loaded, territoryDate, battles]);
-
-  // Update ACLED heatmap by timeline date (debounced)
-  useEffect(() => {
-    if (!map.current || !loaded) return;
-
-    const timer = setTimeout(() => {
-      const source = map.current?.getSource("acled-heatmap") as
-        | maplibregl.GeoJSONSource
-        | undefined;
-      if (!source || !acledRegionalRef.current) return;
-
-      const data = acledRegionalRef.current;
-      const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
-
-      const year = territoryDate ? parseInt(territoryDate.slice(0, 4), 10) : null;
-      const month = territoryDate ? parseInt(territoryDate.slice(4, 6), 10) : null;
-
-      const geoWithData: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: oblastFeatures.map((f) => {
-          const name = (f.properties as { name: string }).name;
-          const oblastData = data.oblasts.find((o) => o.name === name);
-          let fatalities = 0;
-          let events = 0;
-
-          if (oblastData?.monthly) {
-            if (year && month) {
-              oblastData.monthly
-                .filter((m) => m.year < year || (m.year === year && monthIndex(m.month) <= month))
-                .forEach((m) => {
-                  fatalities += m.fatalities;
-                  events += m.events;
-                });
-            } else {
-              fatalities = oblastData.monthly
-                .filter((m) => m.year >= 2022)
-                .reduce((sum, m) => sum + m.fatalities, 0);
-              events = oblastData.monthly
-                .filter((m) => m.year >= 2022)
-                .reduce((sum, m) => sum + m.events, 0);
-            }
-          }
-
-          return {
-            ...f,
-            properties: { ...f.properties, fatalities, events },
-          };
-        }),
-      };
-
-      source.setData(structuredClone(geoWithData));
-    }, 80);
-
-    return () => clearTimeout(timer);
-  }, [loaded, territoryDate]);
 
   // Fly to target location
   useEffect(() => {

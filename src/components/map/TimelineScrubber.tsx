@@ -669,8 +669,8 @@ export default function TimelineScrubber({
             ))}
 
             {/* Event marker dots */}
-            {eventPositionsPx.map((event) => (
-              <Tooltip key={event.date}>
+            {eventPositionsPx.map((event, i) => (
+              <Tooltip key={`${event.date}-${i}`}>
                 <TooltipTrigger
                   render={
                     <button
@@ -723,10 +723,10 @@ export default function TimelineScrubber({
 
             {/* Event labels below timeline */}
             <div className="absolute left-0 right-0 pointer-events-none" style={{ top: "28px" }}>
-              {labelRows.map((labelInfo) => {
+              {labelRows.map((labelInfo, i) => {
                 const isLabelActive = activeEvent?.date === labelInfo.date;
                 return (
-                  <Tooltip key={labelInfo.date}>
+                  <Tooltip key={`${labelInfo.date}-${i}`}>
                     <TooltipTrigger
                       render={
                         <div

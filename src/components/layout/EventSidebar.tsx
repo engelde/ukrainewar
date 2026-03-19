@@ -321,7 +321,7 @@ export default function EventSidebar({
                   const isFuture = currentDate ? event.date > currentDate : false;
 
                   return (
-                    <SidebarMenuItem key={event.date}>
+                    <SidebarMenuItem key={`${event.date}-${event.label}`}>
                       <SidebarMenuButton
                         ref={isActive ? activeRef : undefined}
                         onClick={() => handleEventClick(event.date)}
