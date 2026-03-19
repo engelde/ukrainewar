@@ -224,6 +224,10 @@ export default function MapView({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const layersRef = useRef(layers);
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
   const equipmentDataRef = useRef<EquipmentMarker[]>([]);
   const [_equipmentVersion, setEquipmentVersion] = useState(0);
   const fetchedMonthsRef = useRef<Set<string>>(new Set());
@@ -786,11 +790,14 @@ export default function MapView({
       });
 
       // Cluster circles — warm purple tint
+      const conflictsVis = layersRef.current.conflicts ? "visible" : "none";
+
       mapInstance.addLayer({
         id: "acled-clusters",
         type: "circle",
         source: "acled",
         filter: ["has", "point_count"],
+        layout: { visibility: conflictsVis as "visible" | "none" },
         paint: {
           "circle-color": [
             "step",
@@ -815,6 +822,7 @@ export default function MapView({
         source: "acled",
         filter: ["has", "point_count"],
         layout: {
+          visibility: conflictsVis as "visible" | "none",
           "text-field": "{point_count_abbreviated}",
           "text-size": 10,
           "text-font": ["Open Sans Bold"],
@@ -830,6 +838,7 @@ export default function MapView({
         type: "circle",
         source: "acled",
         filter: ["!", ["has", "point_count"]],
+        layout: { visibility: conflictsVis as "visible" | "none" },
         paint: {
           "circle-color": [
             "match",
@@ -1074,11 +1083,14 @@ export default function MapView({
           data: structuredClone(geoWithData),
         });
 
+        const heatmapVis = layersRef.current.heatmap ? "visible" : "none";
+
         mapInstance.addLayer(
           {
             id: "acled-heatmap-fill",
             type: "fill",
             source: "acled-heatmap",
+            layout: { visibility: heatmapVis as "visible" | "none" },
             paint: {
               "fill-color": [
                 "interpolate",
@@ -1107,6 +1119,7 @@ export default function MapView({
           id: "acled-heatmap-line",
           type: "line",
           source: "acled-heatmap",
+          layout: { visibility: heatmapVis as "visible" | "none" },
           paint: {
             "line-color": "rgba(239, 68, 68, 0.15)",
             "line-width": 0.5,
