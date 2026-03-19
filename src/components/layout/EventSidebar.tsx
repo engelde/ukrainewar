@@ -9,6 +9,7 @@ import {
   TbFilter,
   TbFlag,
   TbFlame,
+  TbSearch,
   TbShieldCheckered,
   TbSword,
   TbUsers,
@@ -227,11 +228,24 @@ export default function EventSidebar({
   const activeRef = useRef<HTMLButtonElement>(null);
   const [activeFilters, setActiveFilters] = useState<Set<EventCategory>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredEvents = useMemo(() => {
-    if (activeFilters.size === 0) return events;
-    return events.filter((e) => activeFilters.has(getEventCategory(e.label)));
-  }, [activeFilters, events]);
+    let filtered = events;
+    if (activeFilters.size > 0) {
+      filtered = filtered.filter((e) => activeFilters.has(getEventCategory(e.label)));
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (e) =>
+          e.label.toLowerCase().includes(q) ||
+          e.description.toLowerCase().includes(q) ||
+          formatEventDate(e.date).toLowerCase().includes(q),
+      );
+    }
+    return filtered;
+  }, [activeFilters, events, searchQuery]);
 
   const yearGroups = groupByYear(filteredEvents);
   const years = Object.keys(yearGroups).sort();
@@ -337,6 +351,28 @@ export default function EventSidebar({
           </div>
         )}
       </SidebarHeader>
+
+      {/* Search input */}
+      <div className="px-3 py-2 border-b border-sidebar-border">
+        <div className="relative">
+          <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t("events.searchPlaceholder")}
+            className="w-full rounded-md bg-sidebar-accent/50 border border-sidebar-border/50 pl-8 pr-8 py-1.5 text-xs text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ua-blue/50"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-sidebar-foreground"
+            >
+              <TbX className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
 
       <SidebarContent>
         {years.map((year) => (

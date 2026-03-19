@@ -82,6 +82,7 @@
     "title": "Ключові події",
     "filterByType": "Фільтр за типом",
     "closeSidebar": "Закрити панель",
+    "searchPlaceholder": "Пошук подій...",
     "footerHint": "Натисніть на подію, щоб перейти до цієї дати на хронології",
     "categories": {
       "battle": "Битви",

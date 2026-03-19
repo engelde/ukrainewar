@@ -12,6 +12,7 @@ import {
   TbPlayerSkipForwardFilled,
   TbRefresh,
   TbTimeline,
+  TbX,
 } from "react-icons/tb";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,6 +25,7 @@ interface TimelineScrubberProps {
   events: WarEvent[];
   onDateChange: (date: string) => void;
   initialDate?: string | null;
+  externalDate?: string | null;
   dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
@@ -74,6 +76,7 @@ export default function TimelineScrubber({
   events,
   onDateChange,
   initialDate,
+  externalDate,
   dockSlot,
   eventsOpen,
   onToggleEvents,
@@ -98,6 +101,7 @@ export default function TimelineScrubber({
     return true;
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [dismissedEventDate, setDismissedEventDate] = useState<string | null>(null);
 
   // Daily losses waveform data
   const [dailyLosses, setDailyLosses] = useState<Map<string, number>>(new Map());
@@ -411,6 +415,32 @@ export default function TimelineScrubber({
     }
   }, [currentIndex, isPlaying]);
 
+  // Sync currentIndex when external date changes (e.g., event sidebar click)
+  const lastExternalDate = useRef<string | null | undefined>(externalDate);
+  useEffect(() => {
+    if (externalDate && externalDate !== lastExternalDate.current && !isPlaying) {
+      const idx = dates.findIndex((d) => d >= externalDate);
+      if (idx >= 0 && idx !== currentIndex) {
+        setCurrentIndex(idx);
+      }
+    }
+    lastExternalDate.current = externalDate;
+  }, [externalDate, dates, isPlaying, currentIndex]);
+
+  // Clear dismissed event when nearest event changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: clear dismissal when a new event comes in range
+  useEffect(() => {
+    if (!dismissedEventDate || dates.length === 0) return;
+    // Recompute which event is nearest (within 5 days)
+    const nearest = events.find((event) => {
+      const idx = dates.findIndex((d) => d >= event.date);
+      return idx >= 0 && Math.abs(currentIndex - idx) <= 5;
+    });
+    if (nearest && nearest.date !== dismissedEventDate) {
+      setDismissedEventDate(null);
+    }
+  }, [currentIndex, dates, events, dismissedEventDate]);
+
   if (dates.length === 0) return null;
 
   const currentDate = dates[currentIndex] || dates[dates.length - 1];
@@ -460,10 +490,12 @@ export default function TimelineScrubber({
     return rows;
   })();
 
-  // Closest active event (within 5 days)
-  const activeEvent = eventPositionsPx.find((event) => {
+  // Closest active event (within 5 days), dismissible by user
+  const nearestEvent = eventPositionsPx.find((event) => {
     return Math.abs(currentIndex - event.index) <= 5;
   });
+  const activeEvent =
+    nearestEvent && nearestEvent.date !== dismissedEventDate ? nearestEvent : null;
 
   // Year boundaries in pixels
   const yearTicksPx = YEAR_MARKS.map((y) => {
@@ -508,7 +540,7 @@ export default function TimelineScrubber({
         {activeEvent && (
           <div className="mx-3 mt-2.5 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-4 py-2.5 flex items-start gap-2.5">
             <TbInfoCircle className="h-4 w-4 text-ua-blue mt-0.5 flex-shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-[13px] font-semibold text-ua-blue">{activeEvent.label}</span>
                 <span className="text-[11px] text-muted-foreground font-mono">
@@ -519,6 +551,13 @@ export default function TimelineScrubber({
                 {activeEvent.description}
               </p>
             </div>
+            <button
+              onClick={() => setDismissedEventDate(activeEvent.date)}
+              className="flex-shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+              title="Dismiss"
+            >
+              <TbX className="h-3.5 w-3.5" />
+            </button>
           </div>
         )}
 
@@ -620,7 +659,7 @@ export default function TimelineScrubber({
                 )}
               </button>
               {showPlayHint && !isPlaying && (
-                <span className="absolute inset-0 rounded-md bg-ua-blue/25 pointer-events-none animate-[ping_1s_ease-in-out_3_forwards]" />
+                <span className="absolute inset-0 rounded-md bg-ua-blue/25 pointer-events-none animate-[ping_1s_ease-in-out_4_forwards]" />
               )}
             </div>
             <button

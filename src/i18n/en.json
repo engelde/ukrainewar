@@ -82,6 +82,7 @@
     "title": "Key Events",
     "filterByType": "Filter by type",
     "closeSidebar": "Close sidebar",
+    "searchPlaceholder": "Search events...",
     "footerHint": "Click an event to jump to that date on the timeline",
     "categories": {
       "battle": "Battles",

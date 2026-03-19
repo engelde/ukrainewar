@@ -17,7 +17,6 @@ import {
 import { t } from "@/i18n";
 import type { CasualtyData } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import AnimatedCounter from "./AnimatedCounter";
 import Sparkline from "./Sparkline";
 
 interface StatsEntry {
@@ -148,7 +147,6 @@ interface StatsOverlayProps {
   collapsed?: boolean;
   onCollapse?: () => void;
   onExpand?: () => void;
-  timelineDate?: string;
 }
 
 export default function StatsOverlay({
@@ -157,7 +155,6 @@ export default function StatsOverlay({
   collapsed = false,
   onCollapse,
   onExpand,
-  timelineDate,
 }: StatsOverlayProps) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [trendData, setTrendData] = useState<TrendData | null>(null);
@@ -182,24 +179,16 @@ export default function StatsOverlay({
     };
   }, []);
 
-  // Normalize timelineDate (YYYYMMDD) to ISO date (YYYY-MM-DD) for comparison
-  const cutoffDate = timelineDate
-    ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}-${timelineDate.slice(6, 8)}`
-    : null;
-
   const getTrendValues = (trendKey: string): number[] => {
     if (!trendData) return [];
     const raw =
       trendKey === "_total" ? trendData.totalTrend : (trendData.typeTrends[trendKey] ?? []);
-    const filtered = cutoffDate ? raw.filter((d) => d.date <= cutoffDate) : raw;
-    return filtered.map((d) => d.count);
+    return raw.map((d) => d.count);
   };
 
   const getTrendDates = (): string[] => {
     if (!trendData) return [];
-    const raw = trendData.totalTrend;
-    const filtered = cutoffDate ? raw.filter((d) => d.date <= cutoffDate) : raw;
-    return filtered.map((d) => d.date);
+    return trendData.totalTrend.map((d) => d.date);
   };
 
   return (
@@ -297,10 +286,9 @@ export default function StatsOverlay({
                           +{stat.daily.toLocaleString()}
                         </span>
                       )}
-                      <AnimatedCounter
-                        value={stat.total}
-                        className="text-sm font-bold text-foreground tabular-nums text-right"
-                      />
+                      <span className="text-sm font-bold text-foreground tabular-nums text-right">
+                        {stat.total.toLocaleString()}
+                      </span>
                     </span>
                   </button>
                   {/* Expanded sparkline */}

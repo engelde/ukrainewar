@@ -1609,7 +1609,7 @@ export default function MapView({
 
     const popup = new maplibregl.Popup({
       offset: 20,
-      closeButton: false,
+      closeButton: true,
       closeOnClick: false,
       className: "event-marker-popup",
     }).setHTML(`

@@ -106,6 +106,19 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Clean up URL if date param matches today (today is the default, shouldn't appear in URL)
+  useEffect(() => {
+    if (urlDate) {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+      if (urlDate >= todayStr) {
+        setUrlDate(null);
+      }
+    }
+    // Run only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [historicalData, setHistoricalData] = useState<CasualtyData | null>(null);
   const resetPendingRef = useRef(false);
   const lastFetchedDate = useRef<string | null>(null);
@@ -345,7 +358,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
               isHistorical={isViewingPast && !!historicalData}
               collapsed={false}
               onCollapse={() => setStatsCollapsed(true)}
-              timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
@@ -384,6 +396,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           key={timelineKey}
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}
+          externalDate={territoryDate}
           eventsOpen={sidebarOpen}
           onToggleEvents={handleToggleSidebar}
           onReset={handleReset}
@@ -397,7 +410,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                     isHistorical={isViewingPast && !!historicalData}
                     collapsed={true}
                     onExpand={() => setStatsCollapsed(false)}
-                    timelineDate={territoryDate ?? undefined}
                   />
                 )}
                 {!humanitarianOpen && (
