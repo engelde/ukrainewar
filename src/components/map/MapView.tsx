@@ -1135,7 +1135,18 @@ export default function MapView({
     }
   }, []);
 
-  // Initialize map
+  // Store initial-load callbacks in refs so the init effect never re-runs
+  const loadTerritoryDataRef = useRef(loadTerritoryData);
+  useEffect(() => {
+    loadTerritoryDataRef.current = loadTerritoryData;
+  }, [loadTerritoryData]);
+
+  const loadEquipmentDataRef = useRef(loadEquipmentData);
+  useEffect(() => {
+    loadEquipmentDataRef.current = loadEquipmentData;
+  }, [loadEquipmentData]);
+
+  // Initialize map (runs once on mount)
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
@@ -1166,8 +1177,8 @@ export default function MapView({
       setLoaded(true);
       if (map.current) {
         loadUkraineBorder(map.current);
-        loadTerritoryData(map.current);
-        loadEquipmentData(map.current);
+        loadTerritoryDataRef.current(map.current);
+        loadEquipmentDataRef.current(map.current);
         loadAcledData(map.current);
         loadAcledHeatmap(map.current);
         if (battles.length > 0) {
@@ -1191,17 +1202,9 @@ export default function MapView({
       map.current?.remove();
       map.current = null;
     };
-  }, [
-    battles,
-    initialCenter,
-    initialZoom,
-    loadAcledData,
-    loadAcledHeatmap,
-    loadBattleMarkers,
-    loadEquipmentData,
-    loadTerritoryData,
-    loadUkraineBorder,
-  ]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Only run on mount — all changing callbacks use refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Toggle layer visibility
   useEffect(() => {
