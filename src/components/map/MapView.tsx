@@ -349,22 +349,30 @@ export default function MapView({
     });
   }, []);
 
+  // Track the last territory date we started loading to avoid redundant fetches
+  const lastTerritoryFetchRef = useRef<string | null | undefined>(null);
+  const territoryAbortRef = useRef<AbortController | null>(null);
+
   const loadTerritoryData = useCallback(
     async (mapInstance: maplibregl.Map) => {
+      // Skip if already loading this exact date
+      if (lastTerritoryFetchRef.current === territoryDate) return;
+      lastTerritoryFetchRef.current = territoryDate;
+
+      // Abort any in-flight territory fetch
+      territoryAbortRef.current?.abort();
+      const controller = new AbortController();
+      territoryAbortRef.current = controller;
+
       try {
         const useViina = territoryDate && territoryDate < DEEPSTATE_START;
 
         if (useViina) {
-          // Use VIINA point-based territory data
-          const res = await fetch(`/api/territory/viina?date=${territoryDate}`);
+          const res = await fetch(`/api/territory/viina?date=${territoryDate}`, {
+            signal: controller.signal,
+          });
 
-          // Clear DeepState data when using VIINA
-          const deepstateSource = mapInstance.getSource("territory") as
-            | maplibregl.GeoJSONSource
-            | undefined;
-          if (deepstateSource) {
-            deepstateSource.setData({ type: "FeatureCollection", features: [] });
-          }
+          if (!mapInstance.isStyleLoaded()) return;
 
           ensureViinaLayers(mapInstance);
           const viinaSource = mapInstance.getSource("viina-territory") as
@@ -375,6 +383,14 @@ export default function MapView({
           const { geojson } = await res.json();
           viinaSource.setData(geojson);
 
+          // Clear DeepState data only after VIINA data is ready
+          const deepstateSource = mapInstance.getSource("territory") as
+            | maplibregl.GeoJSONSource
+            | undefined;
+          if (deepstateSource) {
+            deepstateSource.setData({ type: "FeatureCollection", features: [] });
+          }
+
           // Show VIINA layers, hide territory layers
           ["viina-ru", "viina-contested"].forEach((id) => {
             if (mapInstance.getLayer(id))
@@ -383,32 +399,32 @@ export default function MapView({
           return;
         }
 
-        // Clear VIINA data when using DeepState
-        const viinaSource = mapInstance.getSource("viina-territory") as
-          | maplibregl.GeoJSONSource
-          | undefined;
-        if (viinaSource) {
-          viinaSource.setData({ type: "FeatureCollection", features: [] });
-        }
-
         // DeepState territory (July 2024+)
         const url = territoryDate ? `/api/territory/${territoryDate}` : "/api/territory";
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
+
+        if (!mapInstance.isStyleLoaded()) return;
 
         const existingSource = mapInstance.getSource("territory") as
           | maplibregl.GeoJSONSource
           | undefined;
 
         if (!res.ok) {
-          if (existingSource) {
-            existingSource.setData({ type: "FeatureCollection", features: [] });
-          }
+          // Don't clear on failure — keep showing the last good data
           return;
         }
         const { geojson } = await res.json();
 
         if (existingSource) {
           existingSource.setData(geojson);
+
+          // Clear VIINA data only after DeepState data is ready
+          const viinaSource = mapInstance.getSource("viina-territory") as
+            | maplibregl.GeoJSONSource
+            | undefined;
+          if (viinaSource) {
+            viinaSource.setData({ type: "FeatureCollection", features: [] });
+          }
           return;
         }
 
@@ -443,6 +459,7 @@ export default function MapView({
           },
         });
       } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
         console.error("Failed to load territory data:", err);
       }
     },
@@ -1280,8 +1297,8 @@ export default function MapView({
   useEffect(() => {
     if (!map.current || !loaded || !territoryDate) return;
     const timer = setTimeout(() => {
-      if (map.current) loadTerritoryData(map.current);
-    }, 80);
+      if (map.current?.isStyleLoaded()) loadTerritoryData(map.current);
+    }, 200);
     return () => clearTimeout(timer);
   }, [loaded, territoryDate, loadTerritoryData]);
 
@@ -1366,7 +1383,7 @@ export default function MapView({
 
     const timer = setTimeout(() => {
       const m = map.current;
-      if (!m) return;
+      if (!m || !m.isStyleLoaded()) return;
 
       const timelineDateNorm = territoryDate
         ? `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}-${territoryDate.slice(6, 8)}`
