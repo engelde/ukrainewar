@@ -24,7 +24,6 @@ interface TimelineScrubberProps {
   initialDate?: string | null;
   dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
-  onToggleEvents?: () => void;
 }
 
 const SPEED_OPTIONS = [
@@ -72,7 +71,6 @@ export default function TimelineScrubber({
   initialDate,
   dockSlot,
   eventsOpen,
-  onToggleEvents,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -671,26 +669,6 @@ export default function TimelineScrubber({
               </button>
             ))}
           </div>
-
-          {/* Spacer to push Events button to right */}
-          <div className="flex-1" />
-
-          {/* Events toggle — far right */}
-          {onToggleEvents && (
-            <button
-              onClick={onToggleEvents}
-              title={t("timeline.toggleEvents")}
-              className={cn(
-                "flex h-7 items-center rounded-md px-2.5 transition-colors",
-                "text-[10px] font-semibold uppercase tracking-wider",
-                eventsOpen
-                  ? "bg-ua-yellow/15 text-ua-yellow"
-                  : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated",
-              )}
-            >
-              {t("timeline.events")}
-            </button>
-          )}
         </div>
 
         {/* Scrollable timeline */}

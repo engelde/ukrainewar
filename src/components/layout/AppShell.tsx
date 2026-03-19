@@ -137,10 +137,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     [setUrlDate],
   );
 
+  // Fetch historical casualty data when timeline date changes (debounced for playback)
+  const casualtyDebounceRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    if (fetchControllerRef.current) {
-      fetchControllerRef.current.abort();
-    }
     if (!territoryDate) {
       lastFetchedDate.current = null;
       return;
@@ -153,11 +152,16 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     }
     if (lastFetchedDate.current === territoryDate) return;
 
+    // Cancel pending debounce timer
+    if (casualtyDebounceRef.current) {
+      clearTimeout(casualtyDebounceRef.current);
+    }
+
+    const dateToFetch = territoryDate;
     const controller = new AbortController();
     fetchControllerRef.current = controller;
-    const dateToFetch = territoryDate;
 
-    const timer = setTimeout(async () => {
+    casualtyDebounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/casualties/history?date=${dateToFetch}`, {
           signal: controller.signal,
@@ -170,10 +174,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       } catch {
         // Aborted or failed
       }
-    }, 30);
+    }, 300);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(casualtyDebounceRef.current!);
+      controller.abort();
     };
   }, [territoryDate]);
 
@@ -315,7 +320,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           initialZoom={urlZoom ?? undefined}
           activeEvent={activeMapEvent}
         />
-        <Header />
+        <Header eventsOpen={sidebarOpen} onToggleEvents={handleToggleSidebar} />
         <ResetButton onReset={handleReset} warDay={warDay} isHistorical={isViewingPast} />
 
         {displayData && !statsCollapsed && (
@@ -364,7 +369,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}
           eventsOpen={sidebarOpen}
-          onToggleEvents={handleToggleSidebar}
           dockSlot={
             statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed ? (
               <>

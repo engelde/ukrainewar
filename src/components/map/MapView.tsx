@@ -355,9 +355,12 @@ export default function MapView({
 
   const loadTerritoryData = useCallback(
     async (mapInstance: maplibregl.Map) => {
-      // Skip if already loading this exact date
-      if (lastTerritoryFetchRef.current === territoryDate) return;
-      lastTerritoryFetchRef.current = territoryDate;
+      const useViina = territoryDate && territoryDate < DEEPSTATE_START;
+      const fetchKey = `${territoryDate ?? "latest"}:${useViina ? "viina" : "deepstate"}`;
+
+      // Skip if already loading this exact date+source combo
+      if (lastTerritoryFetchRef.current === fetchKey) return;
+      lastTerritoryFetchRef.current = fetchKey;
 
       // Abort any in-flight territory fetch
       territoryAbortRef.current?.abort();
@@ -365,21 +368,25 @@ export default function MapView({
       territoryAbortRef.current = controller;
 
       try {
-        const useViina = territoryDate && territoryDate < DEEPSTATE_START;
-
         if (useViina) {
           const res = await fetch(`/api/territory/viina?date=${territoryDate}`, {
             signal: controller.signal,
           });
 
-          if (!mapInstance.isStyleLoaded()) return;
+          if (!mapInstance.isStyleLoaded()) {
+            lastTerritoryFetchRef.current = null;
+            return;
+          }
 
           ensureViinaLayers(mapInstance);
           const viinaSource = mapInstance.getSource("viina-territory") as
             | maplibregl.GeoJSONSource
             | undefined;
 
-          if (!res.ok || !viinaSource) return;
+          if (!res.ok || !viinaSource) {
+            lastTerritoryFetchRef.current = null;
+            return;
+          }
           const { geojson } = await res.json();
           viinaSource.setData(geojson);
 
@@ -403,14 +410,18 @@ export default function MapView({
         const url = territoryDate ? `/api/territory/${territoryDate}` : "/api/territory";
         const res = await fetch(url, { signal: controller.signal });
 
-        if (!mapInstance.isStyleLoaded()) return;
+        if (!mapInstance.isStyleLoaded()) {
+          lastTerritoryFetchRef.current = null;
+          return;
+        }
 
         const existingSource = mapInstance.getSource("territory") as
           | maplibregl.GeoJSONSource
           | undefined;
 
         if (!res.ok) {
-          // Don't clear on failure — keep showing the last good data
+          // Don't clear on failure — keep showing the last good data, allow retry
+          lastTerritoryFetchRef.current = null;
           return;
         }
         const { geojson } = await res.json();
@@ -460,6 +471,8 @@ export default function MapView({
         });
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
+        // Reset so a retry can succeed
+        lastTerritoryFetchRef.current = null;
         console.error("Failed to load territory data:", err);
       }
     },

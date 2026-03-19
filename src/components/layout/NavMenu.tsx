@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { TbBrandGithub, TbDatabase, TbExternalLink, TbInfoCircle, TbX } from "react-icons/tb";
+import {
+  TbBrandGithub,
+  TbDatabase,
+  TbExternalLink,
+  TbInfoCircle,
+  TbTimeline,
+  TbX,
+} from "react-icons/tb";
 import { t } from "@/i18n";
 import { DATA_SOURCES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -11,9 +18,19 @@ type NavItem = "about" | "sources" | null;
 interface NavMenuProps {
   mobile?: boolean;
   onClose?: () => void;
+  eventsOpen?: boolean;
+  onToggleEvents?: () => void;
 }
 
-function NavContent({ onItemClick }: { onItemClick?: () => void }) {
+function NavContent({
+  onItemClick,
+  eventsOpen,
+  onToggleEvents,
+}: {
+  onItemClick?: () => void;
+  eventsOpen?: boolean;
+  onToggleEvents?: () => void;
+}) {
   const [active, setActive] = useState<NavItem>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +48,23 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
 
   return (
     <div ref={menuRef} className="relative flex items-center gap-0.5">
+      {onToggleEvents && (
+        <button
+          onClick={() => {
+            onToggleEvents();
+            onItemClick?.();
+          }}
+          className={cn(
+            "flex items-center gap-1 rounded-md px-2 py-1",
+            "text-[10px] font-semibold uppercase tracking-wider",
+            "transition-colors",
+            eventsOpen ? "text-ua-yellow" : "text-muted-foreground/70 hover:text-muted-foreground",
+          )}
+        >
+          <TbTimeline className="h-3 w-3" />
+          <span>Events</span>
+        </button>
+      )}
       <button
         onClick={() => setActive(active === "about" ? null : "about")}
         className={cn(
@@ -147,7 +181,15 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
   );
 }
 
-function MobileSidebar({ onClose }: { onClose: () => void }) {
+function MobileSidebar({
+  onClose,
+  eventsOpen,
+  onToggleEvents,
+}: {
+  onClose: () => void;
+  eventsOpen?: boolean;
+  onToggleEvents?: () => void;
+}) {
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -195,6 +237,23 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
 
         {/* Sidebar nav */}
         <div className="flex flex-col py-2">
+          {onToggleEvents && (
+            <button
+              onClick={() => {
+                onToggleEvents();
+                onClose();
+              }}
+              className={cn(
+                "flex items-center gap-2 w-full px-4 py-2.5 transition-colors border-b border-border/20",
+                eventsOpen
+                  ? "text-ua-yellow bg-ua-yellow/5"
+                  : "text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30",
+              )}
+            >
+              <TbTimeline className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider">Events</span>
+            </button>
+          )}
           <SidebarSection title="About">
             <div className="space-y-2 px-4 pb-3">
               <p className="text-[11px] text-foreground/80 leading-relaxed">
@@ -267,9 +326,11 @@ function SidebarSection({ title, children }: { title: string; children: React.Re
   );
 }
 
-export default function NavMenu({ mobile, onClose }: NavMenuProps) {
+export default function NavMenu({ mobile, onClose, eventsOpen, onToggleEvents }: NavMenuProps) {
   if (mobile && onClose) {
-    return <MobileSidebar onClose={onClose} />;
+    return (
+      <MobileSidebar onClose={onClose} eventsOpen={eventsOpen} onToggleEvents={onToggleEvents} />
+    );
   }
-  return <NavContent />;
+  return <NavContent eventsOpen={eventsOpen} onToggleEvents={onToggleEvents} />;
 }
