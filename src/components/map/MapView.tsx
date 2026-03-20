@@ -1211,6 +1211,17 @@ export default function MapView({
         if (battles.length > 0) {
           loadBattleMarkers(map.current, battles);
         }
+
+        // Safety net: retry territory load if source is still empty after 3s
+        const m = map.current;
+        setTimeout(() => {
+          if (!m.isStyleLoaded()) return;
+          const src = m.getSource("territory") as maplibregl.GeoJSONSource | undefined;
+          if (!src) {
+            lastTerritoryFetchRef.current = null;
+            loadTerritoryDataRef.current(m);
+          }
+        }, 3000);
       }
     });
 
@@ -1228,6 +1239,7 @@ export default function MapView({
       heatmapPopupRef.current?.remove();
       lastTerritoryFetchRef.current = null;
       territoryAbortRef.current?.abort();
+      setLoaded(false);
       map.current?.remove();
       map.current = null;
     };

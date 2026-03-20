@@ -34,11 +34,12 @@ interface TimelineScrubberProps {
 }
 
 const SPEED_OPTIONS = [
-  { label: "0.25×", ms: 800 },
-  { label: "0.5×", ms: 400 },
-  { label: "1×", ms: 200 },
-  { label: "2×", ms: 100 },
-  { label: "4×", ms: 50 },
+  { label: "0.25×", ms: 1600 },
+  { label: "0.5×", ms: 800 },
+  { label: "1×", ms: 400 },
+  { label: "2×", ms: 200 },
+  { label: "4×", ms: 100 },
+  { label: "8×", ms: 50 },
 ];
 
 function formatDateDisplay(dateStr: string): string {
@@ -93,7 +94,7 @@ export default function TimelineScrubber({
     return generateDateRange().length - 1;
   });
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speedIndex, setSpeedIndex] = useState(2); // default 1× (200ms)
+  const [speedIndex, setSpeedIndex] = useState(2); // default 1× (400ms)
   const [showPlayHint, setShowPlayHint] = useState(() => {
     if (typeof window !== "undefined") {
       return !new URLSearchParams(window.location.search).has("played");
