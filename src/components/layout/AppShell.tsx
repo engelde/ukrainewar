@@ -336,6 +336,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           layers={layers}
           onMarkerClick={handleMarkerClick}
           onMoveEnd={handleMapMoveEnd}
+          onDateChange={handleTimelineDateChange}
           territoryDate={territoryDate}
           battles={MAJOR_BATTLES}
           flyTo={flyToTarget}

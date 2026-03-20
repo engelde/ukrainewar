@@ -202,6 +202,7 @@ interface MapViewProps {
   layers: MapLayers;
   onMarkerClick?: (marker: EquipmentMarker) => void;
   onMoveEnd?: (center: [number, number], zoom: number) => void;
+  onDateChange?: (date: string) => void;
   territoryDate?: string | null;
   battles?: Battle[];
   flyTo?: { lat: number; lng: number; zoom?: number } | null;
@@ -214,6 +215,7 @@ export default function MapView({
   layers,
   onMarkerClick,
   onMoveEnd,
+  onDateChange,
   territoryDate,
   battles = [],
   flyTo: flyToTarget,
@@ -240,6 +242,10 @@ export default function MapView({
   useEffect(() => {
     onMoveEndRef.current = onMoveEnd;
   }, [onMoveEnd]);
+  const onDateChangeRef = useRef(onDateChange);
+  useEffect(() => {
+    onDateChangeRef.current = onDateChange;
+  }, [onDateChange]);
   const acledRegionalRef = useRef<AcledRegionalData | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
@@ -930,6 +936,16 @@ export default function MapView({
         mapInstance.getCanvas().style.cursor = "";
         acledPopupRef.current?.remove();
         acledPopupRef.current = null;
+      });
+
+      // Click conflict event → jump timeline to that date
+      mapInstance.on("click", "acled-points", (e) => {
+        if (!e.features?.length) return;
+        const props = e.features[0].properties;
+        if (!props?.date) return;
+        // ACLED date is YYYY-MM-DD, timeline expects YYYYMMDD
+        const timelineDate = props.date.replace(/-/g, "");
+        onDateChangeRef.current?.(timelineDate);
       });
 
       // Cursor changes for clusters
