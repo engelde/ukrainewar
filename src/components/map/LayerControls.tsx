@@ -11,6 +11,7 @@ import {
   TbMap,
   TbMapPin,
   TbRadioactive,
+  TbSatellite,
   TbShield,
   TbStack2,
   TbSwords,
@@ -62,7 +63,7 @@ const LAYER_CONFIG: {
     key: "thermal",
     labelKey: "layers.thermal",
     color: "bg-orange-500",
-    Icon: TbRadioactive,
+    Icon: TbSatellite,
   },
 ];
 

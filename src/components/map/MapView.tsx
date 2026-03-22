@@ -1408,6 +1408,107 @@ export default function MapView({
     [ensureArrowImage],
   );
 
+  // ── Thermal Anomaly Layer (NASA FIRMS satellite detections) ──
+  const thermalPopupRef = useRef<maplibregl.Popup | null>(null);
+  const loadThermalLayer = useCallback(async (mapInstance: maplibregl.Map) => {
+    if (mapInstance.getSource("thermal-anomalies")) return;
+
+    try {
+      const res = await fetch("/api/firms");
+      if (!res.ok) return;
+      const geojson: GeoJSON.FeatureCollection = await res.json();
+      if (!mapInstance.isStyleLoaded()) return;
+
+      mapInstance.addSource("thermal-anomalies", {
+        type: "geojson",
+        data: geojson,
+      });
+
+      // Outer glow — large, dim orange circle
+      mapInstance.addLayer({
+        id: "thermal-glow",
+        type: "circle",
+        source: "thermal-anomalies",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["get", "frp"], 0, 12, 50, 24, 200, 40],
+          "circle-color": "rgba(255, 120, 30, 0.15)",
+          "circle-blur": 1,
+        },
+      });
+
+      // Core point — bright orange/red sized by Fire Radiative Power
+      mapInstance.addLayer({
+        id: "thermal-points",
+        type: "circle",
+        source: "thermal-anomalies",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["get", "frp"], 0, 3, 50, 6, 200, 12],
+          "circle-color": [
+            "interpolate",
+            ["linear"],
+            ["get", "frp"],
+            0,
+            "#ff8c00",
+            50,
+            "#ff4500",
+            200,
+            "#ff0000",
+          ],
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "rgba(255, 200, 50, 0.5)",
+        },
+      });
+
+      // Click handler for thermal anomaly details
+      mapInstance.on("click", "thermal-points", (e) => {
+        const feature = e.features?.[0];
+        if (!feature || feature.geometry.type !== "Point") return;
+
+        const props = feature.properties;
+        const coords = feature.geometry.coordinates as [number, number];
+        const frp = props?.frp ? Number(props.frp).toFixed(1) : "N/A";
+        const confidence = props?.confidence || "unknown";
+        const date = props?.date || "";
+        const time = props?.time || "";
+        const timeStr = time ? `${time.slice(0, 2)}:${time.slice(2)}` : "";
+
+        thermalPopupRef.current?.remove();
+        thermalPopupRef.current = new maplibregl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+          className: "infrastructure-popup",
+          maxWidth: "260px",
+        })
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="font-family:var(--font-dm-sans);color:#e8e8ed;font-size:13px;">
+              <div style="font-weight:600;color:#ff8c00;margin-bottom:6px;">Thermal Anomaly</div>
+              <div style="color:#aaa;font-size:11px;margin-bottom:6px;">${date}${timeStr ? ` ${timeStr} UTC` : ""}</div>
+              <div style="margin-bottom:4px;"><span style="color:#888;">Fire Radiative Power:</span> ${frp} MW</div>
+              <div style="margin-bottom:4px;"><span style="color:#888;">Confidence:</span> ${confidence}</div>
+              <div style="color:#666;font-size:10px;margin-top:6px;">Source: NASA FIRMS / VIIRS</div>
+            </div>`,
+          )
+          .addTo(mapInstance);
+      });
+
+      mapInstance.on("mouseenter", "thermal-points", () => {
+        mapInstance.getCanvas().style.cursor = "pointer";
+      });
+      mapInstance.on("mouseleave", "thermal-points", () => {
+        mapInstance.getCanvas().style.cursor = "";
+      });
+
+      // Respect current visibility setting
+      const vis = layersRef.current.thermal ? "visible" : "none";
+      mapInstance.setLayoutProperty("thermal-glow", "visibility", vis);
+      mapInstance.setLayoutProperty("thermal-points", "visibility", vis);
+    } catch (err) {
+      console.error("[MapView] Failed to load thermal anomaly data:", err);
+    }
+  }, []);
+
   // ── Infrastructure Layer (nuclear, dams, bridges, ports, power plants, gas stations) ──
   const loadInfrastructureLayers = useCallback(
     (mapInstance: maplibregl.Map) => {
@@ -2085,6 +2186,7 @@ export default function MapView({
         }
         loadInfrastructureLayers(map.current);
         loadNATOBelarusLayers(map.current);
+        loadThermalLayer(map.current);
 
         // Safety net: retry territory load if source is still empty after 3s
         const m = map.current;
@@ -2113,6 +2215,7 @@ export default function MapView({
       operationPopupRef.current?.remove();
       infrastructurePopupRef.current?.remove();
       natoPopupRef.current?.remove();
+      thermalPopupRef.current?.remove();
       heatmapPopupRef.current?.remove();
       lastTerritoryFetchRef.current = null;
       territoryAbortRef.current?.abort();
@@ -2242,6 +2345,14 @@ export default function MapView({
     for (const layer of natoLayers) {
       if (map.current?.getLayer(layer)) {
         map.current.setLayoutProperty(layer, "visibility", layers.nato ? "visible" : "none");
+      }
+    }
+
+    // Thermal anomaly layers
+    const thermalLayers = ["thermal-glow", "thermal-points"];
+    for (const layer of thermalLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.thermal ? "visible" : "none");
       }
     }
   }, [
