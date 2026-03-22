@@ -31,6 +31,7 @@ const GET_ENDPOINTS = [
   "/api/humanitarian/civilian-casualties",
   "/api/territory",
   "/api/firms",
+  "/api/energy",
 ];
 
 export default {
