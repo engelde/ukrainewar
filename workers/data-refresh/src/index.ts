@@ -32,6 +32,7 @@ const GET_ENDPOINTS = [
   "/api/territory",
   "/api/firms",
   "/api/energy",
+  "/api/energy/gas",
 ];
 
 export default {

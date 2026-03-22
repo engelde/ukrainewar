@@ -66,4 +66,19 @@ export const DATA_SOURCES = [
     url: "https://www.wikidata.org",
     description: "Structured war event data via SPARQL",
   },
+  {
+    name: "NASA FIRMS",
+    url: "https://firms.modaps.eosdis.nasa.gov",
+    description: "Satellite thermal anomaly detection (VIIRS)",
+  },
+  {
+    name: "ENTSO-E",
+    url: "https://transparency.entsoe.eu",
+    description: "European electricity generation data",
+  },
+  {
+    name: "ENTSOG",
+    url: "https://transparency.entsog.eu",
+    description: "European gas transmission flows",
+  },
 ] as const;
