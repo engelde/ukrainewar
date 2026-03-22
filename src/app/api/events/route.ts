@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { WarEvent } from "@/data/events";
 import { KEY_EVENTS } from "@/data/events";
 import { SEED_EVENTS } from "@/data/events-seed";
+import { MISSILE_ATTACKS } from "@/data/missile-attacks";
 import { fetchAcledPages } from "@/lib/acled";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { CACHE_TTL } from "@/lib/constants";
@@ -248,6 +249,25 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 /**
+ * Convert massive/major missile attacks into WarEvent entries.
+ * Only includes "massive" attacks to avoid flooding the timeline.
+ */
+function getMissileAttackEvents(): WarEvent[] {
+  return MISSILE_ATTACKS.filter((a) => a.type === "massive").map((attack) => {
+    const totalLaunched = attack.missiles.launched + attack.drones.launched;
+    const totalIntercepted = attack.missiles.intercepted + attack.drones.intercepted;
+    const rate = totalLaunched > 0 ? Math.round((totalIntercepted / totalLaunched) * 100) : 0;
+    return {
+      date: attack.date,
+      label: `Massive aerial attack (${totalLaunched} projectiles)`,
+      description: `${attack.description}. ${totalIntercepted}/${totalLaunched} intercepted (${rate}%). Targets: ${attack.targets.join(", ")}.`,
+      lat: 50.45,
+      lng: 30.52,
+    };
+  });
+}
+
+/**
  * Merge seed events into the Wikidata events, deduplicating by date + geo proximity.
  * Seed events take priority since they're curated.
  * Additional sources (ACLED) are merged after with same dedup logic.
@@ -302,11 +322,12 @@ async function aggregateEvents(): Promise<WarEvent[]> {
       }),
     ]);
 
+    const missileEvents = getMissileAttackEvents();
     console.log(
-      `[events] Wikidata: ${wikidataEvents.length}, ACLED: ${acledEvents.length}, Seed: ${SEED_EVENTS.length}`,
+      `[events] Wikidata: ${wikidataEvents.length}, ACLED: ${acledEvents.length}, Missiles: ${missileEvents.length}, Seed: ${SEED_EVENTS.length}`,
     );
 
-    const merged = mergeEvents(wikidataEvents, SEED_EVENTS, acledEvents);
+    const merged = mergeEvents(wikidataEvents, SEED_EVENTS, [...acledEvents, ...missileEvents]);
     console.log(`[events] Merged: ${merged.length} events (after dedup)`);
 
     // If all external sources failed, use fallback
