@@ -10,6 +10,8 @@ import Header, { Footer } from "@/components/layout/Header";
 import DetailPanel from "@/components/map/DetailPanel";
 import LayerControls from "@/components/map/LayerControls";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
+import AirDefensePanel from "@/components/panels/AirDefensePanel";
+import EnergyPanel from "@/components/panels/EnergyPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
@@ -84,6 +86,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
   const [humanitarianOpen, setHumanitarianOpen] = useState(false);
   const [spendingOpen, setSpendingOpen] = useState(false);
+  const [energyOpen, setEnergyOpen] = useState(false);
+  const [airDefenseOpen, setAirDefenseOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{
@@ -223,6 +227,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSpendingOpen((prev) => !prev);
   }, []);
 
+  const handleToggleEnergy = useCallback(() => {
+    setEnergyOpen((prev) => !prev);
+  }, []);
+
+  const handleToggleAirDefense = useCallback(() => {
+    setAirDefenseOpen((prev) => !prev);
+  }, []);
+
   const handleMapMoveEnd = useCallback(
     (center: [number, number], zoom: number) => {
       // Skip URL updates during reset flyTo animation
@@ -283,6 +295,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSelectedMarker(null);
     setHumanitarianOpen(true);
     setSpendingOpen(true);
+    setEnergyOpen(false);
+    setAirDefenseOpen(false);
     setStatsCollapsed(false);
     setLayersCollapsed(false);
     setTimelineKey((prev) => prev + 1);
@@ -415,6 +429,24 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
+        {energyOpen && (
+          <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[600px] sm:top-16 max-w-xs">
+            <EnergyPanel
+              isOpen={true}
+              onToggle={handleToggleEnergy}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
+        {airDefenseOpen && (
+          <DraggablePanel className="fixed left-4 top-[360px] z-30 sm:left-[600px] sm:top-[300px] max-w-xs">
+            <AirDefensePanel
+              isOpen={true}
+              onToggle={handleToggleAirDefense}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
 
         <TimelineScrubber
           events={events}
@@ -427,7 +459,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onReset={handleReset}
           isHistorical={isViewingPast}
           dockSlot={
-            statsCollapsed || !humanitarianOpen || !spendingOpen || layersCollapsed ? (
+            statsCollapsed ||
+            !humanitarianOpen ||
+            !spendingOpen ||
+            !energyOpen ||
+            !airDefenseOpen ||
+            layersCollapsed ? (
               <>
                 {statsCollapsed && displayData && (
                   <StatsOverlay
@@ -448,6 +485,20 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                   <SpendingPanel
                     isOpen={false}
                     onToggle={handleToggleSpending}
+                    timelineDate={territoryDate ?? undefined}
+                  />
+                )}
+                {!energyOpen && (
+                  <EnergyPanel
+                    isOpen={false}
+                    onToggle={handleToggleEnergy}
+                    timelineDate={territoryDate ?? undefined}
+                  />
+                )}
+                {!airDefenseOpen && (
+                  <AirDefensePanel
+                    isOpen={false}
+                    onToggle={handleToggleAirDefense}
                     timelineDate={territoryDate ?? undefined}
                   />
                 )}
