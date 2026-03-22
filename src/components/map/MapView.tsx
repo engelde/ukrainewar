@@ -517,10 +517,14 @@ export default function MapView({
             deepstateSource.setData({ type: "FeatureCollection", features: [] });
           }
 
-          // Show VIINA layers, hide territory layers
+          // Show VIINA layers (respecting user's territory toggle)
           ["viina-ru", "viina-contested"].forEach((id) => {
             if (mapInstance.getLayer(id))
-              mapInstance.setLayoutProperty(id, "visibility", "visible");
+              mapInstance.setLayoutProperty(
+                id,
+                "visibility",
+                layersRef.current.territory ? "visible" : "none",
+              );
           });
           return;
         }
@@ -589,7 +593,11 @@ export default function MapView({
           },
         });
       } catch (err) {
-        if (err instanceof Error && err.name === "AbortError") return;
+        if (err instanceof Error && err.name === "AbortError") {
+          // Clear so a retry of this date can succeed after abort
+          lastTerritoryFetchRef.current = null;
+          return;
+        }
         // Reset so a retry can succeed
         lastTerritoryFetchRef.current = null;
         console.error("Failed to load territory data:", err);
@@ -1226,12 +1234,12 @@ export default function MapView({
           "line-color": [
             "case",
             ["==", ["get", "side"], "ukraine"],
-            "rgba(59, 130, 246, 0.25)",
-            "rgba(239, 68, 68, 0.25)",
+            "rgba(34, 211, 238, 0.3)",
+            "rgba(251, 146, 60, 0.3)",
           ],
-          "line-width": ["case", ["get", "active"], 10, 6],
-          "line-blur": 4,
-          "line-opacity": ["case", ["get", "active"], 0.6, 0.3],
+          "line-width": ["case", ["get", "active"], 14, 8],
+          "line-blur": 6,
+          "line-opacity": ["case", ["get", "active"], 0.7, 0.3],
         },
       });
 
@@ -1246,9 +1254,9 @@ export default function MapView({
           "line-join": "round",
         },
         paint: {
-          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#3b82f6", "#ef4444"],
-          "line-width": ["case", ["get", "active"], 3.5, 2],
-          "line-opacity": ["case", ["get", "active"], 0.9, 0.4],
+          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#22d3ee", "#fb923c"],
+          "line-width": ["case", ["get", "active"], 4, 2.5],
+          "line-opacity": ["case", ["get", "active"], 0.95, 0.5],
         },
       });
 
@@ -1263,9 +1271,9 @@ export default function MapView({
           "line-join": "round",
         },
         paint: {
-          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#3b82f6", "#ef4444"],
-          "line-width": ["case", ["get", "active"], 3.5, 2],
-          "line-opacity": ["case", ["get", "active"], 0.9, 0.4],
+          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#22d3ee", "#fb923c"],
+          "line-width": ["case", ["get", "active"], 4, 2.5],
+          "line-opacity": ["case", ["get", "active"], 0.95, 0.5],
           "line-dasharray": [4, 3],
         },
       });
@@ -1277,15 +1285,15 @@ export default function MapView({
         source: "operation-arrows",
         layout: {
           "icon-image": "op-arrow",
-          "icon-size": ["case", ["get", "active"], 0.6, 0.4],
+          "icon-size": ["case", ["get", "active"], 0.7, 0.45],
           "icon-rotate": ["get", "bearing"],
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
         },
         paint: {
-          "icon-color": ["case", ["==", ["get", "side"], "ukraine"], "#3b82f6", "#ef4444"],
-          "icon-opacity": ["case", ["get", "active"], 0.9, 0.4],
+          "icon-color": ["case", ["==", ["get", "side"], "ukraine"], "#22d3ee", "#fb923c"],
+          "icon-opacity": ["case", ["get", "active"], 0.95, 0.5],
         },
       });
 
@@ -1297,10 +1305,10 @@ export default function MapView({
         layout: {
           "symbol-placement": "line-center",
           "text-field": ["get", "name"],
-          "text-size": 10,
+          "text-size": 11,
           "text-allow-overlap": false,
           "text-font": ["Open Sans Semibold"],
-          "text-offset": [0, -1],
+          "text-offset": [0, -1.2],
         },
         paint: {
           "text-color": [
@@ -1309,14 +1317,14 @@ export default function MapView({
             [
               "case",
               ["==", ["get", "side"], "ukraine"],
-              "#93c5fd", // light blue for active Ukraine
-              "#fca5a5", // light red for active Russia
+              "#67e8f9", // bright cyan for active Ukraine
+              "#fdba74", // bright orange for active Russia
             ],
-            "#6b7280",
+            "#9ca3af",
           ],
-          "text-halo-color": "rgba(0, 0, 0, 0.85)",
-          "text-halo-width": 1.5,
-          "text-opacity": ["case", ["get", "active"], 1, 0.5],
+          "text-halo-color": "rgba(0, 0, 0, 0.9)",
+          "text-halo-width": 2,
+          "text-opacity": ["case", ["get", "active"], 1, 0.6],
         },
       });
 
@@ -1330,7 +1338,7 @@ export default function MapView({
         const coords = e.lngLat;
 
         const sideLabel = props.side === "ukraine" ? "Ukraine" : "Russia";
-        const sideColor = props.side === "ukraine" ? "#3b82f6" : "#ef4444";
+        const sideColor = props.side === "ukraine" ? "#22d3ee" : "#fb923c";
         const typeLabel = (props.type as string)
           .replace(/-/g, " ")
           .replace(/\b\w/g, (c: string) => c.toUpperCase());
