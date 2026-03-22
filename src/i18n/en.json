@@ -56,7 +56,9 @@
     "heatmap": "Conflict Heatmap",
     "heatmapDesc": "Regional fatality intensity",
     "battles": "Major Battles",
-    "battlesDesc": "Key battle locations"
+    "battlesDesc": "Key battle locations",
+    "operations": "Troop Movements",
+    "operationsDesc": "Major military operations"
   },
   "timeline": {
     "title": "Timeline",

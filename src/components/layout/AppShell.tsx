@@ -15,6 +15,7 @@ import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { MAJOR_BATTLES } from "@/data/battles";
+import { MAJOR_OPERATIONS } from "@/data/operations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEvents } from "@/hooks/useEvents";
 import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
@@ -68,6 +69,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     conflicts: true,
     heatmap: true,
     battles: true,
+    operations: true,
   });
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
@@ -285,6 +287,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       conflicts: true,
       heatmap: true,
       battles: true,
+      operations: true,
     });
   }, [setUrlDate, setUrlLng, setUrlLat, setUrlZoom, setUrlEvents]);
 
@@ -339,6 +342,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onDateChange={handleTimelineDateChange}
           territoryDate={territoryDate}
           battles={MAJOR_BATTLES}
+          operations={MAJOR_OPERATIONS}
           flyTo={flyToTarget}
           initialCenter={urlLng != null && urlLat != null ? [urlLng, urlLat] : undefined}
           initialZoom={urlZoom ?? undefined}

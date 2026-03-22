@@ -2,6 +2,7 @@
 
 import type { IconType } from "react-icons";
 import {
+  TbArrowsRightLeft,
   TbBomb,
   TbBorderAll,
   TbChevronDown,
@@ -36,6 +37,12 @@ const LAYER_CONFIG: {
   { key: "conflicts", labelKey: "layers.conflicts", color: "bg-purple-500", Icon: TbFlame },
   { key: "heatmap", labelKey: "layers.heatmap", color: "bg-red-500", Icon: TbMap },
   { key: "battles", labelKey: "layers.battles", color: "bg-red-500", Icon: TbSwords },
+  {
+    key: "operations",
+    labelKey: "layers.operations",
+    color: "bg-amber-500",
+    Icon: TbArrowsRightLeft,
+  },
 ];
 
 export default function LayerControls({

@@ -4,6 +4,7 @@ import maplibregl from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Battle } from "@/data/battles";
+import type { MilitaryOperation } from "@/data/operations";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
 import ukraineOblasts from "@/data/ukraine-oblasts.json";
@@ -177,6 +178,111 @@ function monthIndex(name: string): number {
   return MONTH_NAMES[name] ?? 0;
 }
 
+// Convert operations to GeoJSON lines with arrow-friendly properties
+function operationsGeoJSON(
+  ops: MilitaryOperation[],
+  timelineDate?: string | null,
+): GeoJSON.FeatureCollection {
+  const filtered = timelineDate ? ops.filter((o) => o.startDate <= timelineDate) : ops;
+
+  return {
+    type: "FeatureCollection",
+    features: filtered.map((op) => {
+      const active = timelineDate
+        ? op.startDate <= timelineDate && (!op.endDate || op.endDate >= timelineDate)
+        : false;
+
+      // Compute progress along waypoints for active operations
+      let progress = 1;
+      if (active && timelineDate && op.endDate) {
+        const start = parseInt(op.startDate, 10);
+        const end = parseInt(op.endDate, 10);
+        const current = parseInt(timelineDate, 10);
+        progress =
+          end === start ? 1 : Math.min(1, Math.max(0.05, (current - start) / (end - start)));
+      } else if (active && timelineDate && !op.endDate) {
+        // Ongoing operation — show full path
+        progress = 1;
+      }
+
+      // Build coordinate array (trimmed to progress for active ops)
+      const allCoords = op.waypoints.map((wp) => [wp.lng, wp.lat]);
+      let coords = allCoords;
+      if (active && progress < 1 && allCoords.length > 1) {
+        // Interpolate along the path based on progress
+        const totalSegments = allCoords.length - 1;
+        const targetSegment = progress * totalSegments;
+        const segIndex = Math.floor(targetSegment);
+        const segFrac = targetSegment - segIndex;
+        coords = allCoords.slice(0, segIndex + 1);
+        if (segIndex < totalSegments) {
+          const from = allCoords[segIndex];
+          const to = allCoords[segIndex + 1];
+          coords.push([
+            from[0] + (to[0] - from[0]) * segFrac,
+            from[1] + (to[1] - from[1]) * segFrac,
+          ]);
+        }
+      }
+
+      return {
+        type: "Feature" as const,
+        geometry: {
+          type: "LineString" as const,
+          coordinates: coords,
+        },
+        properties: {
+          id: op.id,
+          name: op.name,
+          side: op.side,
+          type: op.type,
+          startDate: op.startDate,
+          active,
+          significance: op.significance,
+          description: op.description,
+          outcome: op.outcome || "",
+          dateRange: formatBattleDateRange(op.startDate, op.endDate),
+        },
+      };
+    }),
+  };
+}
+
+// Generate arrowhead points at the end of each operation line
+function operationArrowheadsGeoJSON(
+  ops: MilitaryOperation[],
+  timelineDate?: string | null,
+): GeoJSON.FeatureCollection {
+  const lines = operationsGeoJSON(ops, timelineDate);
+
+  return {
+    type: "FeatureCollection",
+    features: lines.features
+      .filter((f) => (f.geometry as GeoJSON.LineString).coordinates.length >= 2)
+      .map((f) => {
+        const coords = (f.geometry as GeoJSON.LineString).coordinates;
+        const tip = coords[coords.length - 1];
+        const prev = coords[coords.length - 2];
+        // Calculate bearing for arrow rotation
+        const dx = tip[0] - prev[0];
+        const dy = tip[1] - prev[1];
+        const bearing = (Math.atan2(dx, dy) * 180) / Math.PI;
+
+        return {
+          type: "Feature" as const,
+          geometry: {
+            type: "Point" as const,
+            coordinates: tip,
+          },
+          properties: {
+            ...f.properties,
+            bearing,
+          },
+        };
+      }),
+  };
+}
+
 const ACLED_EVENT_COLORS: Record<string, string> = {
   Battles: "#ef4444",
   "Explosions/Remote violence": "#f97316",
@@ -205,6 +311,7 @@ interface MapViewProps {
   onDateChange?: (date: string) => void;
   territoryDate?: string | null;
   battles?: Battle[];
+  operations?: MilitaryOperation[];
   flyTo?: { lat: number; lng: number; zoom?: number } | null;
   initialCenter?: [number, number];
   initialZoom?: number;
@@ -218,6 +325,7 @@ export default function MapView({
   onDateChange,
   territoryDate,
   battles = [],
+  operations = [],
   flyTo: flyToTarget,
   initialCenter,
   initialZoom,
@@ -236,6 +344,7 @@ export default function MapView({
   const acledDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
   const battlePopupRef = useRef<maplibregl.Popup | null>(null);
+  const operationPopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
   const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
@@ -1054,6 +1163,218 @@ export default function MapView({
     });
   }, []);
 
+  // Create triangle arrowhead image for operation arrows
+  const ensureArrowImage = useCallback((mapInstance: maplibregl.Map) => {
+    if (mapInstance.hasImage("op-arrow")) return;
+    const size = 24;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(size / 2, 2);
+    ctx.lineTo(size - 3, size - 2);
+    ctx.lineTo(3, size - 2);
+    ctx.closePath();
+    ctx.fill();
+    const imageData = ctx.getImageData(0, 0, size, size);
+    mapInstance.addImage(
+      "op-arrow",
+      { width: size, height: size, data: new Uint8Array(imageData.data.buffer) },
+      { sdf: true },
+    );
+  }, []);
+
+  // Load military operation arrow layers
+  const loadOperationLayers = useCallback(
+    (mapInstance: maplibregl.Map, ops: MilitaryOperation[]) => {
+      ensureArrowImage(mapInstance);
+
+      if (mapInstance.getSource("operations")) {
+        const src = mapInstance.getSource("operations") as maplibregl.GeoJSONSource;
+        src.setData(operationsGeoJSON(ops));
+        const arrowSrc = mapInstance.getSource("operation-arrows") as maplibregl.GeoJSONSource;
+        arrowSrc?.setData(operationArrowheadsGeoJSON(ops));
+        return;
+      }
+
+      // Line source (arrow body)
+      mapInstance.addSource("operations", {
+        type: "geojson",
+        data: operationsGeoJSON(ops),
+      });
+
+      // Arrowhead point source
+      mapInstance.addSource("operation-arrows", {
+        type: "geojson",
+        data: operationArrowheadsGeoJSON(ops),
+      });
+
+      // Glow/shadow behind the arrow line
+      mapInstance.addLayer({
+        id: "operation-line-glow",
+        type: "line",
+        source: "operations",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": [
+            "case",
+            ["==", ["get", "side"], "ukraine"],
+            "rgba(59, 130, 246, 0.25)",
+            "rgba(239, 68, 68, 0.25)",
+          ],
+          "line-width": ["case", ["get", "active"], 10, 6],
+          "line-blur": 4,
+          "line-opacity": ["case", ["get", "active"], 0.6, 0.3],
+        },
+      });
+
+      // Main arrow line (advances — solid)
+      mapInstance.addLayer({
+        id: "operation-lines",
+        type: "line",
+        source: "operations",
+        filter: ["!=", ["get", "type"], "retreat"],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#3b82f6", "#ef4444"],
+          "line-width": ["case", ["get", "active"], 3.5, 2],
+          "line-opacity": ["case", ["get", "active"], 0.9, 0.4],
+        },
+      });
+
+      // Retreat lines (dashed)
+      mapInstance.addLayer({
+        id: "operation-lines-retreat",
+        type: "line",
+        source: "operations",
+        filter: ["==", ["get", "type"], "retreat"],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#3b82f6", "#ef4444"],
+          "line-width": ["case", ["get", "active"], 3.5, 2],
+          "line-opacity": ["case", ["get", "active"], 0.9, 0.4],
+          "line-dasharray": [4, 3],
+        },
+      });
+
+      // Arrowhead symbols at the tip of each line
+      mapInstance.addLayer({
+        id: "operation-arrowheads",
+        type: "symbol",
+        source: "operation-arrows",
+        layout: {
+          "icon-image": "op-arrow",
+          "icon-size": ["case", ["get", "active"], 0.6, 0.4],
+          "icon-rotate": ["get", "bearing"],
+          "icon-rotation-alignment": "map",
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
+        paint: {
+          "icon-color": ["case", ["==", ["get", "side"], "ukraine"], "#3b82f6", "#ef4444"],
+          "icon-opacity": ["case", ["get", "active"], 0.9, 0.4],
+        },
+      });
+
+      // Operation name labels
+      mapInstance.addLayer({
+        id: "operation-labels",
+        type: "symbol",
+        source: "operations",
+        layout: {
+          "symbol-placement": "line-center",
+          "text-field": ["get", "name"],
+          "text-size": 10,
+          "text-allow-overlap": false,
+          "text-font": ["Open Sans Semibold"],
+          "text-offset": [0, -1],
+        },
+        paint: {
+          "text-color": [
+            "case",
+            ["get", "active"],
+            [
+              "case",
+              ["==", ["get", "side"], "ukraine"],
+              "#93c5fd", // light blue for active Ukraine
+              "#fca5a5", // light red for active Russia
+            ],
+            "#6b7280",
+          ],
+          "text-halo-color": "rgba(0, 0, 0, 0.85)",
+          "text-halo-width": 1.5,
+          "text-opacity": ["case", ["get", "active"], 1, 0.5],
+        },
+      });
+
+      // Click handler for operation popups
+      const handleOperationClick = (
+        e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] },
+      ) => {
+        if (!e.features?.length) return;
+        const f = e.features[0];
+        const props = f.properties || {};
+        const coords = e.lngLat;
+
+        const sideLabel = props.side === "ukraine" ? "Ukraine" : "Russia";
+        const sideColor = props.side === "ukraine" ? "#3b82f6" : "#ef4444";
+        const typeLabel = (props.type as string)
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+        operationPopupRef.current?.remove();
+        operationPopupRef.current = new maplibregl.Popup({
+          closeOnClick: true,
+          maxWidth: "280px",
+          className: "operation-popup",
+        })
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="max-width:280px">
+              <div style="font-weight:700;font-size:13px;color:${sideColor};margin-bottom:4px">${props.name}</div>
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:2px">${props.dateRange}</div>
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${sideColor}22;color:${sideColor};border:1px solid ${sideColor}44">${sideLabel}</span>
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#9ca3af;border:1px solid rgba(255,255,255,0.12)">${typeLabel}</span>
+              </div>
+              <div style="font-size:11px;color:#d1d5db;margin-bottom:6px;line-height:1.4">${props.description}</div>
+              ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>Outcome:</strong> ${props.outcome}</div>` : ""}
+            </div>`,
+          )
+          .addTo(mapInstance);
+
+        // Jump timeline to operation's start date
+        if (props.startDate) {
+          onDateChangeRef.current?.(props.startDate as string);
+        }
+      };
+
+      for (const layerId of ["operation-lines", "operation-lines-retreat"]) {
+        mapInstance.on("click", layerId, handleOperationClick);
+        mapInstance.on("mouseenter", layerId, () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", layerId, () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
+      }
+    },
+    [ensureArrowImage],
+  );
+
   // Load ACLED regional heatmap (choropleth by oblast)
   const loadAcledHeatmap = useCallback(async (mapInstance: maplibregl.Map) => {
     try {
@@ -1227,6 +1548,9 @@ export default function MapView({
         if (battles.length > 0) {
           loadBattleMarkers(map.current, battles);
         }
+        if (operations.length > 0) {
+          loadOperationLayers(map.current, operations);
+        }
 
         // Safety net: retry territory load if source is still empty after 3s
         const m = map.current;
@@ -1252,6 +1576,7 @@ export default function MapView({
       popupRef.current?.remove();
       acledPopupRef.current?.remove();
       battlePopupRef.current?.remove();
+      operationPopupRef.current?.remove();
       heatmapPopupRef.current?.remove();
       lastTerritoryFetchRef.current = null;
       territoryAbortRef.current?.abort();
@@ -1342,6 +1667,20 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.battles ? "visible" : "none");
       }
     });
+
+    // Operation arrow layers
+    const operationLayers = [
+      "operation-line-glow",
+      "operation-lines",
+      "operation-lines-retreat",
+      "operation-arrowheads",
+      "operation-labels",
+    ];
+    operationLayers.forEach((layer) => {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.operations ? "visible" : "none");
+      }
+    });
   }, [
     loaded,
     layers.territory,
@@ -1351,6 +1690,7 @@ export default function MapView({
     layers.conflicts,
     layers.heatmap,
     layers.battles,
+    layers.operations,
   ]);
 
   // Update territory when timeline date changes (throttled — leading + trailing edge)
@@ -1521,6 +1861,18 @@ export default function MapView({
         }
       }
 
+      // --- Operation arrows ---
+      if (operations.length > 0) {
+        const opSource = m.getSource("operations") as maplibregl.GeoJSONSource | undefined;
+        if (opSource) {
+          opSource.setData(operationsGeoJSON(operations, territoryDate));
+        }
+        const arrowSource = m.getSource("operation-arrows") as maplibregl.GeoJSONSource | undefined;
+        if (arrowSource) {
+          arrowSource.setData(operationArrowheadsGeoJSON(operations, territoryDate));
+        }
+      }
+
       // --- ACLED heatmap ---
       const heatmapSource = m.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
       if (heatmapSource && acledRegionalRef.current) {
@@ -1565,7 +1917,7 @@ export default function MapView({
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [loaded, territoryDate, battles]);
+  }, [loaded, territoryDate, battles, operations]);
 
   // Fly to target location
   useEffect(() => {
