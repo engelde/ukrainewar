@@ -25,7 +25,7 @@
 
 ## Overview
 
-The Russo-Ukrainian War Tracker is a dark-themed, map-centric web application that consolidates data from 8+ authoritative sources into a single interactive experience. Users can explore territory control changes, equipment losses, casualty statistics, humanitarian impact, and bilateral aid — all synchronized to a central timeline spanning the full duration of the war.
+The Russo-Ukrainian War Tracker is a dark-themed, map-centric web application that consolidates data from 12+ authoritative sources into a single interactive experience. Users can explore territory control changes, equipment losses, casualty statistics, humanitarian impact, bilateral aid, energy infrastructure status, air defense performance, and strategic asset monitoring — all synchronized to a central timeline spanning the full duration of the war.
 
 The entire interface is built around an explorable map rendered in muted dark tones, with data panels, counters, and visualizations layered on top. Every element is designed to put the data at the center of the experience.
 
@@ -43,6 +43,12 @@ The entire interface is built around an explorable map rendered in muted dark to
 - **Conflict event heatmap** showing regional intensity by oblast
 - **Major battle locations** with historical context
 - **Ukraine border** and oblast boundary layers
+- **Nuclear power plants** — 5 Ukrainian NPPs with operational status indicators
+- **Critical infrastructure** — 6 dams, 4 bridges, and 9 ports
+- **NATO eastern flank** — 14 bases and enhanced forward presence battlegroups
+- **Belarus military positions** — 10 tracked entries near the Ukrainian border
+- **Energy infrastructure** — gas transit pipelines and power stations
+- **NASA FIRMS thermal anomalies** — near-real-time satellite fire/strike detections (VIIRS)
 - All layers independently toggleable via layer controls
 
 ### Central Timeline
@@ -94,6 +100,21 @@ The entire interface is built around an explorable map rendered in muted dark to
 - Date, nearest location, and coordinates
 - Color-coded by status: red (destroyed), orange (damaged), green (captured), purple (abandoned)
 
+### Energy Infrastructure Panel
+
+- **Real-time electricity generation** data from the ENTSO-E Transparency Platform
+- **Damaged capacity tracking** — pre-war vs. current generation capacity
+- **Plant-level status** for thermal, nuclear, hydro, and renewable facilities
+- **Gas transit monitoring** — Ukrainian pipeline transit volumes via ENTSOG
+- Data updates every 6-12 hours depending on source
+
+### Air Defense Panel
+
+- **Missile and drone attack statistics** aggregated from Ukrainian Air Force reports
+- **Interception rates** by weapon type (cruise missiles, ballistic missiles, Shaheds)
+- **Attack history** — 40 curated major attack waves from February 2022 through May 2025
+- Integrated into the central timeline as filterable events
+
 ### URL State Management
 
 - Timeline date, map position (lat/lng/zoom), and sidebar state persisted in URL
@@ -121,6 +142,27 @@ The entire interface is built around an explorable map rendered in muted dark to
 
 ---
 
+## API Routes
+
+The application exposes the following API endpoints. All responses are cached with stale-while-refresh semantics.
+
+| Route | Description | Cache |
+|-------|-------------|-------|
+| `/api/losses` | Russian equipment and personnel losses (MoD) | 1h |
+| `/api/losses/recent` | Recent visually confirmed losses (WarSpotting) | 6h |
+| `/api/casualties` | Civilian casualty data (OHCHR via HDX) | 4h |
+| `/api/territory` | Territory control GeoJSON (DeepState) | 12h |
+| `/api/events` | Key events (Wikidata SPARQL + curated) | 24h |
+| `/api/acled` | Conflict events (ACLED) | 24h |
+| `/api/refugees` | Refugee and IDP statistics (UNHCR) | 24h |
+| `/api/humanitarian` | Funding appeal data (OCHA via HDX) | 24h |
+| `/api/aid` | Bilateral aid commitments (Kiel Institute) | 7d |
+| `/api/firms` | NASA FIRMS thermal anomalies (VIIRS satellite) | 3h |
+| `/api/energy` | Electricity generation + plant status (ENTSO-E) | 6h |
+| `/api/energy/gas` | Gas transit through Ukraine (ENTSOG) | 12h |
+
+---
+
 ## Data Sources
 
 This project aggregates data from the following authoritative sources. All data is accessed through publicly available APIs and datasets.
@@ -129,6 +171,7 @@ This project aggregates data from the following authoritative sources. All data 
 |--------|--------------|------|
 | **WarSpotting** | Visually confirmed Russian equipment losses with geolocation | [warspotting.net](https://warspotting.net) |
 | **Ukrainian Ministry of Defence** | Official daily personnel and equipment loss reports | [mil.gov.ua](https://www.mil.gov.ua) |
+| **Ukrainian Air Force** | Missile and drone attack reports, interception statistics | [t.me/kaborofua](https://t.me/kpszsu) |
 | **DeepState Map** | Territory control and frontline GeoJSON data | [deepstatemap.live](https://deepstatemap.live) |
 | **ACLED** | Armed conflict event data — battles, civilian targeting, protests | [acleddata.com](https://acleddata.com) |
 | **Wikidata** | Structured data on named events, battles, and offensives (via SPARQL) | [wikidata.org](https://www.wikidata.org) |
@@ -136,6 +179,9 @@ This project aggregates data from the following authoritative sources. All data 
 | **UNHCR** | Refugee and internally displaced persons statistics | [data.unhcr.org](https://data.unhcr.org) |
 | **Kiel Institute** | Ukraine Support Tracker — bilateral military, financial, and humanitarian aid | [ifw-kiel.de](https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/) |
 | **VIINA** | Territorial control derived from news coverage (Zhukov & Ayers) | [github.com/zhukovyuri/VIINA](https://github.com/zhukovyuri/VIINA) |
+| **NASA FIRMS** | Near-real-time satellite thermal anomaly detections (VIIRS) | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov) |
+| **ENTSO-E** | European electricity generation data (Transparency Platform) | [transparency.entsoe.eu](https://transparency.entsoe.eu) |
+| **ENTSOG** | European gas transit flow data (Transparency Platform) | [transparency.entsog.eu](https://transparency.entsog.eu) |
 
 ### Data Freshness
 
@@ -148,12 +194,16 @@ All API responses use a multi-layer persistent caching system (file-based in dev
 | Casualty reports | 4 hours | Daily |
 | Territory control | 12 hours | Daily |
 | Conflict events (ACLED) | 24 hours | Daily |
+| NASA FIRMS thermal anomalies | 3 hours | Near-real-time |
+| Electricity generation (ENTSO-E) | 6 hours | Hourly |
+| Gas transit (ENTSOG) | 12 hours | Daily |
 | Key events (Wikidata) | 24 hours | Community-edited |
 | Refugee/IDP data | 24 hours | Monthly |
 | Humanitarian funding | 24 hours | Monthly |
 | Civilian casualties | 24 hours | Monthly (OHCHR) |
 | Bilateral aid | 7 days | Monthly releases |
 | VIINA territory | Weekly | Weekly snapshots |
+| Missile attack dataset | Static | Curated (40 major waves) |
 
 ---
 
@@ -241,6 +291,10 @@ This project aggregates, cross-references, and visualizes publicly available con
 - **Conflict events** are sourced from ACLED's geocoded event database, filtered for events with 5+ fatalities. Key events combine Wikidata SPARQL queries with curated editorial selections for political and diplomatic milestones.
 - **Humanitarian data** comes from UNHCR (refugees/IDPs), OCHA (funding appeals), and OHCHR (civilian casualties). Refugee and IDP figures are available as yearly snapshots; civilian casualties are monthly.
 - **Bilateral aid** data is from the Kiel Institute's Ukraine Support Tracker, which tracks committed and disbursed military, financial, and humanitarian aid from 41 donor countries.
+- **Energy infrastructure** data combines ENTSO-E electricity generation figures with curated plant-level status information. Gas transit volumes are sourced from ENTSOG's Transparency Platform, filtered for Ukrainian interconnection points.
+- **Thermal anomaly detections** are sourced from NASA FIRMS using the VIIRS satellite instrument. Detections are filtered to the conflict zone and displayed as potential fire/strike indicators — not all detections represent military activity.
+- **Missile attack data** is compiled from Ukrainian Air Force daily reports. The dataset includes 40 curated major attack waves from February 2022 through May 2025, with weapon types, quantities launched, and interception counts.
+- **Strategic asset positions** (nuclear plants, dams, bridges, ports, NATO bases, Belarus military positions) are sourced from curated geospatial datasets and updated as conditions change.
 
 ### Data Limitations
 
@@ -250,6 +304,10 @@ This project aggregates, cross-references, and visualizes publicly available con
 - Equipment loss markers only appear where geolocation data is available (a subset of confirmed losses)
 - Refugee and IDP data updates yearly, not monthly — during timeline playback, the most recent available year's figures are shown
 - Humanitarian funding data reflects UN-coordinated appeals only, not total global aid
+- NASA FIRMS thermal detections include non-conflict sources (e.g., agricultural fires, industrial activity); not all anomalies indicate military strikes
+- ENTSO-E generation data reflects grid-connected output only and may not capture off-grid or emergency generation
+- Missile attack interception rates are based on Ukrainian Air Force claims, which may differ from independent assessments
+- Strategic asset positions (NATO, Belarus) are based on publicly reported information and may not reflect all deployments
 
 ---
 
@@ -257,7 +315,7 @@ This project aggregates, cross-references, and visualizes publicly available con
 
 **Created and maintained by [David Engel](https://github.com/engelde)**
 
-This project relies on publicly available data from the sources listed above. Each data source retains its own licensing terms. The ACLED dataset is used under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). Kiel Institute data is from the publicly available Ukraine Support Tracker. UNHCR and OCHA data are provided through their respective open data portals.
+This project relies on publicly available data from the sources listed above. Each data source retains its own licensing terms. The ACLED dataset is used under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). Kiel Institute data is from the publicly available Ukraine Support Tracker. UNHCR and OCHA data are provided through their respective open data portals. NASA FIRMS data is freely available under NASA's open data policy. ENTSO-E and ENTSOG data are accessed through their public Transparency Platforms.
 
 If you use this project in academic work, please cite:
 
