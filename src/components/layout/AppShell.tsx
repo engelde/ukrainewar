@@ -15,6 +15,11 @@ import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { MAJOR_BATTLES } from "@/data/battles";
+import { BELARUS_BASES } from "@/data/belarus-bases";
+import { GAS_PIPELINES, GAS_STATIONS, POWER_PLANTS } from "@/data/energy-assets";
+import { BRIDGES, DAMS, PORTS } from "@/data/infrastructure";
+import { NATO_BASES } from "@/data/nato-bases";
+import { NUCLEAR_PLANTS } from "@/data/nuclear-plants";
 import { MAJOR_OPERATIONS } from "@/data/operations";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEvents } from "@/hooks/useEvents";
@@ -70,6 +75,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     heatmap: true,
     battles: true,
     operations: true,
+    infrastructure: true,
+    nato: true,
+    thermal: true,
   });
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
@@ -288,6 +296,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       heatmap: true,
       battles: true,
       operations: true,
+      infrastructure: true,
+      nato: true,
+      thermal: true,
     });
   }, [setUrlDate, setUrlLng, setUrlLat, setUrlZoom, setUrlEvents]);
 
@@ -343,6 +354,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           territoryDate={territoryDate}
           battles={MAJOR_BATTLES}
           operations={MAJOR_OPERATIONS}
+          nuclearPlants={NUCLEAR_PLANTS}
+          dams={DAMS}
+          bridges={BRIDGES}
+          ports={PORTS}
+          natoBases={NATO_BASES}
+          belarusBases={BELARUS_BASES}
+          gasPipelines={GAS_PIPELINES}
+          gasStations={GAS_STATIONS}
+          powerPlants={POWER_PLANTS}
           flyTo={flyToTarget}
           initialCenter={urlLng != null && urlLat != null ? [urlLng, urlLat] : undefined}
           initialZoom={urlZoom ?? undefined}

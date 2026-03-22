@@ -4,6 +4,11 @@ import maplibregl from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Battle } from "@/data/battles";
+import type { BelarusBase } from "@/data/belarus-bases";
+import type { GasPipeline, GasStation, PowerPlant } from "@/data/energy-assets";
+import type { Bridge, Dam, Port } from "@/data/infrastructure";
+import type { NATOBase } from "@/data/nato-bases";
+import type { NuclearPlant } from "@/data/nuclear-plants";
 import type { MilitaryOperation } from "@/data/operations";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
@@ -316,6 +321,15 @@ interface MapViewProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   activeEvent?: { label: string; description: string; lat: number; lng: number } | null;
+  nuclearPlants?: NuclearPlant[];
+  dams?: Dam[];
+  bridges?: Bridge[];
+  ports?: Port[];
+  natoBases?: NATOBase[];
+  belarusBases?: BelarusBase[];
+  gasPipelines?: GasPipeline[];
+  gasStations?: GasStation[];
+  powerPlants?: PowerPlant[];
 }
 
 export default function MapView({
@@ -330,6 +344,15 @@ export default function MapView({
   initialCenter,
   initialZoom,
   activeEvent,
+  nuclearPlants = [],
+  dams = [],
+  bridges = [],
+  ports = [],
+  natoBases = [],
+  belarusBases = [],
+  gasPipelines = [],
+  gasStations = [],
+  powerPlants = [],
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -345,6 +368,8 @@ export default function MapView({
   const acledPopupRef = useRef<maplibregl.Popup | null>(null);
   const battlePopupRef = useRef<maplibregl.Popup | null>(null);
   const operationPopupRef = useRef<maplibregl.Popup | null>(null);
+  const infrastructurePopupRef = useRef<maplibregl.Popup | null>(null);
+  const natoPopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
   const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
@@ -1383,6 +1408,505 @@ export default function MapView({
     [ensureArrowImage],
   );
 
+  // ── Infrastructure Layer (nuclear, dams, bridges, ports, power plants, gas stations) ──
+  const loadInfrastructureLayers = useCallback(
+    (mapInstance: maplibregl.Map) => {
+      if (mapInstance.getSource("infrastructure")) return;
+
+      // Build GeoJSON from all infrastructure data
+      const features: GeoJSON.Feature[] = [];
+
+      for (const npp of nuclearPlants) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [npp.lng, npp.lat] },
+          properties: {
+            id: npp.id,
+            name: npp.name,
+            category: "nuclear",
+            status: npp.status,
+            detail: `${npp.reactors}x ${npp.reactorType} — ${npp.capacityMW} MW`,
+            description: npp.description,
+            warContext: npp.warContext,
+          },
+        });
+      }
+
+      for (const dam of dams) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [dam.lng, dam.lat] },
+          properties: {
+            id: dam.id,
+            name: dam.name,
+            category: "dam",
+            status: dam.status,
+            detail: dam.capacityMW ? `${dam.capacityMW} MW hydroelectric` : "Reservoir dam",
+            description: dam.warContext,
+            warContext: dam.warContext,
+          },
+        });
+      }
+
+      for (const bridge of bridges) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [bridge.lng, bridge.lat] },
+          properties: {
+            id: bridge.id,
+            name: bridge.name,
+            category: "bridge",
+            status: bridge.status,
+            detail: bridge.strategicValue,
+            description: bridge.warContext,
+            warContext: bridge.warContext,
+          },
+        });
+      }
+
+      for (const port of ports) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [port.lng, port.lat] },
+          properties: {
+            id: port.id,
+            name: port.name,
+            category: "port",
+            status: port.status,
+            detail: `${port.portType === "river" ? "River" : "Sea"} port`,
+            description: port.warContext,
+            warContext: port.warContext,
+          },
+        });
+      }
+
+      for (const plant of powerPlants) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [plant.lng, plant.lat] },
+          properties: {
+            id: plant.id,
+            name: plant.name,
+            category: "power-plant",
+            status: plant.status,
+            detail: plant.capacityMW
+              ? `${plant.capacityMW} MW ${plant.plantType}`
+              : plant.plantType,
+            description: plant.warContext,
+            warContext: plant.warContext,
+          },
+        });
+      }
+
+      for (const station of gasStations) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [station.lng, station.lat] },
+          properties: {
+            id: station.id,
+            name: station.name,
+            category: "gas-station",
+            status: station.status,
+            detail: `Gas ${station.stationType} point`,
+            description: station.description,
+            warContext: station.description,
+          },
+        });
+      }
+
+      mapInstance.addSource("infrastructure", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features },
+      });
+
+      // Outer glow ring for nuclear plants
+      mapInstance.addLayer({
+        id: "infrastructure-nuclear-glow",
+        type: "circle",
+        source: "infrastructure",
+        filter: ["==", ["get", "category"], "nuclear"],
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 8, 8, 16, 12, 24],
+          "circle-color": [
+            "case",
+            ["==", ["get", "status"], "occupied"],
+            "#ef4444",
+            ["==", ["get", "status"], "decommissioned"],
+            "#6b7280",
+            "#22c55e",
+          ],
+          "circle-opacity": 0.15,
+          "circle-blur": 0.8,
+        },
+      });
+
+      // Main infrastructure point markers
+      mapInstance.addLayer({
+        id: "infrastructure-points",
+        type: "circle",
+        source: "infrastructure",
+        paint: {
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            4,
+            ["case", ["==", ["get", "category"], "nuclear"], 5, 3],
+            8,
+            ["case", ["==", ["get", "category"], "nuclear"], 8, 5],
+            12,
+            ["case", ["==", ["get", "category"], "nuclear"], 12, 8],
+          ],
+          "circle-color": [
+            "match",
+            ["get", "category"],
+            "nuclear",
+            [
+              "case",
+              ["==", ["get", "status"], "occupied"],
+              "#ef4444",
+              ["==", ["get", "status"], "decommissioned"],
+              "#6b7280",
+              "#22c55e",
+            ],
+            "dam",
+            [
+              "case",
+              ["==", ["get", "status"], "destroyed"],
+              "#ef4444",
+              ["==", ["get", "status"], "damaged"],
+              "#eab308",
+              "#06b6d4",
+            ],
+            "bridge",
+            [
+              "case",
+              ["==", ["get", "status"], "destroyed"],
+              "#ef4444",
+              ["==", ["get", "status"], "damaged"],
+              "#eab308",
+              "#8b5cf6",
+            ],
+            "port",
+            [
+              "case",
+              ["==", ["get", "status"], "occupied"],
+              "#ef4444",
+              ["==", ["get", "status"], "limited"],
+              "#eab308",
+              "#3b82f6",
+            ],
+            "power-plant",
+            [
+              "case",
+              ["==", ["get", "status"], "destroyed"],
+              "#ef4444",
+              ["==", ["get", "status"], "damaged"],
+              "#eab308",
+              "#f97316",
+            ],
+            "gas-station",
+            ["case", ["==", ["get", "status"], "shutdown"], "#6b7280", "#a855f7"],
+            "#9ca3af",
+          ],
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "rgba(0, 0, 0, 0.5)",
+        },
+      });
+
+      // Infrastructure labels
+      mapInstance.addLayer({
+        id: "infrastructure-labels",
+        type: "symbol",
+        source: "infrastructure",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 5, 0, 7, 9, 10, 11],
+          "text-offset": [0, 1.4],
+          "text-anchor": "top",
+          "text-allow-overlap": false,
+          "text-font": ["Open Sans Semibold"],
+          "text-max-width": 10,
+        },
+        paint: {
+          "text-color": "#d1d5db",
+          "text-halo-color": "rgba(0, 0, 0, 0.85)",
+          "text-halo-width": 1.5,
+          "text-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0, 7, 0.8, 10, 1],
+        },
+      });
+
+      // Gas pipeline lines — active
+      const pipelineFeatures: GeoJSON.Feature[] = gasPipelines.map((p) => ({
+        type: "Feature" as const,
+        geometry: {
+          type: "LineString" as const,
+          coordinates: p.waypoints.map((wp) => [wp.lng, wp.lat]),
+        },
+        properties: {
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          description: p.description,
+        },
+      }));
+
+      mapInstance.addSource("gas-pipelines", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: pipelineFeatures },
+      });
+
+      mapInstance.addLayer({
+        id: "gas-pipeline-lines",
+        type: "line",
+        source: "gas-pipelines",
+        filter: ["!=", ["get", "status"], "shutdown"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": ["case", ["==", ["get", "status"], "destroyed"], "#ef4444", "#a855f7"],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.5, 8, 3, 12, 5],
+          "line-opacity": 0.7,
+        },
+      });
+
+      // Gas pipeline lines — shutdown (dashed)
+      mapInstance.addLayer({
+        id: "gas-pipeline-lines-shutdown",
+        type: "line",
+        source: "gas-pipelines",
+        filter: ["==", ["get", "status"], "shutdown"],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#6b7280",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.5, 8, 3, 12, 5],
+          "line-opacity": 0.7,
+          "line-dasharray": [4, 3],
+        },
+      });
+
+      mapInstance.addLayer({
+        id: "gas-pipeline-labels",
+        type: "symbol",
+        source: "gas-pipelines",
+        layout: {
+          "symbol-placement": "line-center",
+          "text-field": ["get", "name"],
+          "text-size": 9,
+          "text-font": ["Open Sans Semibold"],
+          "text-offset": [0, -0.8],
+        },
+        paint: {
+          "text-color": "#c4b5fd",
+          "text-halo-color": "rgba(0, 0, 0, 0.85)",
+          "text-halo-width": 1.5,
+          "text-opacity": 0.8,
+        },
+      });
+
+      // Click handler for infrastructure popups
+      const handleInfraClick = (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        if (!e.features?.length) return;
+        const props = e.features[0].properties || {};
+        const coords = e.lngLat;
+
+        const statusColors: Record<string, string> = {
+          operational: "#22c55e",
+          damaged: "#eab308",
+          destroyed: "#ef4444",
+          occupied: "#ef4444",
+          decommissioned: "#6b7280",
+          limited: "#eab308",
+          shutdown: "#6b7280",
+        };
+        const statusColor = statusColors[props.status] || "#9ca3af";
+        const categoryLabels: Record<string, string> = {
+          nuclear: "Nuclear Plant",
+          dam: "Dam",
+          bridge: "Bridge",
+          port: "Port",
+          "power-plant": "Power Plant",
+          "gas-station": "Gas Station",
+        };
+        const categoryLabel = categoryLabels[props.category] || props.category;
+
+        infrastructurePopupRef.current?.remove();
+        infrastructurePopupRef.current = new maplibregl.Popup({
+          closeOnClick: true,
+          maxWidth: "280px",
+          className: "operation-popup",
+        })
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="max-width:280px">
+              <div style="font-weight:700;font-size:13px;color:${statusColor};margin-bottom:4px">${props.name}</div>
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.12)">${categoryLabel}</span>
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44">${props.status}</span>
+              </div>
+              ${props.detail ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:4px">${props.detail}</div>` : ""}
+              <div style="font-size:11px;color:#d1d5db;line-height:1.4">${props.description}</div>
+            </div>`,
+          )
+          .addTo(mapInstance);
+      };
+
+      mapInstance.on("click", "infrastructure-points", handleInfraClick);
+      mapInstance.on("mouseenter", "infrastructure-points", () => {
+        mapInstance.getCanvas().style.cursor = "pointer";
+      });
+      mapInstance.on("mouseleave", "infrastructure-points", () => {
+        mapInstance.getCanvas().style.cursor = "";
+      });
+    },
+    [nuclearPlants, dams, bridges, ports, powerPlants, gasStations, gasPipelines],
+  );
+
+  // ── NATO & Belarus Layer ──
+  const loadNATOBelarusLayers = useCallback(
+    (mapInstance: maplibregl.Map) => {
+      if (mapInstance.getSource("nato-belarus")) return;
+
+      const features: GeoJSON.Feature[] = [];
+
+      for (const base of natoBases) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [base.lng, base.lat] },
+          properties: {
+            id: base.id,
+            name: base.name,
+            side: "nato",
+            country: base.country,
+            baseType: base.baseType,
+            framework: base.frameworkNation || "",
+            description: base.description,
+            significance: base.significance,
+          },
+        });
+      }
+
+      for (const base of belarusBases) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [base.lng, base.lat] },
+          properties: {
+            id: base.id,
+            name: base.name,
+            side: "belarus",
+            baseType: base.baseType,
+            description: base.significance,
+            significance: base.warContext,
+          },
+        });
+      }
+
+      mapInstance.addSource("nato-belarus", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features },
+      });
+
+      // NATO markers — blue
+      mapInstance.addLayer({
+        id: "nato-points",
+        type: "circle",
+        source: "nato-belarus",
+        filter: ["==", ["get", "side"], "nato"],
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 3, 6, 5, 10, 8],
+          "circle-color": "#60a5fa",
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "#1e3a5f",
+        },
+      });
+
+      // Belarus markers — dark red
+      mapInstance.addLayer({
+        id: "belarus-points",
+        type: "circle",
+        source: "nato-belarus",
+        filter: ["==", ["get", "side"], "belarus"],
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 3, 6, 5, 10, 8],
+          "circle-color": "#b91c1c",
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "#450a0a",
+        },
+      });
+
+      // NATO/Belarus labels
+      mapInstance.addLayer({
+        id: "nato-belarus-labels",
+        type: "symbol",
+        source: "nato-belarus",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 4, 0, 6, 8, 10, 10],
+          "text-offset": [0, 1.2],
+          "text-anchor": "top",
+          "text-allow-overlap": false,
+          "text-font": ["Open Sans Semibold"],
+          "text-max-width": 10,
+        },
+        paint: {
+          "text-color": ["case", ["==", ["get", "side"], "nato"], "#93c5fd", "#fca5a5"],
+          "text-halo-color": "rgba(0, 0, 0, 0.85)",
+          "text-halo-width": 1.5,
+          "text-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0, 6, 0.7, 10, 1],
+        },
+      });
+
+      // Click handler
+      const handleNATOClick = (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        if (!e.features?.length) return;
+        const props = e.features[0].properties || {};
+        const coords = e.lngLat;
+
+        const isNATO = props.side === "nato";
+        const color = isNATO ? "#60a5fa" : "#b91c1c";
+        const sideLabel = isNATO ? "NATO" : "Belarus";
+        const typeLabel = (props.baseType as string)
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+        natoPopupRef.current?.remove();
+        natoPopupRef.current = new maplibregl.Popup({
+          closeOnClick: true,
+          maxWidth: "280px",
+          className: "operation-popup",
+        })
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="max-width:280px">
+              <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:4px">${props.name}</div>
+              <div style="display:flex;gap:6px;margin-bottom:6px">
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${color}22;color:${color};border:1px solid ${color}44">${sideLabel}</span>
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#9ca3af;border:1px solid rgba(255,255,255,0.12)">${typeLabel}</span>
+                ${isNATO && props.country ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.12)">${props.country}</span>` : ""}
+              </div>
+              ${isNATO && props.framework ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:4px">Framework Nation: ${props.framework}</div>` : ""}
+              <div style="font-size:11px;color:#d1d5db;line-height:1.4">${props.description}</div>
+              ${props.significance ? `<div style="font-size:11px;color:#60a5fa;margin-top:4px">${props.significance}</div>` : ""}
+            </div>`,
+          )
+          .addTo(mapInstance);
+      };
+
+      for (const layerId of ["nato-points", "belarus-points"]) {
+        mapInstance.on("click", layerId, handleNATOClick);
+        mapInstance.on("mouseenter", layerId, () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", layerId, () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
+      }
+    },
+    [natoBases, belarusBases],
+  );
+
   // Load ACLED regional heatmap (choropleth by oblast)
   const loadAcledHeatmap = useCallback(async (mapInstance: maplibregl.Map) => {
     try {
@@ -1559,6 +2083,8 @@ export default function MapView({
         if (operations.length > 0) {
           loadOperationLayers(map.current, operations);
         }
+        loadInfrastructureLayers(map.current);
+        loadNATOBelarusLayers(map.current);
 
         // Safety net: retry territory load if source is still empty after 3s
         const m = map.current;
@@ -1585,6 +2111,8 @@ export default function MapView({
       acledPopupRef.current?.remove();
       battlePopupRef.current?.remove();
       operationPopupRef.current?.remove();
+      infrastructurePopupRef.current?.remove();
+      natoPopupRef.current?.remove();
       heatmapPopupRef.current?.remove();
       lastTerritoryFetchRef.current = null;
       territoryAbortRef.current?.abort();
@@ -1689,6 +2217,33 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.operations ? "visible" : "none");
       }
     });
+
+    // Infrastructure layers
+    const infraLayers = [
+      "infrastructure-nuclear-glow",
+      "infrastructure-points",
+      "infrastructure-labels",
+      "gas-pipeline-lines",
+      "gas-pipeline-lines-shutdown",
+      "gas-pipeline-labels",
+    ];
+    for (const layer of infraLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(
+          layer,
+          "visibility",
+          layers.infrastructure ? "visible" : "none",
+        );
+      }
+    }
+
+    // NATO/Belarus layers
+    const natoLayers = ["nato-points", "belarus-points", "nato-belarus-labels"];
+    for (const layer of natoLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.nato ? "visible" : "none");
+      }
+    }
   }, [
     loaded,
     layers.territory,
@@ -1699,6 +2254,9 @@ export default function MapView({
     layers.heatmap,
     layers.battles,
     layers.operations,
+    layers.infrastructure,
+    layers.nato,
+    layers.thermal,
   ]);
 
   // Update territory when timeline date changes (throttled — leading + trailing edge)

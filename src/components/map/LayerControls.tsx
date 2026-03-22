@@ -5,10 +5,13 @@ import {
   TbArrowsRightLeft,
   TbBomb,
   TbBorderAll,
+  TbBuildingBridge,
   TbChevronDown,
   TbFlame,
   TbMap,
   TbMapPin,
+  TbRadioactive,
+  TbShield,
   TbStack2,
   TbSwords,
 } from "react-icons/tb";
@@ -42,6 +45,24 @@ const LAYER_CONFIG: {
     labelKey: "layers.operations",
     color: "bg-amber-500",
     Icon: TbArrowsRightLeft,
+  },
+  {
+    key: "infrastructure",
+    labelKey: "layers.infrastructure",
+    color: "bg-cyan-500",
+    Icon: TbBuildingBridge,
+  },
+  {
+    key: "nato",
+    labelKey: "layers.nato",
+    color: "bg-blue-400",
+    Icon: TbShield,
+  },
+  {
+    key: "thermal",
+    labelKey: "layers.thermal",
+    color: "bg-orange-500",
+    Icon: TbRadioactive,
   },
 ];
 

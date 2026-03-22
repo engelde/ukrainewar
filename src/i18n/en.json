@@ -58,7 +58,13 @@
     "battles": "Major Battles",
     "battlesDesc": "Key battle locations",
     "operations": "Troop Movements",
-    "operationsDesc": "Major military operations"
+    "operationsDesc": "Major military operations",
+    "infrastructure": "Infrastructure",
+    "infrastructureDesc": "Nuclear plants, dams, bridges, ports",
+    "nato": "NATO / Belarus",
+    "natoDesc": "Alliance bases and Belarus installations",
+    "thermal": "Thermal Anomalies",
+    "thermalDesc": "NASA satellite fire detections"
   },
   "timeline": {
     "title": "Timeline",

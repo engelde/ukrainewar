@@ -58,7 +58,13 @@
     "battles": "Основні битви",
     "battlesDesc": "Місця ключових битв",
     "operations": "Рух військ",
-    "operationsDesc": "Основні військові операції"
+    "operationsDesc": "Основні військові операції",
+    "infrastructure": "Інфраструктура",
+    "infrastructureDesc": "АЕС, дамби, мости, порти",
+    "nato": "НАТО / Білорусь",
+    "natoDesc": "Бази альянсу та білоруські об'єкти",
+    "thermal": "Теплові аномалії",
+    "thermalDesc": "Супутникові виявлення NASA"
   },
   "timeline": {
     "title": "Хронологія",
