@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { CACHE_TTL, DEEPSTATE_DATA_BASE } from "@/lib/constants";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const CACHE_KEY = "territory-latest";
 const TTL = CACHE_TTL.TERRITORY; // 12 hours
@@ -69,7 +70,10 @@ function refreshInBackground() {
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = checkRateLimit(request, "territory", 120, 60_000);
+  if (limited) return limited;
+
   try {
     // Fast in-memory layer
     if (memCache && Date.now() - memCacheAt < TTL * 1000) {

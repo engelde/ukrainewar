@@ -141,6 +141,13 @@ export default function RootLayout({
         <NuqsAdapter>
           <TooltipProvider>{children}</TooltipProvider>
         </NuqsAdapter>
+        {process.env.CF_WEB_ANALYTICS_TOKEN && (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={`{"token": "${process.env.CF_WEB_ANALYTICS_TOKEN}"}`}
+          />
+        )}
       </body>
     </html>
   );

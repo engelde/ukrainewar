@@ -1,25 +1,19 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
-import {
-  TbChevronLeft,
-  TbChevronRight,
-  TbFlag,
-  TbInfoCircle,
-  TbPlayerPauseFilled,
-  TbPlayerPlayFilled,
-  TbPlayerSkipBackFilled,
-  TbPlayerSkipForwardFilled,
-  TbRefresh,
-  TbTimeline,
-  TbX,
-} from "react-icons/tb";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WarEvent } from "@/data/events";
-import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { TimelineControls } from "./TimelineControls";
+import { TimelineEventCard } from "./TimelineEventCard";
+import { TimelineWaveformCanvas } from "./TimelineWaveformCanvas";
+import {
+  formatDateShort,
+  generateDateRange,
+  PIXELS_PER_DAY,
+  SPEED_OPTIONS,
+  YEAR_MARKS,
+} from "./timelineConstants";
 
 interface TimelineScrubberProps {
   events: WarEvent[];
@@ -32,45 +26,6 @@ interface TimelineScrubberProps {
   onReset?: () => void;
   isHistorical?: boolean;
 }
-
-const SPEED_OPTIONS = [
-  { label: "0.25×", ms: 1600 },
-  { label: "0.5×", ms: 800 },
-  { label: "1×", ms: 400 },
-  { label: "2×", ms: 200 },
-  { label: "4×", ms: 100 },
-  { label: "8×", ms: 50 },
-];
-
-function formatDateDisplay(dateStr: string): string {
-  const m = dateStr.slice(4, 6);
-  const d = dateStr.slice(6, 8);
-  const y = dateStr.slice(0, 4);
-  return `${m}.${d}.${y}`;
-}
-
-function formatDateShort(dateStr: string): string {
-  const m = dateStr.slice(4, 6);
-  const d = dateStr.slice(6, 8);
-  return `${m}.${d}`;
-}
-
-function generateDateRange(): string[] {
-  const dates: string[] = [];
-  const start = new Date("2022-02-24");
-  const end = new Date();
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    dates.push(`${y}${m}${day}`);
-  }
-  return dates;
-}
-
-const PIXELS_PER_DAY = 2;
-
-const YEAR_MARKS = ["2022", "2023", "2024", "2025", "2026"];
 
 export default function TimelineScrubber({
   events,
@@ -383,6 +338,31 @@ export default function TimelineScrubber({
     setIsPlaying(false);
   }, [dates.length]);
 
+  const handleStepBackClick = useCallback(() => {
+    if (!holdFiredRef.current) handleStepBack();
+  }, [handleStepBack]);
+
+  const handleStepForwardClick = useCallback(() => {
+    if (!holdFiredRef.current) handleStepForward();
+  }, [handleStepForward]);
+
+  const handleCalendarSelect = useCallback(
+    (date: Date | undefined) => {
+      if (!date) return;
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      const dateStr = `${y}${m}${d}`;
+      const idx = dates.findIndex((dd) => dd >= dateStr);
+      if (idx >= 0) {
+        setCurrentIndex(idx);
+        setIsPlaying(false);
+      }
+      setCalendarOpen(false);
+    },
+    [dates],
+  );
+
   const cycleSpeed = useCallback(() => {
     setSpeedIndex((prev) => (prev + 1) % SPEED_OPTIONS.length);
   }, []);
@@ -538,232 +518,42 @@ export default function TimelineScrubber({
       >
         {/* Event info card — shown when near key events */}
         {activeEvent && (
-          <div className="mx-3 mt-2.5 rounded-md bg-ua-blue/10 border border-ua-blue/20 px-4 py-2.5 flex items-start gap-2.5">
-            <TbInfoCircle className="h-4 w-4 text-ua-blue mt-0.5 flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-[13px] font-semibold text-ua-blue">{activeEvent.label}</span>
-                <span className="text-[11px] text-muted-foreground font-mono">
-                  {formatDateShort(activeEvent.date)}
-                </span>
-              </div>
-              <p className="text-[12px] text-foreground/80 mt-1 leading-relaxed">
-                {activeEvent.description}
-              </p>
-            </div>
-            <button
-              onClick={() => setDismissedEventDate(activeEvent.date)}
-              aria-label="Dismiss event info"
-              className="flex-shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-              title="Dismiss"
-            >
-              <TbX className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <TimelineEventCard
+            label={activeEvent.label}
+            date={activeEvent.date}
+            description={activeEvent.description}
+            onDismiss={() => setDismissedEventDate(activeEvent.date)}
+          />
         )}
 
         {/* Controls row */}
-        <div className="flex items-center gap-2.5 px-4 pt-3 sm:gap-3">
-          {/* Date info — click to open calendar picker */}
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger
-              render={
-                <button className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px] rounded-md hover:bg-surface-elevated/50 transition-colors px-1.5 py-1 -mx-1.5 -my-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
-                      {t("timeline.title")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-mono text-foreground font-medium">
-                      {formatDateDisplay(currentDate)}
-                    </span>
-                    {currentIndex === dates.length - 1 && (
-                      <span className="text-[9px] text-capture font-mono">{t("common.today")}</span>
-                    )}
-                  </div>
-                </button>
-              }
-            />
-            <PopoverContent side="top" align="start" sideOffset={8} className="w-auto p-0">
-              <Calendar
-                mode="single"
-                captionLayout="dropdown"
-                startMonth={new Date(2022, 1)}
-                endMonth={new Date()}
-                selected={(() => {
-                  const y = parseInt(currentDate.slice(0, 4), 10);
-                  const m = parseInt(currentDate.slice(4, 6), 10) - 1;
-                  const d = parseInt(currentDate.slice(6, 8), 10);
-                  return new Date(y, m, d);
-                })()}
-                onSelect={(date) => {
-                  if (!date) return;
-                  const y = date.getFullYear();
-                  const m = String(date.getMonth() + 1).padStart(2, "0");
-                  const d = String(date.getDate()).padStart(2, "0");
-                  const dateStr = `${y}${m}${d}`;
-                  const idx = dates.findIndex((dd) => dd >= dateStr);
-                  if (idx >= 0) {
-                    setCurrentIndex(idx);
-                    setIsPlaying(false);
-                  }
-                  setCalendarOpen(false);
-                }}
-                disabled={[{ before: new Date(2022, 1, 24) }, { after: new Date() }]}
-                defaultMonth={(() => {
-                  const y = parseInt(currentDate.slice(0, 4), 10);
-                  const m = parseInt(currentDate.slice(4, 6), 10) - 1;
-                  return new Date(y, m, 1);
-                })()}
-                className="bg-background/95 backdrop-blur-xl border border-border/40 rounded-lg"
-              />
-            </PopoverContent>
-          </Popover>
-
-          {/* Transport controls */}
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={jumpToStart}
-              aria-label="Jump to start"
-              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
-              title={t("timeline.jumpToStart")}
-            >
-              <TbPlayerSkipBackFilled className="h-4.5 w-4.5" />
-            </button>
-            <button
-              onClick={() => {
-                if (!holdFiredRef.current) handleStepBack();
-              }}
-              onMouseDown={handleStepBackDown}
-              onMouseUp={handleStepUp}
-              onMouseLeave={handleStepUp}
-              disabled={currentIndex <= 0}
-              aria-label="Step back one day"
-              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
-            >
-              <TbChevronLeft className="h-5 w-5" />
-            </button>
-            <div className="relative">
-              <button
-                onClick={togglePlay}
-                aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
-                className={cn(
-                  "relative z-10 flex h-10 w-10 items-center justify-center rounded-md transition-colors",
-                  isPlaying
-                    ? "bg-ua-blue/20 text-ua-blue"
-                    : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {isPlaying ? (
-                  <TbPlayerPauseFilled className="h-5 w-5" />
-                ) : (
-                  <TbPlayerPlayFilled className="h-5 w-5" />
-                )}
-              </button>
-              {showPlayHint && !isPlaying && (
-                <span className="absolute inset-0 rounded-md bg-ua-blue/25 pointer-events-none animate-[ping_1s_ease-in-out_4_forwards]" />
-              )}
-            </div>
-            <button
-              onClick={() => {
-                if (!holdFiredRef.current) handleStepForward();
-              }}
-              onMouseDown={handleStepForwardDown}
-              onMouseUp={handleStepUp}
-              onMouseLeave={handleStepUp}
-              disabled={currentIndex >= dates.length - 1}
-              aria-label="Step forward one day"
-              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
-            >
-              <TbChevronRight className="h-5 w-5" />
-            </button>
-            <button
-              onClick={jumpToEnd}
-              aria-label="Jump to today"
-              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
-              title={t("timeline.jumpToToday")}
-            >
-              <TbPlayerSkipForwardFilled className="h-4.5 w-4.5" />
-            </button>
-          </div>
-
-          {/* Speed control */}
-          <button
-            onClick={cycleSpeed}
-            aria-label={`Playback speed: ${SPEED_OPTIONS[speedIndex].label}`}
-            className={cn(
-              "flex h-9 items-center justify-center rounded-md px-2.5 transition-colors",
-              "text-xs font-mono font-semibold",
-              isPlaying
-                ? "bg-ua-blue/15 text-ua-blue"
-                : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
-            )}
-            title={t("timeline.playbackSpeed")}
-          >
-            {SPEED_OPTIONS[speedIndex].label}
-          </button>
-
-          {/* Year jump buttons — desktop only */}
-          <div className="hidden sm:flex items-center gap-0.5 ml-1">
-            {availableYears.map((y) => (
-              <button
-                key={y}
-                onClick={() => handleJumpToYear(y)}
-                className={cn(
-                  "flex h-6 items-center justify-center rounded px-1.5 transition-colors",
-                  "text-[9px] font-mono",
-                  currentYear === y
-                    ? "bg-ua-blue/15 text-ua-blue font-semibold"
-                    : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-surface-elevated/50",
-                )}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
-
-          {/* Spacer to push buttons to right */}
-          <div className="flex-1" />
-
-          {/* Events toggle */}
-          {onToggleEvents && (
-            <button
-              onClick={onToggleEvents}
-              title={t("timeline.toggleEvents")}
-              aria-label="Toggle events sidebar"
-              className={cn(
-                "flex h-7 items-center gap-1 rounded-md px-2.5 transition-colors",
-                "text-[10px] font-semibold uppercase tracking-wider",
-                eventsOpen
-                  ? "bg-ua-yellow/15 text-ua-yellow"
-                  : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated",
-              )}
-            >
-              <TbFlag className="h-3 w-3" />
-              <span>{t("timeline.events")}</span>
-            </button>
-          )}
-
-          {/* Reset button */}
-          {isHistorical && onReset && (
-            <button
-              onClick={onReset}
-              aria-label="Reset view"
-              className={cn(
-                "flex h-7 items-center gap-1.5 rounded-md px-2.5 transition-colors",
-                "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
-                "hover:text-foreground hover:bg-surface-elevated",
-                "group",
-              )}
-              title={t("timeline.resetTooltip")}
-            >
-              <TbRefresh className="h-3 w-3 group-hover:rotate-180 transition-transform duration-300" />
-              <span className="hidden sm:inline">{t("common.reset")}</span>
-            </button>
-          )}
-        </div>
+        <TimelineControls
+          currentDate={currentDate}
+          currentIndex={currentIndex}
+          datesLength={dates.length}
+          isPlaying={isPlaying}
+          speedLabel={SPEED_OPTIONS[speedIndex].label}
+          calendarOpen={calendarOpen}
+          onCalendarOpenChange={setCalendarOpen}
+          onCalendarSelect={handleCalendarSelect}
+          currentYear={currentYear}
+          availableYears={availableYears}
+          showPlayHint={showPlayHint}
+          eventsOpen={eventsOpen}
+          isHistorical={isHistorical}
+          onTogglePlay={togglePlay}
+          onJumpToStart={jumpToStart}
+          onJumpToEnd={jumpToEnd}
+          onStepBackClick={handleStepBackClick}
+          onStepForwardClick={handleStepForwardClick}
+          onStepBackDown={handleStepBackDown}
+          onStepForwardDown={handleStepForwardDown}
+          onStepUp={handleStepUp}
+          onCycleSpeed={cycleSpeed}
+          onJumpToYear={handleJumpToYear}
+          onToggleEvents={onToggleEvents}
+          onReset={onReset}
+        />
 
         {/* Scrollable timeline */}
         <div
@@ -779,7 +569,7 @@ export default function TimelineScrubber({
           >
             {/* Daily losses waveform (background) */}
             {maxDaily > 0 && (
-              <WaveformCanvas
+              <TimelineWaveformCanvas
                 dates={dates}
                 dailyLosses={dailyLosses}
                 maxDaily={maxDaily}
@@ -917,70 +707,3 @@ export default function TimelineScrubber({
     </div>
   );
 }
-
-// Canvas-based waveform for daily losses visualization
-
-const WaveformCanvas = memo(function WaveformCanvas({
-  dates,
-  dailyLosses,
-  maxDaily,
-  totalWidth,
-  currentIndex,
-}: {
-  dates: string[];
-  dailyLosses: Map<string, number>;
-  maxDaily: number;
-  totalWidth: number;
-  currentIndex: number;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const WAVE_HEIGHT = 22;
-  const WAVE_TOP = 3; // align with track line center
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = totalWidth * dpr;
-    canvas.height = WAVE_HEIGHT * dpr;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, totalWidth, WAVE_HEIGHT);
-
-    const barWidth = PIXELS_PER_DAY;
-    const mid = WAVE_HEIGHT / 2;
-
-    for (let i = 0; i < dates.length; i++) {
-      const val = dailyLosses.get(dates[i]) ?? 0;
-      if (val === 0) continue;
-
-      const ratio = val / maxDaily;
-      const halfH = ratio * (WAVE_HEIGHT / 2 - 1);
-
-      const isPast = i <= currentIndex;
-      if (isPast) {
-        ctx.fillStyle = "rgba(239, 68, 68, 0.18)";
-      } else {
-        ctx.fillStyle = "rgba(239, 68, 68, 0.08)";
-      }
-
-      const x = i * barWidth;
-      ctx.fillRect(x, mid - halfH, Math.max(barWidth - 0.5, 1), halfH * 2);
-    }
-  }, [dates, dailyLosses, maxDaily, totalWidth, currentIndex]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute left-0 pointer-events-none"
-      style={{
-        top: `${WAVE_TOP}px`,
-        width: `${totalWidth}px`,
-        height: `${WAVE_HEIGHT}px`,
-      }}
-    />
-  );
-});

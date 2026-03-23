@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface Place {
   lat: number;
@@ -49,6 +50,9 @@ function findClosestSnapshot(snapshots: Snapshot[], targetDate: string): Snapsho
 }
 
 export async function GET(request: NextRequest) {
+  const limited = checkRateLimit(request, "territory-viina", 120, 60_000);
+  if (limited) return limited;
+
   const date = request.nextUrl.searchParams.get("date");
 
   if (!date || !/^\d{8}$/.test(date)) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
  * NASA FIRMS (Fire Information for Resource Management System) proxy.
@@ -82,7 +83,10 @@ function toGeoJSON(records: FirmsRecord[]): GeoJSON.FeatureCollection {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = checkRateLimit(request, "firms", 30, 60_000);
+  if (limited) return limited;
+
   try {
     // Check cache first
     const cached = await cacheGet<GeoJSON.FeatureCollection>(CACHE_KEY);

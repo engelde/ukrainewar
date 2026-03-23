@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
  * Ukraine Energy Infrastructure API
@@ -428,7 +429,10 @@ function getCuratedFallback(): EnergyData {
 // Route handler
 // ---------------------------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = checkRateLimit(request, "energy", 30, 60_000);
+  if (limited) return limited;
+
   try {
     // 1. Serve from fresh cache
     const cached = await cacheGet<EnergyData>(CACHE_KEY);

@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { fetchAcledPages } from "@/lib/acled";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { CACHE_TTL } from "@/lib/constants";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { AcledEvent } from "@/lib/types";
 
 // Dedup concurrent fetches
@@ -77,6 +78,9 @@ async function fetchFilteredAcled(start: string, end: string): Promise<GeoJSON.F
  * 4. Inflight dedup — concurrent requests share a single upstream fetch
  */
 export async function GET(request: NextRequest) {
+  const limited = checkRateLimit(request, "acled", 30, 60_000);
+  if (limited) return limited;
+
   try {
     const { searchParams } = request.nextUrl;
     const defaults = getDefaultDateRange();

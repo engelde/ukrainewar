@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const UNHCR_API = "https://api.unhcr.org/population/v1/population";
 const CACHE_KEY = "humanitarian-refugees";
@@ -116,7 +117,10 @@ function refreshInBackground() {
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = checkRateLimit(request, "humanitarian-refugees", 30, 60_000);
+  if (limited) return limited;
+
   try {
     // Fast in-memory layer
     if (memCache && Date.now() - memCacheAt < TTL * 1000) {
