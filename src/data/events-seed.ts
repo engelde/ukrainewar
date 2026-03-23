@@ -334,6 +334,14 @@ export const SEED_EVENTS: WarEvent[] = [
     lng: 38.094,
   },
   {
+    date: "20230114",
+    label: "Dnipro apartment building struck",
+    description:
+      "A Russian Kh-22 cruise missile strikes a residential apartment building in Dnipro, killing at least 46 civilians in one of the deadliest single strikes on a residential target",
+    lat: 48.464,
+    lng: 35.046,
+  },
+  {
     date: "20230121",
     label: "Tanks pledged",
     description: "Western allies pledge Leopard 2 and M1 Abrams tanks to Ukraine",
@@ -351,6 +359,20 @@ export const SEED_EVENTS: WarEvent[] = [
       "President Biden makes an unannounced visit to Kyiv, walking with Zelenskyy as air-raid sirens sound, pledging continued US support",
     lat: 50.45,
     lng: 30.52,
+  },
+  {
+    date: "20230224",
+    label: "First anniversary of invasion",
+    description:
+      "Ukraine marks one year since Russia's full-scale invasion with global rallies of support and renewed Western pledges of military and financial aid",
+    lat: 50.45,
+    lng: 30.52,
+  },
+  {
+    date: "20230224",
+    label: "China proposes peace framework",
+    description:
+      "China releases a 12-point position paper calling for a political settlement to the Ukraine conflict; Western nations express skepticism over the plan's neutrality",
   },
   {
     date: "20230317",
@@ -371,12 +393,34 @@ export const SEED_EVENTS: WarEvent[] = [
       "Classified Pentagon documents leak online revealing details of Ukraine's military capabilities and Western intelligence assessments",
   },
   {
+    date: "20230503",
+    label: "Kremlin drone incident",
+    description:
+      "Two drones strike the Kremlin Senate Palace in Moscow; Russia accuses Ukraine of an assassination attempt on Putin; Ukraine denies involvement",
+    lat: 55.752,
+    lng: 37.618,
+  },
+  {
+    date: "20230519",
+    label: "F-16 training approved",
+    description:
+      "President Biden agrees at the G7 summit in Hiroshima to support an international coalition to train Ukrainian pilots on F-16 fighter jets",
+  },
+  {
     date: "20230520",
     label: "Bakhmut falls",
     description:
       "Russia captures Bakhmut after the longest and bloodiest battle of the war (over 10 months). Both sides suffer massive casualties",
     lat: 48.595,
     lng: 37.999,
+  },
+  {
+    date: "20230522",
+    label: "Belgorod incursion",
+    description:
+      "Anti-Putin Russian volunteer fighters cross from Ukraine into Belgorod oblast in an armed incursion, briefly seizing border positions before withdrawing",
+    lat: 50.577,
+    lng: 36.587,
   },
   {
     date: "20230606",
@@ -424,11 +468,35 @@ export const SEED_EVENTS: WarEvent[] = [
   },
   {
     date: "20230717",
+    label: "Kerch Bridge struck again",
+    description:
+      "Ukrainian naval drones strike the Kerch Strait Bridge connecting Russia to Crimea, damaging a road span and disrupting logistics to occupied territory",
+    lat: 45.314,
+    lng: 36.505,
+  },
+  {
+    date: "20230717",
     label: "Black Sea Grain Deal collapses",
     description:
       "Russia withdraws from the Black Sea Grain Initiative, resuming attacks on Odesa port infrastructure and global grain shipments",
     lat: 46.484,
     lng: 30.735,
+  },
+  {
+    date: "20230723",
+    label: "Odesa cathedral struck",
+    description:
+      "A Russian missile strikes the Transfiguration Cathedral in Odesa, a UNESCO World Heritage site, during an attack on port infrastructure",
+    lat: 46.484,
+    lng: 30.741,
+  },
+  {
+    date: "20230804",
+    label: "Novorossiysk port attacked",
+    description:
+      "Ukrainian naval drones attack the Russian Black Sea port of Novorossiysk, damaging the landing ship Olenegorsky Gornyak and disrupting naval operations",
+    lat: 44.718,
+    lng: 37.795,
   },
   {
     date: "20230823",
@@ -443,6 +511,22 @@ export const SEED_EVENTS: WarEvent[] = [
       "Ukrainian forces recapture the village of Robotyne in Zaporizhzhia oblast, the main breach point in the counteroffensive's southern axis",
     lat: 47.448,
     lng: 35.835,
+  },
+  {
+    date: "20230913",
+    label: "Sevastopol drydock strike",
+    description:
+      "Ukrainian Storm Shadow cruise missiles strike the Sevastopol drydocks in Crimea, severely damaging the submarine Rostov-on-Don and the landing ship Minsk",
+    lat: 44.608,
+    lng: 33.548,
+  },
+  {
+    date: "20230919",
+    label: "Zelenskyy addresses UN General Assembly",
+    description:
+      "President Zelenskyy addresses the UN General Assembly in New York for the first time in person since the invasion, calling for a just peace and accountability",
+    lat: 40.749,
+    lng: -73.968,
   },
   {
     date: "20230922",
@@ -461,6 +545,22 @@ export const SEED_EVENTS: WarEvent[] = [
     lng: 36.919,
   },
   {
+    date: "20231010",
+    label: "Russia's Avdiivka offensive begins",
+    description:
+      "Russia launches a major assault on Avdiivka in Donetsk oblast with massed infantry and armored attacks, beginning a months-long battle for the fortified city",
+    lat: 48.14,
+    lng: 37.742,
+  },
+  {
+    date: "20231017",
+    label: "ATACMS first used",
+    description:
+      "Ukraine fires US-supplied ATACMS ballistic missiles for the first time, striking Russian-occupied airfields in Berdyansk and Luhansk oblasts",
+    lat: 46.761,
+    lng: 36.799,
+  },
+  {
     date: "20231104",
     label: "Counteroffensive assessed",
     description:
@@ -473,6 +573,12 @@ export const SEED_EVENTS: WarEvent[] = [
       "Ukrainian naval drones and missiles strike Russian ships and air defenses deep in occupied Crimea, degrading Black Sea Fleet capabilities",
     lat: 44.62,
     lng: 33.53,
+  },
+  {
+    date: "20231206",
+    label: "US aid package stalls",
+    description:
+      "A $61 billion US aid package for Ukraine fails to advance in the Senate as Republicans demand border security provisions, threatening a critical supply line",
   },
   {
     date: "20231215",
@@ -684,15 +790,39 @@ export const SEED_EVENTS: WarEvent[] = [
       "Russian gas transit through Ukraine officially ceases after the transit agreement expires, cutting a major revenue stream and reshaping European energy supply",
   },
   {
+    date: "20250115",
+    label: "Winter energy barrage",
+    description:
+      "Russia launches a combined missile and drone attack targeting energy infrastructure across Ukraine, causing widespread power grid shutdowns during winter",
+    lat: 50.45,
+    lng: 30.52,
+  },
+  {
     date: "20250120",
     label: "Trump inaugurated",
     description: "Trump takes office, signals prioritization of ending the war",
+  },
+  {
+    date: "20250131",
+    label: "Russia recaptures Kursk territory",
+    description:
+      "Russian forces, supported by North Korean troops, recapture most of the territory in Kursk oblast that Ukraine had seized in its August 2024 incursion",
+    lat: 51.416,
+    lng: 34.695,
   },
   {
     date: "20250212",
     label: "Minerals deal tensions",
     description:
       "Tensions emerge over a proposed US-Ukraine minerals deal; Trump links continued support to resource access, straining relations with Zelenskyy",
+  },
+  {
+    date: "20250219",
+    label: "Kellogg visits Kyiv",
+    description:
+      "Trump's special envoy Keith Kellogg arrives in Kyiv for a three-day visit, meeting President Zelenskyy and officials as part of shuttle diplomacy to broker a ceasefire",
+    lat: 50.45,
+    lng: 30.52,
   },
   {
     date: "20250224",
@@ -706,5 +836,11 @@ export const SEED_EVENTS: WarEvent[] = [
     label: "Zelenskyy-Trump White House clash",
     description:
       "A tense Oval Office meeting between Zelenskyy and Trump results in no signed minerals deal; Zelenskyy is escorted out after heated exchange",
+  },
+  {
+    date: "20250311",
+    label: "Ukraine accepts ceasefire proposal",
+    description:
+      "Ukraine agrees to a US-brokered 30-day ceasefire proposal following talks in Saudi Arabia; implementation is conditional on Russian acceptance",
   },
 ];

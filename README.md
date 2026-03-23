@@ -135,6 +135,15 @@ The entire interface is built around an explorable map rendered in muted dark to
 - **OHCHR civilian casualties** — UN-verified minimum
 - Clear disclaimers about data uncertainty and methodology differences
 
+### Sanctions Panel
+
+- **27 curated sanctions packages** across EU (14), US (6), UK (3), Canada, Japan, Australia, Switzerland
+- **Summary statistics** — total packages, individuals, and entities sanctioned
+- **Imposer breakdown** — color-coded bar chart by sanctioning body
+- **Key measures** — 10 major bans (SWIFT, oil embargo, price cap, diamond ban, etc.)
+- **Timeline-aware** — filters to show only sanctions imposed by the selected date
+- Data sourced from EU Council, US Treasury OFAC, UK Government
+
 ### URL State Management
 
 - Timeline date, map position (lat/lng/zoom), and sidebar state persisted in URL

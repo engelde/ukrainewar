@@ -3,19 +3,30 @@
 import dynamic from "next/dynamic";
 import { parseAsBoolean, parseAsFloat, parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import HumanitarianPanel from "@/components/humanitarian/HumanitarianPanel";
 import DayTracker from "@/components/layout/DayTracker";
 import EventSidebar from "@/components/layout/EventSidebar";
 import Header, { Footer } from "@/components/layout/Header";
 import DetailPanel from "@/components/map/DetailPanel";
 import LayerControls from "@/components/map/LayerControls";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
-import AirDefensePanel from "@/components/panels/AirDefensePanel";
-import EnergyPanel from "@/components/panels/EnergyPanel";
-import InternationalSupportPanel from "@/components/panels/InternationalSupportPanel";
-import SanctionsPanel from "@/components/panels/SanctionsPanel";
-import UkraineLossesPanel from "@/components/panels/UkraineLossesPanel";
-import SpendingPanel from "@/components/spending/SpendingPanel";
+
+const HumanitarianPanel = dynamic(() => import("@/components/humanitarian/HumanitarianPanel"), {
+  ssr: false,
+});
+const AirDefensePanel = dynamic(() => import("@/components/panels/AirDefensePanel"), {
+  ssr: false,
+});
+const EnergyPanel = dynamic(() => import("@/components/panels/EnergyPanel"), { ssr: false });
+const InternationalSupportPanel = dynamic(
+  () => import("@/components/panels/InternationalSupportPanel"),
+  { ssr: false },
+);
+const UkraineLossesPanel = dynamic(() => import("@/components/panels/UkraineLossesPanel"), {
+  ssr: false,
+});
+const SanctionsPanel = dynamic(() => import("@/components/panels/SanctionsPanel"), { ssr: false });
+const SpendingPanel = dynamic(() => import("@/components/spending/SpendingPanel"), { ssr: false });
+
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
