@@ -177,5 +177,16 @@
     "estimateTimeline": "Estimate Timeline",
     "disclaimer": "Ukraine does not officially publish comprehensive military casualty figures. Estimates vary widely between sources. Mediazona counts are confirmed minimums based on named individuals.",
     "source": "Mediazona / OHCHR"
+  },
+  "sanctions": {
+    "title": "Sanctions Overview",
+    "totalPackages": "Sanctions Packages",
+    "individuals": "Individuals Sanctioned",
+    "entities": "Entities Sanctioned",
+    "keyBans": "Key Measures",
+    "byImposer": "By Imposer",
+    "asOf": "As of {date}",
+    "packages": "packages",
+    "source": "EU Council / US Treasury / UK Gov"
   }
 }

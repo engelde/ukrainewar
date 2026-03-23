@@ -13,6 +13,7 @@ import TimelineScrubber from "@/components/map/TimelineScrubber";
 import AirDefensePanel from "@/components/panels/AirDefensePanel";
 import EnergyPanel from "@/components/panels/EnergyPanel";
 import InternationalSupportPanel from "@/components/panels/InternationalSupportPanel";
+import SanctionsPanel from "@/components/panels/SanctionsPanel";
 import UkraineLossesPanel from "@/components/panels/UkraineLossesPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
 import StatsOverlay from "@/components/stats/StatsOverlay";
@@ -94,6 +95,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [airDefenseOpen, setAirDefenseOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [ukraineLossesOpen, setUkraineLossesOpen] = useState(false);
+  const [sanctionsOpen, setSanctionsOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{
@@ -249,6 +251,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUkraineLossesOpen((prev) => !prev);
   }, []);
 
+  const handleToggleSanctions = useCallback(() => {
+    setSanctionsOpen((prev) => !prev);
+  }, []);
+
   // Global Escape key handler — closes the topmost open panel
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -256,6 +262,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       // Close in reverse priority order: detail panel → draggable panels → sidebar
       if (selectedMarker) {
         setSelectedMarker(null);
+      } else if (sanctionsOpen) {
+        setSanctionsOpen(false);
       } else if (ukraineLossesOpen) {
         setUkraineLossesOpen(false);
       } else if (supportOpen) {
@@ -276,6 +284,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [
     selectedMarker,
+    sanctionsOpen,
     ukraineLossesOpen,
     supportOpen,
     airDefenseOpen,
@@ -349,6 +358,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setAirDefenseOpen(false);
     setSupportOpen(false);
     setUkraineLossesOpen(false);
+    setSanctionsOpen(false);
     setStatsCollapsed(false);
     setLayersCollapsed(false);
     setTimelineKey((prev) => prev + 1);
@@ -446,6 +456,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             airDefense: handleToggleAirDefense,
             support: handleToggleSupport,
             ukraineLosses: handleToggleUkraineLosses,
+            sanctions: handleToggleSanctions,
           }}
           panelStates={{
             humanitarian: humanitarianOpen,
@@ -454,6 +465,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             airDefense: airDefenseOpen,
             support: supportOpen,
             ukraineLosses: ukraineLossesOpen,
+            sanctions: sanctionsOpen,
           }}
         />
         <DayTracker
@@ -534,6 +546,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
+        {sanctionsOpen && (
+          <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw+120px)] sm:top-16">
+            <SanctionsPanel
+              isOpen={true}
+              onToggle={handleToggleSanctions}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
 
         <TimelineScrubber
           events={events}
@@ -553,6 +574,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             !airDefenseOpen ||
             !supportOpen ||
             !ukraineLossesOpen ||
+            !sanctionsOpen ||
             layersCollapsed ? (
               <>
                 {statsCollapsed && displayData && (
@@ -598,6 +620,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                   <UkraineLossesPanel
                     isOpen={false}
                     onToggle={handleToggleUkraineLosses}
+                    timelineDate={territoryDate ?? undefined}
+                  />
+                )}
+                {!sanctionsOpen && (
+                  <SanctionsPanel
+                    isOpen={false}
+                    onToggle={handleToggleSanctions}
                     timelineDate={territoryDate ?? undefined}
                   />
                 )}

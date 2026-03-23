@@ -18,6 +18,7 @@ interface HeaderProps {
     airDefense?: () => void;
     support?: () => void;
     ukraineLosses?: () => void;
+    sanctions?: () => void;
   };
   panelStates?: {
     humanitarian?: boolean;
@@ -26,6 +27,7 @@ interface HeaderProps {
     airDefense?: boolean;
     support?: boolean;
     ukraineLosses?: boolean;
+    sanctions?: boolean;
   };
 }
 

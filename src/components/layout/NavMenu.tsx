@@ -12,6 +12,7 @@ import {
   TbHeartHandshake,
   TbInfoCircle,
   TbLayoutGrid,
+  TbScale,
   TbShieldCheck,
   TbUserMinus,
   TbX,
@@ -29,6 +30,7 @@ interface PanelToggles {
   airDefense?: () => void;
   support?: () => void;
   ukraineLosses?: () => void;
+  sanctions?: () => void;
 }
 
 interface PanelStates {
@@ -38,6 +40,7 @@ interface PanelStates {
   airDefense?: boolean;
   support?: boolean;
   ukraineLosses?: boolean;
+  sanctions?: boolean;
 }
 
 interface NavMenuProps {
@@ -305,6 +308,12 @@ function NavContent({
                   active={panelStates?.ukraineLosses}
                   onClick={panelToggles?.ukraineLosses}
                 />
+                <PanelToggle
+                  label="Sanctions"
+                  icon={TbScale}
+                  active={panelStates?.sanctions}
+                  onClick={panelToggles?.sanctions}
+                />
               </div>
             )}
           </div>
@@ -403,6 +412,7 @@ function MobileSidebar({
                   { label: "Air Defense", icon: TbShieldCheck, key: "airDefense" as const },
                   { label: "Intl Support", icon: TbGlobe, key: "support" as const },
                   { label: "UA Losses", icon: TbUserMinus, key: "ukraineLosses" as const },
+                  { label: "Sanctions", icon: TbScale, key: "sanctions" as const },
                 ] as const
               ).map(({ label, icon: Icon, key }) => (
                 <button
