@@ -438,38 +438,6 @@ export default function TimelineScrubber({
     })
     .filter((e) => e.px >= 0);
 
-  // All labels with two-row collision-free layout
-  const labelRows = (() => {
-    const MIN_LABEL_GAP = 55;
-    const rows: { date: string; label: string; description: string; px: number; row: number }[] =
-      [];
-    let lastRow0 = -MIN_LABEL_GAP;
-    let lastRow1 = -MIN_LABEL_GAP;
-
-    for (const event of eventPositionsPx) {
-      if (event.px - lastRow0 >= MIN_LABEL_GAP) {
-        rows.push({
-          date: event.date,
-          label: event.label,
-          description: event.description,
-          px: event.px,
-          row: 0,
-        });
-        lastRow0 = event.px;
-      } else if (event.px - lastRow1 >= MIN_LABEL_GAP) {
-        rows.push({
-          date: event.date,
-          label: event.label,
-          description: event.description,
-          px: event.px,
-          row: 1,
-        });
-        lastRow1 = event.px;
-      }
-    }
-    return rows;
-  })();
-
   // Closest active event (within 5 days), dismissible by user
   const nearestEvent = eventPositionsPx.find((event) => {
     return Math.abs(currentIndex - event.index) <= 5;
@@ -558,13 +526,13 @@ export default function TimelineScrubber({
         {/* Scrollable timeline */}
         <div
           ref={scrollContainerRef}
-          className="overflow-x-auto overflow-y-hidden scrollbar-none mx-4 mb-3 mt-2 select-none"
+          className="overflow-x-auto overflow-y-hidden scrollbar-none mx-4 mt-2 select-none"
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
         >
           <div
             className="relative cursor-crosshair"
-            style={{ width: `${totalWidth}px`, height: "75px" }}
+            style={{ width: `${totalWidth}px`, height: "90px" }}
             onClick={handleTimelineClick}
           >
             {/* Daily losses waveform (background) */}
@@ -643,65 +611,59 @@ export default function TimelineScrubber({
             >
               <div className="w-1.5 h-1.5 bg-ua-blue rounded-full -translate-x-[2.5px]" />
             </div>
-
-            {/* Event labels below timeline */}
-            <div className="absolute left-0 right-0 pointer-events-none" style={{ top: "28px" }}>
-              {labelRows.map((labelInfo, i) => {
-                const isLabelActive = activeEvent?.date === labelInfo.date;
-                return (
-                  <Tooltip key={`${labelInfo.date}-${i}`}>
-                    <TooltipTrigger
-                      render={
-                        <div
-                          className="absolute pointer-events-auto cursor-pointer"
-                          style={{ left: `${labelInfo.px}px` }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleJumpToEvent(labelInfo.date);
-                          }}
-                        />
-                      }
-                    >
-                      <div className="flex flex-col items-center -translate-x-1/2">
-                        <div
-                          className={cn(
-                            "w-px",
-                            labelInfo.row === 0 ? "h-2" : "h-5",
-                            isLabelActive ? "bg-ua-yellow/50" : "bg-border/40",
-                          )}
-                        />
-                        <span
-                          className={cn(
-                            "text-[12px] whitespace-nowrap leading-none mt-0.5",
-                            "transition-colors",
-                            isLabelActive
-                              ? "text-ua-yellow font-semibold"
-                              : "text-muted-foreground/70 hover:text-muted-foreground",
-                          )}
-                        >
-                          {labelInfo.date.slice(4, 6)}.{labelInfo.date.slice(6, 8)}
-                        </span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="max-w-[280px] bg-background/95 backdrop-blur-lg border border-border/60 text-foreground px-3 py-2"
-                    >
-                      <p className="text-[11px] font-semibold text-ua-yellow mb-0.5">
-                        {labelInfo.label}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground leading-snug">
-                        {labelInfo.description}
-                      </p>
-                      <p className="text-[9px] text-muted-foreground/60 mt-1">
-                        {formatDateShort(labelInfo.date)}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
           </div>
+        </div>
+
+        {/* Year / month progress tracker */}
+        <div className="mx-4 mb-2 flex items-center gap-1 h-5">
+          {YEAR_MARKS.map((year) => {
+            const yearStart = dates.indexOf(`${year}0101`);
+            const nextYear = String(Number(year) + 1);
+            const yearEnd = dates.indexOf(`${nextYear}0101`);
+            const endIdx = yearEnd >= 0 ? yearEnd : dates.length;
+            const startIdx = year === "2022" ? 0 : yearStart;
+            if (startIdx < 0) return null;
+            const isCurrentYear = currentDate.slice(0, 4) === year;
+            const yearDays = endIdx - startIdx;
+            const widthPct = (yearDays / dates.length) * 100;
+
+            return (
+              <div
+                key={year}
+                className="relative h-full flex items-center"
+                style={{ width: `${widthPct}%` }}
+              >
+                <div
+                  className={cn(
+                    "w-full h-1.5 rounded-full overflow-hidden",
+                    isCurrentYear ? "bg-ua-blue/15" : "bg-border/15",
+                  )}
+                >
+                  {isCurrentYear && (
+                    <div
+                      className="h-full bg-ua-blue/40 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(100, ((currentIndex - startIdx) / yearDays) * 100)}%`,
+                      }}
+                    />
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    "absolute -top-0.5 left-1 text-[8px] font-mono tracking-wider",
+                    isCurrentYear ? "text-ua-blue" : "text-muted-foreground/40",
+                  )}
+                >
+                  {year}
+                  {isCurrentYear && (
+                    <span className="ml-1 text-muted-foreground/60">
+                      {currentDate.slice(4, 6)}/{currentDate.slice(6, 8)}
+                    </span>
+                  )}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

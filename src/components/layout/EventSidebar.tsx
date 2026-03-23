@@ -5,7 +5,6 @@ import { GiExplosiveMaterials, GiSubmarine } from "react-icons/gi";
 import {
   TbArrowBarRight,
   TbBomb,
-  TbCalendarEvent,
   TbFilter,
   TbFlag,
   TbFlame,
@@ -87,7 +86,7 @@ export const EVENT_CATEGORIES: EventCategoryInfo[] = [
   {
     id: "milestone",
     label: "events.categories.milestone",
-    icon: <TbCalendarEvent className="h-3.5 w-3.5" />,
+    icon: <TbFlag className="h-3.5 w-3.5" />,
     color: "text-muted-foreground",
   },
 ];
@@ -181,7 +180,7 @@ export function getEventIcon(label: string) {
   if (lower.includes("dprk") || lower.includes("deployed"))
     return <TbArrowBarRight className="h-4 w-4 text-abandoned" />;
   if (lower.includes("liberated")) return <TbFlag className="h-4 w-4 text-capture" />;
-  return <TbCalendarEvent className="h-4 w-4 text-muted-foreground" />;
+  return <TbFlag className="h-4 w-4 text-muted-foreground" />;
 }
 
 export function formatEventDate(dateStr: string): string {
@@ -258,6 +257,65 @@ export default function EventSidebar({
     return closest;
   }, [currentDate, filteredEvents]);
 
+  // Track which year is currently visible
+  const [visibleYear, setVisibleYear] = useState<string>(
+    currentDate ? currentDate.slice(0, 4) : years[years.length - 1] || "2022",
+  );
+  const yearRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Observe which year group is in view
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const year = entry.target.getAttribute("data-year");
+            if (year) setVisibleYear(year);
+          }
+        }
+      },
+      { root: container, rootMargin: "-20% 0px -70% 0px", threshold: 0 },
+    );
+
+    for (const year of years) {
+      const el = yearRefs.current[year];
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [years]);
+
+  const scrollToYear = useCallback((year: string) => {
+    const el = yearRefs.current[year];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setVisibleYear(year);
+    }
+  }, []);
+
+  // Quarter helpers
+  const getQuarter = (dateStr: string): string => {
+    const month = parseInt(dateStr.slice(4, 6), 10);
+    return `Q${Math.ceil(month / 3)}`;
+  };
+
+  const quarterGroups = useMemo(() => {
+    const groups: Record<string, Record<string, WarEvent[]>> = {};
+    for (const [year, evts] of Object.entries(yearGroups)) {
+      groups[year] = {};
+      for (const e of evts) {
+        const q = getQuarter(e.date);
+        if (!groups[year][q]) groups[year][q] = [];
+        groups[year][q].push(e);
+      }
+    }
+    return groups;
+  }, [yearGroups]);
+
   useEffect(() => {
     if (activeRef.current) {
       activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -288,7 +346,7 @@ export default function EventSidebar({
       <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TbCalendarEvent className="h-5 w-5 text-ua-yellow" />
+            <TbFlag className="h-5 w-5 text-ua-yellow" />
             <h2 className="text-sm font-bold tracking-wider uppercase text-sidebar-foreground">
               {t("events.title")}
             </h2>
@@ -377,9 +435,72 @@ export default function EventSidebar({
         </div>
       </div>
 
-      <SidebarContent>
+      {/* Year / Quarter navigation */}
+      <div className="sticky top-0 z-10 bg-sidebar/95 backdrop-blur-sm border-b border-sidebar-border px-3 py-1.5">
+        <div className="flex items-center gap-1">
+          {years.map((year) => {
+            const isActiveYear = year === visibleYear;
+            const quarters = quarterGroups[year] ? Object.keys(quarterGroups[year]).sort() : [];
+            return (
+              <div key={year} className="flex items-center gap-0.5">
+                <button
+                  onClick={() => scrollToYear(year)}
+                  className={cn(
+                    "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider transition-colors",
+                    isActiveYear
+                      ? "text-ua-yellow bg-ua-yellow/10"
+                      : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-sidebar-accent",
+                  )}
+                >
+                  {year}
+                </button>
+                {isActiveYear && quarters.length > 1 && (
+                  <div className="flex gap-0.5">
+                    {quarters.map((q) => {
+                      const qEvents = quarterGroups[year]?.[q] ?? [];
+                      const qStart = qEvents[0]?.date;
+                      const hasActive =
+                        activeEventDate && qEvents.some((e) => e.date === activeEventDate);
+                      return (
+                        <button
+                          key={q}
+                          onClick={() => {
+                            if (qStart) {
+                              const el = document.querySelector(`[data-event-date="${qStart}"]`);
+                              el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }
+                          }}
+                          className={cn(
+                            "px-1 py-0.5 rounded text-[9px] font-mono transition-colors",
+                            hasActive
+                              ? "text-ua-blue bg-ua-blue/10"
+                              : "text-muted-foreground/40 hover:text-muted-foreground/70",
+                          )}
+                        >
+                          {q}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {year !== years[years.length - 1] && (
+                  <span className="text-border/30 text-[8px] mx-0.5">|</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <SidebarContent ref={contentRef} className="scrollbar-thin scrollbar-thumb-border/30">
         {years.map((year) => (
-          <SidebarGroup key={year}>
+          <SidebarGroup
+            key={year}
+            ref={(el: HTMLDivElement | null) => {
+              yearRefs.current[year] = el;
+            }}
+            data-year={year}
+          >
             <SidebarGroupLabel className="text-xs font-bold tracking-widest uppercase text-ua-blue-light">
               {year}
             </SidebarGroupLabel>
@@ -390,7 +511,10 @@ export default function EventSidebar({
                   const isFuture = currentDate ? event.date > currentDate : false;
 
                   return (
-                    <SidebarMenuItem key={`${event.date}-${event.label}`}>
+                    <SidebarMenuItem
+                      key={`${event.date}-${event.label}`}
+                      data-event-date={event.date}
+                    >
                       <SidebarMenuButton
                         ref={isActive ? activeRef : undefined}
                         onClick={() => handleEventClick(event.date)}

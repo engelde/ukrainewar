@@ -14,6 +14,8 @@ import {
   TbLayoutGrid,
   TbScale,
   TbShieldCheck,
+  TbSkull,
+  TbStack,
   TbUserMinus,
   TbX,
 } from "react-icons/tb";
@@ -24,6 +26,9 @@ import { cn } from "@/lib/utils";
 type NavItem = "about" | "sources" | "panels" | null;
 
 interface PanelToggles {
+  events?: () => void;
+  russianLosses?: () => void;
+  layers?: () => void;
   humanitarian?: () => void;
   spending?: () => void;
   energy?: () => void;
@@ -34,6 +39,9 @@ interface PanelToggles {
 }
 
 interface PanelStates {
+  events?: boolean;
+  russianLosses?: boolean;
+  layers?: boolean;
   humanitarian?: boolean;
   spending?: boolean;
   energy?: boolean;
@@ -110,23 +118,6 @@ function NavContent({
 
   return (
     <div ref={menuRef} className="relative flex items-center gap-0.5">
-      {onToggleEvents && (
-        <button
-          onClick={() => {
-            onToggleEvents();
-            onItemClick?.();
-          }}
-          className={cn(
-            "flex items-center gap-1 rounded-md px-2 py-1",
-            "text-[10px] font-semibold uppercase tracking-wider",
-            "transition-colors",
-            eventsOpen ? "text-ua-yellow" : "text-muted-foreground/70 hover:text-muted-foreground",
-          )}
-        >
-          <TbFlag className="h-3 w-3" />
-          <span>Events</span>
-        </button>
-      )}
       <button
         onClick={() => setActive(active === "panels" ? null : "panels")}
         className={cn(
@@ -273,6 +264,24 @@ function NavContent({
             {active === "panels" && (
               <div className="grid grid-cols-2 gap-1">
                 <PanelToggle
+                  label="Events"
+                  icon={TbFlag}
+                  active={panelStates?.events}
+                  onClick={panelToggles?.events}
+                />
+                <PanelToggle
+                  label="Russian Losses"
+                  icon={TbSkull}
+                  active={panelStates?.russianLosses}
+                  onClick={panelToggles?.russianLosses}
+                />
+                <PanelToggle
+                  label="Layers"
+                  icon={TbStack}
+                  active={panelStates?.layers}
+                  onClick={panelToggles?.layers}
+                />
+                <PanelToggle
                   label="Humanitarian"
                   icon={TbHeartHandshake}
                   active={panelStates?.humanitarian}
@@ -384,28 +393,13 @@ function MobileSidebar({
 
         {/* Sidebar nav */}
         <div className="flex flex-col py-2">
-          {onToggleEvents && (
-            <button
-              onClick={() => {
-                onToggleEvents();
-                onClose();
-              }}
-              aria-label="Toggle events sidebar"
-              className={cn(
-                "flex items-center gap-2 w-full px-4 py-2.5 transition-colors border-b border-border/20",
-                eventsOpen
-                  ? "text-ua-yellow bg-ua-yellow/5"
-                  : "text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30",
-              )}
-            >
-              <TbFlag className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Events</span>
-            </button>
-          )}
           <SidebarSection title="Panels">
             <div className="flex flex-col gap-0.5 px-2 pb-3">
               {(
                 [
+                  { label: "Events", icon: TbFlag, key: "events" as const },
+                  { label: "Russian Losses", icon: TbSkull, key: "russianLosses" as const },
+                  { label: "Layers", icon: TbStack, key: "layers" as const },
                   { label: "Humanitarian", icon: TbHeartHandshake, key: "humanitarian" as const },
                   { label: "Spending & Aid", icon: TbCoin, key: "spending" as const },
                   { label: "Energy", icon: TbBolt, key: "energy" as const },

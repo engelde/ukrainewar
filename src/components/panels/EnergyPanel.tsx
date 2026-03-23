@@ -176,7 +176,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
         "rounded-lg",
-        "bg-background/85 backdrop-blur-xl",
+        "bg-background/80 backdrop-blur-xl",
         "border border-border/50",
         "shadow-xl shadow-black/30",
         "scrollbar-thin scrollbar-thumb-border/30",

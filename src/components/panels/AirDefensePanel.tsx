@@ -24,13 +24,6 @@ function formatNumber(n: number): string {
   return n.toLocaleString("en-US");
 }
 
-function formatDate(yyyymmdd: string): string {
-  const y = yyyymmdd.slice(0, 4);
-  const m = yyyymmdd.slice(4, 6);
-  const d = yyyymmdd.slice(6, 8);
-  return `${m}.${d}.${y}`;
-}
-
 function pct(intercepted: number, launched: number): number {
   return launched > 0 ? Math.round((intercepted / launched) * 100) : 0;
 }
@@ -67,12 +60,6 @@ function computeFilteredStats(attacks: MissileAttack[]) {
   };
 }
 
-const TYPE_BADGE_CLASSES: Record<MissileAttack["type"], string> = {
-  massive: "bg-red-500/20 text-red-400 border-red-500/30",
-  major: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  significant: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-};
-
 function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePanelProps) {
   const filteredAttacks = useMemo(() => {
     if (!timelineDate) return MISSILE_ATTACKS;
@@ -95,8 +82,6 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
     }
     return computeFilteredStats(filteredAttacks);
   }, [timelineDate, filteredAttacks]);
-
-  const recentAttacks = useMemo(() => filteredAttacks.slice(-5).reverse(), [filteredAttacks]);
 
   const missileRate = pct(stats.totalMissilesIntercepted, stats.totalMissilesLaunched);
   const droneRate = pct(stats.totalDronesIntercepted, stats.totalDronesLaunched);
@@ -136,15 +121,15 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
         "rounded-xl",
-        "bg-black/60 backdrop-blur-md",
-        "border border-white/10",
+        "bg-background/80 backdrop-blur-xl",
+        "border border-border/50",
         "shadow-xl shadow-black/30",
         "scrollbar-thin scrollbar-thumb-border/30",
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-        <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
+      <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
+        <div className="flex items-center gap-1.5">
           <TbShieldChevron className="h-3.5 w-3.5 text-capture" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
             {t("airDefense.title")}
@@ -190,7 +175,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         </div>
 
         {/* Interception rate bars */}
-        <div className="space-y-1.5 pt-1 border-t border-white/5">
+        <div className="space-y-1.5 pt-1 border-t border-border/20">
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
             {t("airDefense.interceptionRate")}
           </div>
@@ -205,24 +190,10 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
             launched={stats.totalDronesLaunched}
           />
         </div>
-
-        {/* Recent / notable attacks */}
-        {recentAttacks.length > 0 && (
-          <div className="space-y-1 pt-1 border-t border-white/5">
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
-              {timelineDate ? "Attacks near date" : t("airDefense.recentAttacks")}
-            </div>
-            <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-border/30">
-              {recentAttacks.map((attack) => (
-                <AttackRow key={attack.date} attack={attack} />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Source footer */}
-      <div className="px-3 py-1.5 border-t border-white/10">
+      <div className="px-3 py-1.5 border-t border-border/30">
         <div className="text-[8px] text-muted-foreground/50">
           {t("common.source")}: {t("airDefense.source")}
         </div>
@@ -301,48 +272,6 @@ function InterceptionBar({
         <span className="text-[8px] font-mono" style={{ color: "#E53E3E" }}>
           {(100 - rate).toFixed(1)}% hit
         </span>
-      </div>
-    </div>
-  );
-}
-
-function AttackRow({ attack }: { attack: MissileAttack }) {
-  const total = attack.missiles.launched + attack.drones.launched;
-  const totalIntercepted = attack.missiles.intercepted + attack.drones.intercepted;
-  const rate = pct(totalIntercepted, total);
-
-  return (
-    <div className="rounded-lg bg-white/5 p-1.5">
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="text-[9px] font-mono text-muted-foreground">
-          {formatDate(attack.date)}
-        </span>
-        <span
-          className={cn(
-            "text-[8px] px-1 py-px rounded border font-medium",
-            TYPE_BADGE_CLASSES[attack.type],
-          )}
-        >
-          {attack.type}
-        </span>
-      </div>
-      <div className="flex items-center gap-2 text-[9px] text-foreground/70">
-        {attack.missiles.launched > 0 && (
-          <span className="flex items-center gap-0.5">
-            <TbRocket className="h-2.5 w-2.5 text-destruction" />
-            {attack.missiles.launched}
-          </span>
-        )}
-        {attack.drones.launched > 0 && (
-          <span className="flex items-center gap-0.5">
-            <TbDrone className="h-2.5 w-2.5 text-orange-400" />
-            {attack.drones.launched}
-          </span>
-        )}
-        <span className="text-[8px] text-muted-foreground/60">{rate}% def</span>
-      </div>
-      <div className="text-[8px] text-muted-foreground/60 line-clamp-2 mt-0.5">
-        {attack.description}
       </div>
     </div>
   );

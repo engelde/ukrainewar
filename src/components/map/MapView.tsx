@@ -508,34 +508,7 @@ export default function MapView({
           },
         });
 
-        // Individual markers (unclustered) — circles at low zoom
-        mapInstance.addLayer({
-          id: "equipment-points",
-          type: "circle",
-          source: "equipment",
-          filter: ["!", ["has", "point_count"]],
-          maxzoom: 14,
-          paint: {
-            "circle-color": [
-              "match",
-              ["get", "status"],
-              "destroyed",
-              STATUS_COLORS.destroyed,
-              "damaged",
-              STATUS_COLORS.damaged,
-              "captured",
-              STATUS_COLORS.captured,
-              "abandoned",
-              STATUS_COLORS.abandoned,
-              "#888",
-            ],
-            "circle-radius": 6,
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "rgba(0,0,0,0.5)",
-          },
-        });
-
-        // Individual markers — category icons at high zoom
+        // Individual markers — category icons at all zoom levels
         loadEquipmentIcons(mapInstance);
 
         mapInstance.addLayer({
@@ -543,7 +516,6 @@ export default function MapView({
           type: "symbol",
           source: "equipment",
           filter: ["!", ["has", "point_count"]],
-          minzoom: 14,
           layout: {
             "icon-image": [
               "concat",
@@ -552,7 +524,17 @@ export default function MapView({
               "-",
               ["get", "status"],
             ] as unknown as maplibregl.ExpressionSpecification,
-            "icon-size": 1,
+            "icon-size": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              5,
+              0.6,
+              10,
+              0.8,
+              14,
+              1,
+            ] as unknown as maplibregl.ExpressionSpecification,
             "icon-allow-overlap": true,
             "icon-ignore-placement": false,
             "icon-padding": 2,
@@ -560,26 +542,6 @@ export default function MapView({
         });
 
         // Click individual markers
-        mapInstance.on("click", "equipment-points", (e) => {
-          if (!e.features?.length) return;
-          const props = e.features[0].properties;
-          if (!props) return;
-
-          const marker: EquipmentMarker = {
-            id: props.id,
-            type: props.type,
-            model: props.model,
-            status: props.status,
-            date: props.date,
-            location: props.location || null,
-            lat: (e.features[0].geometry as GeoJSON.Point).coordinates[1],
-            lng: (e.features[0].geometry as GeoJSON.Point).coordinates[0],
-          };
-
-          onMarkerClick?.(marker);
-        });
-
-        // Click icon markers (high zoom)
         mapInstance.on("click", "equipment-icons", (e) => {
           if (!e.features?.length) return;
           const props = e.features[0].properties;
@@ -619,12 +581,6 @@ export default function MapView({
         });
 
         // Cursor changes
-        mapInstance.on("mouseenter", "equipment-points", () => {
-          mapInstance.getCanvas().style.cursor = "pointer";
-        });
-        mapInstance.on("mouseleave", "equipment-points", () => {
-          mapInstance.getCanvas().style.cursor = "";
-        });
         mapInstance.on("mouseenter", "equipment-icons", () => {
           mapInstance.getCanvas().style.cursor = "pointer";
         });
@@ -670,8 +626,6 @@ export default function MapView({
           popupRef.current = null;
         };
 
-        mapInstance.on("mouseenter", "equipment-points", showEquipmentTooltip);
-        mapInstance.on("mouseleave", "equipment-points", hideEquipmentTooltip);
         mapInstance.on("mouseenter", "equipment-icons", showEquipmentTooltip);
         mapInstance.on("mouseleave", "equipment-icons", hideEquipmentTooltip);
       } catch (err) {
@@ -2294,12 +2248,7 @@ export default function MapView({
       );
     }
 
-    const equipmentLayers = [
-      "equipment-clusters",
-      "equipment-cluster-count",
-      "equipment-points",
-      "equipment-icons",
-    ];
+    const equipmentLayers = ["equipment-clusters", "equipment-cluster-count", "equipment-icons"];
 
     equipmentLayers.forEach((layer) => {
       if (map.current?.getLayer(layer)) {

@@ -2,12 +2,7 @@
 
 import { memo, useMemo } from "react";
 import { TbAlertTriangle, TbChevronDown, TbShield, TbUserMinus, TbX } from "react-icons/tb";
-import {
-  CIVILIAN_CASUALTIES_OHCHR,
-  getUkraineLossSummary,
-  UKRAINE_LOSS_ESTIMATES,
-  type UkraineLossEstimate,
-} from "@/data/ukraine-losses";
+import { CIVILIAN_CASUALTIES_OHCHR, getUkraineLossSummary } from "@/data/ukraine-losses";
 import { t } from "@/i18n";
 import { cn, formatDateDisplay } from "@/lib/utils";
 
@@ -22,23 +17,6 @@ function formatNumber(n: number | undefined): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toLocaleString();
-}
-
-function findClosestEstimate(
-  date: string,
-  estimates: UkraineLossEstimate[],
-): UkraineLossEstimate | null {
-  if (estimates.length === 0) return null;
-  let closest = estimates[0];
-  let minDiff = Math.abs(parseInt(date, 10) - parseInt(closest.date, 10));
-  for (const est of estimates) {
-    const diff = Math.abs(parseInt(date, 10) - parseInt(est.date, 10));
-    if (diff < minDiff) {
-      minDiff = diff;
-      closest = est;
-    }
-  }
-  return closest;
 }
 
 function KeyFigure({
@@ -63,78 +41,8 @@ function KeyFigure({
   );
 }
 
-function EstimateRow({
-  estimate,
-  isHighlighted,
-}: {
-  estimate: UkraineLossEstimate;
-  isHighlighted: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "px-2 py-1.5 rounded-md transition-colors",
-        isHighlighted
-          ? "bg-[#005BBB]/15 border border-[#005BBB]/30"
-          : "hover:bg-surface-elevated/30",
-      )}
-    >
-      <div className="flex items-center gap-2 mb-0.5">
-        <span className="text-[9px] font-mono text-muted-foreground tabular-nums shrink-0">
-          {formatDateDisplay(estimate.date)}
-        </span>
-        <span className="text-[9px] text-foreground/80 truncate flex-1">{estimate.source}</span>
-        {estimate.sourceUrl && (
-          <a
-            href={estimate.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[8px] text-[#005BBB]/60 hover:text-[#005BBB] transition-colors shrink-0"
-          >
-            src
-          </a>
-        )}
-      </div>
-
-      <div className="flex items-center gap-3 text-[9px]">
-        {estimate.militaryKilled != null && (
-          <span className="font-mono tabular-nums text-[#E53E3E]">
-            <span className="text-muted-foreground/50">KIA </span>
-            {formatNumber(estimate.militaryKilled)}
-          </span>
-        )}
-        {estimate.militaryWounded != null && (
-          <span className="font-mono tabular-nums text-[#DD6B20]">
-            <span className="text-muted-foreground/50">WIA </span>
-            {formatNumber(estimate.militaryWounded)}
-          </span>
-        )}
-        {estimate.militaryTotal != null && (
-          <span className="font-mono tabular-nums text-foreground/70">
-            <span className="text-muted-foreground/50">Total </span>
-            {formatNumber(estimate.militaryTotal)}
-          </span>
-        )}
-        {estimate.civilianKilled != null && (
-          <span className="font-mono tabular-nums text-[#805AD5]">
-            <span className="text-muted-foreground/50">Civ. </span>
-            {formatNumber(estimate.civilianKilled)}
-          </span>
-        )}
-      </div>
-
-      <p className="text-[8px] text-muted-foreground/60 leading-relaxed mt-0.5">{estimate.notes}</p>
-    </div>
-  );
-}
-
 function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLossesPanelProps) {
   const summary = useMemo(() => getUkraineLossSummary(), []);
-
-  const closestEstimate = useMemo(
-    () => (timelineDate ? findClosestEstimate(timelineDate, UKRAINE_LOSS_ESTIMATES) : null),
-    [timelineDate],
-  );
 
   if (!isOpen) {
     return (
@@ -171,7 +79,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
         "rounded-lg",
-        "bg-background/85 backdrop-blur-xl",
+        "bg-background/80 backdrop-blur-xl",
         "border border-border/50",
         "shadow-xl shadow-black/30",
         "scrollbar-thin scrollbar-thumb-border/30",
@@ -244,27 +152,6 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
           <p className="text-[8px] text-muted-foreground/60 leading-relaxed mt-0.5">
             {CIVILIAN_CASUALTIES_OHCHR.notes}
           </p>
-        </div>
-
-        {/* Timeline of estimates */}
-        <div>
-          <div className="flex items-center justify-between px-1 mb-1.5">
-            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-              {t("ukraineLosses.estimateTimeline")}
-            </span>
-            <span className="text-[9px] font-mono text-muted-foreground tabular-nums">
-              {UKRAINE_LOSS_ESTIMATES.length} reports
-            </span>
-          </div>
-          <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/30">
-            {UKRAINE_LOSS_ESTIMATES.map((est) => (
-              <EstimateRow
-                key={`${est.date}-${est.source}`}
-                estimate={est}
-                isHighlighted={closestEstimate === est && timelineDate != null}
-              />
-            ))}
-          </div>
         </div>
 
         {/* Disclaimer */}

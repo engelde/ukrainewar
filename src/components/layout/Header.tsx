@@ -12,6 +12,9 @@ interface HeaderProps {
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
   panelToggles?: {
+    events?: () => void;
+    russianLosses?: () => void;
+    layers?: () => void;
     humanitarian?: () => void;
     spending?: () => void;
     energy?: () => void;
@@ -21,6 +24,9 @@ interface HeaderProps {
     sanctions?: () => void;
   };
   panelStates?: {
+    events?: boolean;
+    russianLosses?: boolean;
+    layers?: boolean;
     humanitarian?: boolean;
     spending?: boolean;
     energy?: boolean;

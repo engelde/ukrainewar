@@ -102,15 +102,15 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
         "rounded-xl",
-        "bg-black/60 backdrop-blur-md",
-        "border border-white/10",
+        "bg-background/80 backdrop-blur-xl",
+        "border border-border/50",
         "shadow-xl shadow-black/30",
         "scrollbar-thin scrollbar-thumb-border/30",
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-        <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
+      <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
+        <div className="flex items-center gap-1.5">
           <TbScale className="h-3.5 w-3.5 text-amber-400" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
             {t("sanctions.title")}
@@ -147,7 +147,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
         </div>
 
         {/* By Imposer */}
-        <div className="space-y-1.5 pt-1 border-t border-white/5">
+        <div className="space-y-1.5 pt-1 border-t border-border/20">
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
             {t("sanctions.byImposer")}
           </div>
@@ -159,7 +159,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
         </div>
 
         {/* Key Bans */}
-        <div className="space-y-1 pt-1 border-t border-white/5">
+        <div className="space-y-1 pt-1 border-t border-border/20">
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
             {t("sanctions.keyBans")}
           </div>
@@ -178,7 +178,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
       </div>
 
       {/* Source footer */}
-      <div className="px-3 py-1.5 border-t border-white/10">
+      <div className="px-3 py-1.5 border-t border-border/30">
         <div className="text-[8px] text-muted-foreground/50">
           {t("common.source")}: {t("sanctions.source")}
         </div>

@@ -266,6 +266,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSanctionsOpen((prev) => !prev);
   }, []);
 
+  const handleToggleStats = useCallback(() => {
+    setStatsCollapsed((prev) => !prev);
+  }, []);
+
+  const handleToggleLayers = useCallback(() => {
+    setLayersCollapsed((prev) => !prev);
+  }, []);
+
   // Global Escape key handler — closes the topmost open panel
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -461,6 +469,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           eventsOpen={sidebarOpen}
           onToggleEvents={handleToggleSidebar}
           panelToggles={{
+            events: handleToggleSidebar,
+            russianLosses: handleToggleStats,
+            layers: handleToggleLayers,
             humanitarian: handleToggleHumanitarian,
             spending: handleToggleSpending,
             energy: handleToggleEnergy,
@@ -470,6 +481,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             sanctions: handleToggleSanctions,
           }}
           panelStates={{
+            events: sidebarOpen,
+            russianLosses: !statsCollapsed,
+            layers: !layersCollapsed,
             humanitarian: humanitarianOpen,
             spending: spendingOpen,
             energy: energyOpen,
