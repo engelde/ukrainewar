@@ -707,22 +707,4 @@ export const SEED_EVENTS: WarEvent[] = [
     description:
       "A tense Oval Office meeting between Zelenskyy and Trump results in no signed minerals deal; Zelenskyy is escorted out after heated exchange",
   },
-  {
-    date: "20250318",
-    label: "Ceasefire proposed",
-    description:
-      "Trump-Putin call results in proposed limited ceasefire on energy infrastructure; quickly broken",
-  },
-  {
-    date: "20250815",
-    label: "Alaska summit",
-    description:
-      "Trump and Putin meet at Joint Base Elmendorf-Richardson in Anchorage; no ceasefire achieved",
-  },
-  {
-    date: "20250818",
-    label: "DC summit",
-    description:
-      "Trump hosts Zelenskyy and European/NATO leaders at White House; cautious optimism, no breakthrough",
-  },
 ];

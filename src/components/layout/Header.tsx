@@ -11,9 +11,30 @@ import NavMenu from "./NavMenu";
 interface HeaderProps {
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
+  panelToggles?: {
+    humanitarian?: () => void;
+    spending?: () => void;
+    energy?: () => void;
+    airDefense?: () => void;
+    support?: () => void;
+    ukraineLosses?: () => void;
+  };
+  panelStates?: {
+    humanitarian?: boolean;
+    spending?: boolean;
+    energy?: boolean;
+    airDefense?: boolean;
+    support?: boolean;
+    ukraineLosses?: boolean;
+  };
 }
 
-export default function Header({ eventsOpen, onToggleEvents }: HeaderProps) {
+export default function Header({
+  eventsOpen,
+  onToggleEvents,
+  panelToggles,
+  panelStates,
+}: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -36,7 +57,12 @@ export default function Header({ eventsOpen, onToggleEvents }: HeaderProps) {
           </Link>
           <div className="hidden sm:contents">
             <div className="w-px h-4 bg-border/40" />
-            <NavMenu eventsOpen={eventsOpen} onToggleEvents={onToggleEvents} />
+            <NavMenu
+              eventsOpen={eventsOpen}
+              onToggleEvents={onToggleEvents}
+              panelToggles={panelToggles}
+              panelStates={panelStates}
+            />
           </div>
         </div>
       </header>
@@ -47,6 +73,8 @@ export default function Header({ eventsOpen, onToggleEvents }: HeaderProps) {
           onClose={() => setMobileMenuOpen(false)}
           eventsOpen={eventsOpen}
           onToggleEvents={onToggleEvents}
+          panelToggles={panelToggles}
+          panelStates={panelStates}
         />
       )}
     </>

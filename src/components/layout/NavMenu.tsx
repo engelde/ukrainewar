@@ -2,34 +2,93 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  TbBolt,
   TbBrandGithub,
+  TbCoin,
   TbDatabase,
   TbExternalLink,
   TbFlag,
+  TbGlobe,
+  TbHeartHandshake,
   TbInfoCircle,
+  TbLayoutGrid,
+  TbShieldCheck,
+  TbUserMinus,
   TbX,
 } from "react-icons/tb";
 import { t } from "@/i18n";
 import { DATA_SOURCES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-type NavItem = "about" | "sources" | null;
+type NavItem = "about" | "sources" | "panels" | null;
+
+interface PanelToggles {
+  humanitarian?: () => void;
+  spending?: () => void;
+  energy?: () => void;
+  airDefense?: () => void;
+  support?: () => void;
+  ukraineLosses?: () => void;
+}
+
+interface PanelStates {
+  humanitarian?: boolean;
+  spending?: boolean;
+  energy?: boolean;
+  airDefense?: boolean;
+  support?: boolean;
+  ukraineLosses?: boolean;
+}
 
 interface NavMenuProps {
   mobile?: boolean;
   onClose?: () => void;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
+  panelToggles?: PanelToggles;
+  panelStates?: PanelStates;
+}
+
+function PanelToggle({
+  label,
+  icon: Icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors",
+        "text-[10px] font-semibold uppercase tracking-wider",
+        active
+          ? "text-ua-blue bg-ua-blue/10"
+          : "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50",
+      )}
+    >
+      <Icon className="h-3 w-3" />
+      <span>{label}</span>
+    </button>
+  );
 }
 
 function NavContent({
   onItemClick,
   eventsOpen,
   onToggleEvents,
+  panelToggles,
+  panelStates,
 }: {
   onItemClick?: () => void;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
+  panelToggles?: PanelToggles;
+  panelStates?: PanelStates;
 }) {
   const [active, setActive] = useState<NavItem>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -65,6 +124,20 @@ function NavContent({
           <span>Events</span>
         </button>
       )}
+      <button
+        onClick={() => setActive(active === "panels" ? null : "panels")}
+        className={cn(
+          "flex items-center gap-1 rounded-md px-2 py-1",
+          "text-[10px] font-semibold uppercase tracking-wider",
+          "transition-colors",
+          active === "panels"
+            ? "text-ua-blue"
+            : "text-muted-foreground/70 hover:text-muted-foreground",
+        )}
+      >
+        <TbLayoutGrid className="h-3 w-3" />
+        <span>Panels</span>
+      </button>
       <button
         onClick={() => setActive(active === "about" ? null : "about")}
         className={cn(
@@ -122,7 +195,7 @@ function NavContent({
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
-              {active === "about" ? "About" : "Data Sources"}
+              {active === "about" ? "About" : active === "sources" ? "Data Sources" : "Panels"}
             </span>
             <button
               onClick={() => {
@@ -192,6 +265,47 @@ function NavContent({
                 ))}
               </div>
             )}
+
+            {active === "panels" && (
+              <div className="grid grid-cols-2 gap-1">
+                <PanelToggle
+                  label="Humanitarian"
+                  icon={TbHeartHandshake}
+                  active={panelStates?.humanitarian}
+                  onClick={panelToggles?.humanitarian}
+                />
+                <PanelToggle
+                  label="Spending & Aid"
+                  icon={TbCoin}
+                  active={panelStates?.spending}
+                  onClick={panelToggles?.spending}
+                />
+                <PanelToggle
+                  label="Energy"
+                  icon={TbBolt}
+                  active={panelStates?.energy}
+                  onClick={panelToggles?.energy}
+                />
+                <PanelToggle
+                  label="Air Defense"
+                  icon={TbShieldCheck}
+                  active={panelStates?.airDefense}
+                  onClick={panelToggles?.airDefense}
+                />
+                <PanelToggle
+                  label="Intl Support"
+                  icon={TbGlobe}
+                  active={panelStates?.support}
+                  onClick={panelToggles?.support}
+                />
+                <PanelToggle
+                  label="UA Losses"
+                  icon={TbUserMinus}
+                  active={panelStates?.ukraineLosses}
+                  onClick={panelToggles?.ukraineLosses}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -203,10 +317,14 @@ function MobileSidebar({
   onClose,
   eventsOpen,
   onToggleEvents,
+  panelToggles,
+  panelStates,
 }: {
   onClose: () => void;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
+  panelToggles?: PanelToggles;
+  panelStates?: PanelStates;
 }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -272,6 +390,37 @@ function MobileSidebar({
               <span className="text-xs font-semibold uppercase tracking-wider">Events</span>
             </button>
           )}
+          <SidebarSection title="Panels">
+            <div className="flex flex-col gap-0.5 px-2 pb-3">
+              {(
+                [
+                  { label: "Humanitarian", icon: TbHeartHandshake, key: "humanitarian" as const },
+                  { label: "Spending & Aid", icon: TbCoin, key: "spending" as const },
+                  { label: "Energy", icon: TbBolt, key: "energy" as const },
+                  { label: "Air Defense", icon: TbShieldCheck, key: "airDefense" as const },
+                  { label: "Intl Support", icon: TbGlobe, key: "support" as const },
+                  { label: "UA Losses", icon: TbUserMinus, key: "ukraineLosses" as const },
+                ] as const
+              ).map(({ label, icon: Icon, key }) => (
+                <button
+                  key={key}
+                  onClick={() => {
+                    panelToggles?.[key]?.();
+                    onClose();
+                  }}
+                  className={cn(
+                    "flex items-center gap-2 w-full rounded-md px-2 py-1.5 transition-colors",
+                    panelStates?.[key]
+                      ? "text-ua-blue bg-ua-blue/10"
+                      : "text-muted-foreground/70 hover:text-foreground hover:bg-surface-elevated/30",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">{label}</span>
+                </button>
+              ))}
+            </div>
+          </SidebarSection>
           <SidebarSection title="About">
             <div className="space-y-2 px-4 pb-3">
               <p className="text-[11px] text-foreground/80 leading-relaxed">
@@ -352,6 +501,8 @@ function SidebarSection({ title, children }: { title: string; children: React.Re
       >
         {title === "About" ? (
           <TbInfoCircle className="h-4 w-4" />
+        ) : title === "Panels" ? (
+          <TbLayoutGrid className="h-4 w-4" />
         ) : (
           <TbDatabase className="h-4 w-4" />
         )}
@@ -362,11 +513,31 @@ function SidebarSection({ title, children }: { title: string; children: React.Re
   );
 }
 
-export default function NavMenu({ mobile, onClose, eventsOpen, onToggleEvents }: NavMenuProps) {
+export default function NavMenu({
+  mobile,
+  onClose,
+  eventsOpen,
+  onToggleEvents,
+  panelToggles,
+  panelStates,
+}: NavMenuProps) {
   if (mobile && onClose) {
     return (
-      <MobileSidebar onClose={onClose} eventsOpen={eventsOpen} onToggleEvents={onToggleEvents} />
+      <MobileSidebar
+        onClose={onClose}
+        eventsOpen={eventsOpen}
+        onToggleEvents={onToggleEvents}
+        panelToggles={panelToggles}
+        panelStates={panelStates}
+      />
     );
   }
-  return <NavContent eventsOpen={eventsOpen} onToggleEvents={onToggleEvents} />;
+  return (
+    <NavContent
+      eventsOpen={eventsOpen}
+      onToggleEvents={onToggleEvents}
+      panelToggles={panelToggles}
+      panelStates={panelStates}
+    />
+  );
 }

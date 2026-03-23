@@ -47,14 +47,18 @@ The entire interface is built around an explorable map rendered in muted dark to
 - **Critical infrastructure** — 6 dams, 4 bridges, and 9 ports
 - **NATO eastern flank** — 14 bases and enhanced forward presence battlegroups
 - **Belarus military positions** — 10 tracked entries near the Ukrainian border
+- **Ukrainian military bases** — 18 major installations
+- **Russian military bases** — 21 known positions near Ukraine
 - **Energy infrastructure** — gas transit pipelines and power stations
+- **Troop movement arrows** — 27 curated military operations with animated directional paths (cyan for Ukraine, orange for Russia)
 - **NASA FIRMS thermal anomalies** — near-real-time satellite fire/strike detections (VIIRS)
+- Custom canvas-drawn map icons for all infrastructure and military layers
 - All layers independently toggleable via layer controls
 
 ### Central Timeline
 
 - Scrubable timeline spanning **February 24, 2022 to present**
-- **Playback controls** with adjustable speed (0.25x to 4x)
+- **Playback controls** with adjustable speed (0.25x to 8x)
 - **Dynamic key events** from Wikidata, ACLED, and curated editorial sources
 - **Waveform visualization** showing daily Russian loss intensity
 - Calendar picker for jumping to specific dates
@@ -114,6 +118,22 @@ The entire interface is built around an explorable map rendered in muted dark to
 - **Interception rates** by weapon type (cruise missiles, ballistic missiles, Shaheds)
 - **Attack history** — 40 curated major attack waves from February 2022 through May 2025
 - Integrated into the central timeline as filterable events
+
+### International Support Panel
+
+- **Global alignment breakdown** — 35 pro-Ukraine and 13 pro-Russia countries with proportional bar
+- **Support type badges** — Military, Financial, Humanitarian, Political, Sanctions, Troops
+- **Aid totals** per country and combined
+- Country details with notable contributions and descriptions
+- Data sourced from Kiel Institute and open records
+
+### Ukrainian Losses Panel
+
+- **Casualty estimates** compiled from multiple independent sources
+- **Mediazona confirmed** — verified deaths by name (conservative minimum)
+- **Western intelligence** — US, UK, and EU assessment figures
+- **OHCHR civilian casualties** — UN-verified minimum
+- Clear disclaimers about data uncertainty and methodology differences
 
 ### URL State Management
 
@@ -222,6 +242,30 @@ cd ukrainewar
 npm install
 ```
 
+### Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in the required values:
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ACLED_EMAIL` | Yes | ACLED API email — [register here](https://developer.acleddata.com/) |
+| `ACLED_PASSWORD` | Yes | ACLED API password |
+| `ENTSOE_TOKEN` | No | ENTSO-E Transparency Platform API token for energy data |
+| `NASA_FIRMS_KEY` | No | NASA FIRMS API key for thermal anomaly detection (falls back to demo key) |
+| `CACHE_REFRESH_SECRET` | Yes | Shared secret for the `/api/cache/refresh` endpoint used by the cron worker |
+
+For Cloudflare Workers deployment, set secrets via Wrangler:
+
+```bash
+wrangler secret put ACLED_EMAIL
+wrangler secret put ACLED_PASSWORD
+wrangler secret put CACHE_REFRESH_SECRET
+```
+
 ### Development
 
 ```bash
@@ -287,6 +331,7 @@ git commit -m "feat: add population displacement chart"
 This project aggregates, cross-references, and visualizes publicly available conflict data. It does not generate original analysis or make claims beyond what the underlying sources report.
 
 - **Russian military losses** are displayed from the Ukrainian Ministry of Defence daily reports. These are official claims and may differ from independently verified counts. WarSpotting data provides a separate, OSINT-verified count that is typically 30–50% of official figures — both are displayed with clear source attribution.
+- **Ukrainian military losses** are not officially published by Ukraine. Estimates are compiled from Mediazona/BBC confirmed-by-name investigations (conservative minimums), Western intelligence assessments (US, UK, EU), and partial official disclosures. All estimates are presented with source attribution and uncertainty disclaimers.
 - **Territory control** is derived from DeepState Map's daily GeoJSON releases, with coverage from July 2024 onward. Earlier periods use VIINA territorial assessments where available.
 - **Conflict events** are sourced from ACLED's geocoded event database, filtered for events with 5+ fatalities. Key events combine Wikidata SPARQL queries with curated editorial selections for political and diplomatic milestones.
 - **Humanitarian data** comes from UNHCR (refugees/IDPs), OCHA (funding appeals), and OHCHR (civilian casualties). Refugee and IDP figures are available as yearly snapshots; civilian casualties are monthly.
@@ -294,11 +339,13 @@ This project aggregates, cross-references, and visualizes publicly available con
 - **Energy infrastructure** data combines ENTSO-E electricity generation figures with curated plant-level status information. Gas transit volumes are sourced from ENTSOG's Transparency Platform, filtered for Ukrainian interconnection points.
 - **Thermal anomaly detections** are sourced from NASA FIRMS using the VIIRS satellite instrument. Detections are filtered to the conflict zone and displayed as potential fire/strike indicators — not all detections represent military activity.
 - **Missile attack data** is compiled from Ukrainian Air Force daily reports. The dataset includes 40 curated major attack waves from February 2022 through May 2025, with weapon types, quantities launched, and interception counts.
-- **Strategic asset positions** (nuclear plants, dams, bridges, ports, NATO bases, Belarus military positions) are sourced from curated geospatial datasets and updated as conditions change.
+- **Strategic asset positions** (nuclear plants, dams, bridges, ports, NATO bases, Belarus military positions, Ukrainian and Russian bases) are sourced from curated geospatial datasets and updated as conditions change.
+- **International support alignment** data tracks 48 countries across both sides, with aid figures sourced from the Kiel Institute's Ukraine Support Tracker and open records.
 
 ### Data Limitations
 
 - OHCHR civilian casualty figures are considered conservative minimums — actual figures are likely higher
+- Ukrainian military casualty estimates vary widely between sources (Mediazona confirms ~43,000 by name; Western intelligence suggests ~100,000). No single figure is definitive
 - ACLED free-tier access has a 12-month recency restriction; older data may be limited
 - Territory GeoJSON is only available from July 2024; earlier frontline positions are approximated
 - Equipment loss markers only appear where geolocation data is available (a subset of confirmed losses)

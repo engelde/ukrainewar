@@ -221,44 +221,4 @@ export const KEY_EVENTS: WarEvent[] = [
     description:
       "Trump-Putin call results in proposed limited ceasefire on energy infrastructure; quickly broken",
   },
-  {
-    date: "20250426",
-    label: "Kursk recaptured",
-    description: "Russia claims all Ukrainian forces driven out of Kursk region",
-    lat: 51.416,
-    lng: 34.695,
-  },
-  {
-    date: "20250601",
-    label: "Operation Spider Web",
-    description:
-      "Ukraine launches coordinated long-range drone strikes on Russian airfields deep in Russian territory",
-  },
-  {
-    date: "20250630",
-    label: "Luhansk fully occupied",
-    description: "Russia claims complete control of Luhansk Oblast",
-    lat: 48.574,
-    lng: 39.308,
-  },
-  {
-    date: "20250731",
-    label: "Chasiv Yar falls",
-    description:
-      "Russia captures the strategic fortress city of Chasiv Yar after prolonged assault",
-    lat: 48.607,
-    lng: 37.847,
-  },
-  {
-    date: "20250815",
-    label: "Alaska summit",
-    description:
-      "Trump and Putin meet at Joint Base Elmendorf-Richardson in Anchorage; no ceasefire achieved",
-  },
-  {
-    date: "20250818",
-    label: "DC summit",
-    description:
-      "Trump hosts Zelenskyy and European/NATO leaders at White House; cautious optimism, no breakthrough",
-  },
 ];

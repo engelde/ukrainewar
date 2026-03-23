@@ -13,6 +13,7 @@ import TimelineScrubber from "@/components/map/TimelineScrubber";
 import AirDefensePanel from "@/components/panels/AirDefensePanel";
 import EnergyPanel from "@/components/panels/EnergyPanel";
 import InternationalSupportPanel from "@/components/panels/InternationalSupportPanel";
+import UkraineLossesPanel from "@/components/panels/UkraineLossesPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
@@ -92,6 +93,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [energyOpen, setEnergyOpen] = useState(false);
   const [airDefenseOpen, setAirDefenseOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [ukraineLossesOpen, setUkraineLossesOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{
@@ -243,6 +245,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSupportOpen((prev) => !prev);
   }, []);
 
+  const handleToggleUkraineLosses = useCallback(() => {
+    setUkraineLossesOpen((prev) => !prev);
+  }, []);
+
   const handleMapMoveEnd = useCallback(
     (center: [number, number], zoom: number) => {
       // Skip URL updates during reset flyTo animation
@@ -306,6 +312,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setEnergyOpen(false);
     setAirDefenseOpen(false);
     setSupportOpen(false);
+    setUkraineLossesOpen(false);
     setStatsCollapsed(false);
     setLayersCollapsed(false);
     setTimelineKey((prev) => prev + 1);
@@ -393,7 +400,26 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           initialZoom={urlZoom ?? undefined}
           activeEvent={activeMapEvent}
         />
-        <Header eventsOpen={sidebarOpen} onToggleEvents={handleToggleSidebar} />
+        <Header
+          eventsOpen={sidebarOpen}
+          onToggleEvents={handleToggleSidebar}
+          panelToggles={{
+            humanitarian: handleToggleHumanitarian,
+            spending: handleToggleSpending,
+            energy: handleToggleEnergy,
+            airDefense: handleToggleAirDefense,
+            support: handleToggleSupport,
+            ukraineLosses: handleToggleUkraineLosses,
+          }}
+          panelStates={{
+            humanitarian: humanitarianOpen,
+            spending: spendingOpen,
+            energy: energyOpen,
+            airDefense: airDefenseOpen,
+            support: supportOpen,
+            ukraineLosses: ukraineLossesOpen,
+          }}
+        />
         <DayTracker
           warDay={warDay}
           territoryDate={territoryDate}
@@ -463,6 +489,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             <InternationalSupportPanel isOpen={true} onToggle={handleToggleSupport} />
           </DraggablePanel>
         )}
+        {ukraineLossesOpen && (
+          <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw-180px)] sm:top-16">
+            <UkraineLossesPanel
+              isOpen={true}
+              onToggle={handleToggleUkraineLosses}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
 
         <TimelineScrubber
           events={events}
@@ -481,6 +516,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             !energyOpen ||
             !airDefenseOpen ||
             !supportOpen ||
+            !ukraineLossesOpen ||
             layersCollapsed ? (
               <>
                 {statsCollapsed && displayData && (
@@ -521,6 +557,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                 )}
                 {!supportOpen && (
                   <InternationalSupportPanel isOpen={false} onToggle={handleToggleSupport} />
+                )}
+                {!ukraineLossesOpen && (
+                  <UkraineLossesPanel
+                    isOpen={false}
+                    onToggle={handleToggleUkraineLosses}
+                    timelineDate={territoryDate ?? undefined}
+                  />
                 )}
                 {layersCollapsed && (
                   <LayerControls
