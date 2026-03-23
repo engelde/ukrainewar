@@ -103,7 +103,14 @@ export type InfraCategory =
   | "nato-base"
   | "belarus-base"
   | "ukraine-base"
-  | "russia-base";
+  | "russia-base"
+  | "conflict-battle"
+  | "conflict-explosion"
+  | "conflict-protest"
+  | "conflict-civilian"
+  | "conflict-strategic"
+  | "conflict-riot"
+  | "battle-major";
 
 function drawNuclearSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   ctx.save();
@@ -257,6 +264,145 @@ function drawMilitaryStar(ctx: CanvasRenderingContext2D, cx: number, cy: number,
   ctx.fill();
 }
 
+// ── Conflict & Battle Icon Drawing ──
+
+function drawConflictBattleSymbol(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  const s = r * 0.7;
+  ctx.lineWidth = r * 0.18;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy - s);
+  ctx.lineTo(cx + s, cy + s);
+  ctx.moveTo(cx + s, cy - s);
+  ctx.lineTo(cx - s, cy + s);
+  ctx.stroke();
+}
+
+function drawConflictExplosionSymbol(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  const points = 6;
+  const outerR = r * 0.8;
+  const innerR = r * 0.35;
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const angle = (Math.PI * i) / points - Math.PI / 2;
+    const radius = i % 2 === 0 ? outerR : innerR;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawConflictProtestSymbol(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  const s = r * 0.6;
+  ctx.lineWidth = r * 0.15;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy - s * 0.3);
+  ctx.lineTo(cx + s * 0.5, cy - s * 0.8);
+  ctx.lineTo(cx + s * 0.5, cy + s * 0.8);
+  ctx.lineTo(cx - s, cy + s * 0.3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy - s * 0.2);
+  ctx.lineTo(cx - s * 1.3, cy);
+  ctx.lineTo(cx - s, cy + s * 0.2);
+  ctx.stroke();
+}
+
+function drawConflictCivilianSymbol(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  const s = r * 0.6;
+  ctx.lineWidth = r * 0.15;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(cx, cy - s * 0.6, s * 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s * 0.3);
+  ctx.lineTo(cx, cy + s * 0.3);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.4, cy);
+  ctx.lineTo(cx + s * 0.4, cy);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + s * 0.3);
+  ctx.lineTo(cx - s * 0.3, cy + s * 0.8);
+  ctx.moveTo(cx, cy + s * 0.3);
+  ctx.lineTo(cx + s * 0.3, cy + s * 0.8);
+  ctx.stroke();
+}
+
+function drawConflictStrategicSymbol(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  const s = r * 0.7;
+  ctx.lineWidth = r * 0.12;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.3, cy + s);
+  ctx.lineTo(cx - s * 0.3, cy - s);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.3, cy - s);
+  ctx.lineTo(cx + s * 0.6, cy - s * 0.5);
+  ctx.lineTo(cx - s * 0.3, cy - s * 0.1);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawConflictRiotSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const s = r * 0.7;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + s);
+  ctx.bezierCurveTo(cx - s * 0.8, cy + s * 0.2, cx - s * 0.6, cy - s * 0.5, cx, cy - s);
+  ctx.bezierCurveTo(cx + s * 0.6, cy - s * 0.5, cx + s * 0.8, cy + s * 0.2, cx, cy + s);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawBattleMajorSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const points = 5;
+  const outerR = r * 0.8;
+  const innerR = r * 0.35;
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const angle = (Math.PI * i) / points - Math.PI / 2;
+    const radius = i % 2 === 0 ? outerR : innerR;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
 function drawShieldSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   const w = r * 0.75;
   const h = r * 1.0;
@@ -331,6 +477,27 @@ export function createMapIcon(
     case "russia-base":
       drawMilitaryStar(ctx, cx, cy, symbolR);
       break;
+    case "conflict-battle":
+      drawConflictBattleSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "conflict-explosion":
+      drawConflictExplosionSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "conflict-protest":
+      drawConflictProtestSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "conflict-civilian":
+      drawConflictCivilianSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "conflict-strategic":
+      drawConflictStrategicSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "conflict-riot":
+      drawConflictRiotSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "battle-major":
+      drawBattleMajorSymbol(ctx, cx, cy, symbolR);
+      break;
   }
 
   const imgData = ctx.getImageData(0, 0, size, size);
@@ -383,6 +550,30 @@ export function loadInfrastructureIcons(mapInstance: maplibregl.Map) {
   for (const def of INFRA_ICON_DEFS) {
     if (!mapInstance.hasImage(def.id)) {
       mapInstance.addImage(def.id, createMapIcon(def.category, def.color, 28));
+    }
+  }
+}
+
+export const CONFLICT_ICON_DEFS: {
+  id: string;
+  category: InfraCategory;
+  color: string;
+}[] = [
+  { id: "conflict-battle", category: "conflict-battle", color: "#ef4444" },
+  { id: "conflict-explosion", category: "conflict-explosion", color: "#f97316" },
+  { id: "conflict-protest", category: "conflict-protest", color: "#22c55e" },
+  { id: "conflict-civilian", category: "conflict-civilian", color: "#a855f7" },
+  { id: "conflict-strategic", category: "conflict-strategic", color: "#3b82f6" },
+  { id: "conflict-riot", category: "conflict-riot", color: "#eab308" },
+  { id: "battle-critical", category: "battle-major", color: "#ef4444" },
+  { id: "battle-major", category: "battle-major", color: "#f97316" },
+  { id: "battle-minor", category: "battle-major", color: "#eab308" },
+];
+
+export function loadConflictIcons(map: maplibregl.Map, size = 28) {
+  for (const def of CONFLICT_ICON_DEFS) {
+    if (!map.hasImage(def.id)) {
+      map.addImage(def.id, createMapIcon(def.category, def.color, size));
     }
   }
 }

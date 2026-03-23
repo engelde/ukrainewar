@@ -28,6 +28,7 @@ import {
   operationsGeoJSON,
 } from "./mapGeoJSON";
 import {
+  loadConflictIcons,
   loadEquipmentIcons,
   loadInfrastructureIcons,
   normalizeEquipmentCategory,
@@ -702,6 +703,8 @@ export default function MapView({
         clusterRadius: 40,
       });
 
+      loadConflictIcons(mapInstance);
+
       // Cluster circles — warm purple tint
       const conflictsVis = layersRef.current.conflicts ? "visible" : "none";
 
@@ -745,47 +748,49 @@ export default function MapView({
         },
       });
 
-      // Individual event points — color by event type
+      // Individual event points — icon by event type
       mapInstance.addLayer({
         id: "acled-points",
-        type: "circle",
+        type: "symbol",
         source: "acled",
         filter: ["!", ["has", "point_count"]],
-        layout: { visibility: conflictsVis as "visible" | "none" },
-        paint: {
-          "circle-color": [
+        layout: {
+          visibility: conflictsVis as "visible" | "none",
+          "icon-image": [
             "match",
             ["get", "type"],
             "Battles",
-            ACLED_EVENT_COLORS.Battles,
+            "conflict-battle",
             "Explosions/Remote violence",
-            ACLED_EVENT_COLORS["Explosions/Remote violence"],
+            "conflict-explosion",
             "Violence against civilians",
-            ACLED_EVENT_COLORS["Violence against civilians"],
+            "conflict-civilian",
             "Strategic developments",
-            ACLED_EVENT_COLORS["Strategic developments"],
+            "conflict-strategic",
             "Protests",
-            ACLED_EVENT_COLORS.Protests,
+            "conflict-protest",
             "Riots",
-            ACLED_EVENT_COLORS.Riots,
-            "#888",
+            "conflict-riot",
+            "conflict-battle",
           ],
-          "circle-radius": [
+          "icon-size": [
             "interpolate",
             ["linear"],
             ["get", "fatalities"],
             0,
-            4,
+            0.6,
             5,
-            6,
+            0.8,
             20,
-            9,
+            1.0,
             100,
-            13,
+            1.3,
           ],
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "rgba(0,0,0,0.5)",
-          "circle-opacity": 0.85,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
+        paint: {
+          "icon-opacity": 0.85,
         },
       });
 
@@ -879,6 +884,8 @@ export default function MapView({
       data: battleGeoJSON(battleData),
     });
 
+    loadConflictIcons(mapInstance);
+
     // Outer glow ring
     mapInstance.addLayer({
       id: "battle-glow",
@@ -892,17 +899,27 @@ export default function MapView({
       },
     });
 
-    // Inner point
+    // Inner point — icon by significance
     mapInstance.addLayer({
       id: "battle-points",
-      type: "circle",
+      type: "symbol",
       source: "battles",
+      layout: {
+        "icon-image": [
+          "match",
+          ["get", "significance"],
+          "critical",
+          "battle-critical",
+          "major",
+          "battle-major",
+          "battle-minor",
+        ],
+        "icon-size": ["match", ["get", "significance"], "critical", 1.2, "major", 1.0, 0.8],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
       paint: {
-        "circle-radius": ["match", ["get", "significance"], "critical", 6, "major", 5, 4],
-        "circle-color": ["case", ["get", "active"], "#ef4444", "#b91c1c"],
-        "circle-opacity": ["case", ["get", "active"], 0.9, 0.5],
-        "circle-stroke-width": 1.5,
-        "circle-stroke-color": ["case", ["get", "active"], "#fca5a5", "#7f1d1d"],
+        "icon-opacity": ["case", ["get", "active"], 0.9, 0.5],
       },
     });
 
@@ -1879,8 +1896,6 @@ export default function MapView({
       // Guard: map may have been removed during await (React Strict Mode)
       if (map.current !== mapInstance) return;
 
-      const beforeLayer = findFirstSymbolLayer(mapInstance);
-
       // Create oblast boundaries with event data
       const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
       const geoWithData: GeoJSON.FeatureCollection = {
@@ -1916,35 +1931,35 @@ export default function MapView({
 
         const heatmapVis = layersRef.current.heatmap ? "visible" : "none";
 
-        mapInstance.addLayer(
-          {
-            id: "acled-heatmap-fill",
-            type: "fill",
-            source: "acled-heatmap",
-            layout: { visibility: heatmapVis as "visible" | "none" },
-            paint: {
-              "fill-color": [
-                "interpolate",
-                ["linear"],
-                ["get", "fatalities"],
-                0,
-                "rgba(0, 0, 0, 0)",
-                100,
-                "rgba(239, 68, 68, 0.08)",
-                1000,
-                "rgba(239, 68, 68, 0.15)",
-                5000,
-                "rgba(239, 68, 68, 0.25)",
-                20000,
-                "rgba(239, 68, 68, 0.4)",
-                50000,
-                "rgba(239, 68, 68, 0.55)",
-              ],
-              "fill-opacity": 0.7,
-            },
+        // Add heatmap fill at the top of the layer stack so it renders above
+        // the territory overlay and border mask (both are also fill layers).
+        // Without this, the choropleth is hidden beneath opaque fills.
+        mapInstance.addLayer({
+          id: "acled-heatmap-fill",
+          type: "fill",
+          source: "acled-heatmap",
+          layout: { visibility: heatmapVis as "visible" | "none" },
+          paint: {
+            "fill-color": [
+              "interpolate",
+              ["linear"],
+              ["get", "fatalities"],
+              0,
+              "rgba(0, 0, 0, 0)",
+              100,
+              "rgba(239, 68, 68, 0.08)",
+              1000,
+              "rgba(239, 68, 68, 0.15)",
+              5000,
+              "rgba(239, 68, 68, 0.25)",
+              20000,
+              "rgba(239, 68, 68, 0.4)",
+              50000,
+              "rgba(239, 68, 68, 0.55)",
+            ],
+            "fill-opacity": 0.7,
           },
-          beforeLayer,
-        );
+        });
 
         mapInstance.addLayer({
           id: "acled-heatmap-line",

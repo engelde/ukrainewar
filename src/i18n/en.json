@@ -74,8 +74,8 @@
     "operationsDesc": "Major military operations",
     "infrastructure": "Infrastructure",
     "infrastructureDesc": "Nuclear plants, dams, bridges, ports",
-    "nato": "NATO / Belarus",
-    "natoDesc": "Alliance bases and Belarus installations",
+    "nato": "Military Bases",
+    "natoDesc": "NATO, Ukrainian, Russian, and Belarusian military installations",
     "thermal": "Thermal Anomalies",
     "thermalDesc": "NASA satellite fire detections"
   },

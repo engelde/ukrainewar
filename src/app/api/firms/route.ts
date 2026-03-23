@@ -23,7 +23,9 @@ const BBOX = "22,44,41,53";
 const DAYS = 2; // Last 2 days of data
 
 // NASA FIRMS MAP_KEY — free, register at https://firms.modaps.eosdis.nasa.gov/api/area/
-// Using the default demo key; replace with registered key for production
+// A real API key is REQUIRED for area queries. DEMO_KEY is heavily rate-limited
+// and does not reliably return data for bounding-box requests.
+// Set the NASA_FIRMS_KEY environment variable with a registered key.
 const MAP_KEY = process.env.NASA_FIRMS_KEY || "DEMO_KEY";
 
 interface FirmsRecord {
@@ -88,6 +90,19 @@ export async function GET(request: Request) {
   if (limited) return limited;
 
   try {
+    // DEMO_KEY does not support area queries reliably — return empty collection
+    // so the frontend layer still initialises (with zero points) instead of failing.
+    if (MAP_KEY === "DEMO_KEY") {
+      const empty: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+      return NextResponse.json(empty, {
+        headers: {
+          "X-Cache": "SKIP",
+          "X-Firms-Key": "DEMO_KEY",
+          "Cache-Control": "public, max-age=300",
+        },
+      });
+    }
+
     // Check cache first
     const cached = await cacheGet<GeoJSON.FeatureCollection>(CACHE_KEY);
     if (cached && isFresh(cached)) {
