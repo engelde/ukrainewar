@@ -39,7 +39,20 @@
     "sourceMOD": "Source: Ukrainian Ministry of Defence"
   },
   "map": {
-    "loading": "Loading map..."
+    "loading": "Loading map...",
+    "thermalAnomaly": "Thermal Anomaly",
+    "fireRadiativePower": "Fire Radiative Power",
+    "confidence": "Confidence",
+    "sourceFirms": "Source: NASA FIRMS / VIIRS",
+    "outcome": "Outcome",
+    "frameworkNation": "Framework Nation",
+    "fatalities": "Fatalities",
+    "events": "Events"
+  },
+  "notFound": {
+    "title": "404",
+    "message": "The page you are looking for could not be found.",
+    "backToMap": "Back to Map"
   },
   "layers": {
     "title": "Layers",

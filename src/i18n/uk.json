@@ -39,7 +39,20 @@
     "sourceMOD": "Джерело: Міністерство оборони України"
   },
   "map": {
-    "loading": "Завантаження карти..."
+    "loading": "Завантаження карти...",
+    "thermalAnomaly": "Теплова аномалія",
+    "fireRadiativePower": "Потужність теплового випромінювання",
+    "confidence": "Достовірність",
+    "sourceFirms": "Джерело: NASA FIRMS / VIIRS",
+    "outcome": "Результат",
+    "frameworkNation": "Рамкова нація",
+    "fatalities": "Загиблі",
+    "events": "Події"
+  },
+  "notFound": {
+    "title": "404",
+    "message": "Сторінку не знайдено.",
+    "backToMap": "Повернутися до карти"
   },
   "layers": {
     "title": "Шари",

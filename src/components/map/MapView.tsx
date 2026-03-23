@@ -945,7 +945,7 @@ export default function MapView({
               <div style="font-weight:700;font-size:13px;color:#fbbf24;margin-bottom:4px">${props.name}</div>
               <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">${props.dateRange}</div>
               <div style="font-size:11px;color:#d1d5db;margin-bottom:6px;line-height:1.4">${props.description}</div>
-              ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>Outcome:</strong> ${props.outcome}</div>` : ""}
+              ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>${t("map.outcome")}:</strong> ${props.outcome}</div>` : ""}
               <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">${props.significance}</div>
             </div>`,
         )
@@ -1148,7 +1148,7 @@ export default function MapView({
                 <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#9ca3af;border:1px solid rgba(255,255,255,0.12)">${typeLabel}</span>
               </div>
               <div style="font-size:11px;color:#d1d5db;margin-bottom:6px;line-height:1.4">${props.description}</div>
-              ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>Outcome:</strong> ${props.outcome}</div>` : ""}
+              ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>${t("map.outcome")}:</strong> ${props.outcome}</div>` : ""}
             </div>`,
           )
           .addTo(mapInstance);
@@ -1247,11 +1247,11 @@ export default function MapView({
           .setLngLat(coords)
           .setHTML(
             `<div style="font-family:var(--font-dm-sans);color:#e8e8ed;font-size:13px;">
-              <div style="font-weight:600;color:#ff8c00;margin-bottom:6px;">Thermal Anomaly</div>
+              <div style="font-weight:600;color:#ff8c00;margin-bottom:6px;">${t("map.thermalAnomaly")}</div>
               <div style="color:#aaa;font-size:11px;margin-bottom:6px;">${date.includes("-") ? formatISODate(date) : date}${timeStr ? ` ${timeStr} UTC` : ""}</div>
-              <div style="margin-bottom:4px;"><span style="color:#888;">Fire Radiative Power:</span> ${frp} MW</div>
-              <div style="margin-bottom:4px;"><span style="color:#888;">Confidence:</span> ${confidence}</div>
-              <div style="color:#666;font-size:10px;margin-top:6px;">Source: NASA FIRMS / VIIRS</div>
+              <div style="margin-bottom:4px;"><span style="color:#888;">${t("map.fireRadiativePower")}:</span> ${frp} MW</div>
+              <div style="margin-bottom:4px;"><span style="color:#888;">${t("map.confidence")}:</span> ${confidence}</div>
+              <div style="color:#666;font-size:10px;margin-top:6px;">${t("map.sourceFirms")}</div>
             </div>`,
           )
           .addTo(mapInstance);
@@ -1690,7 +1690,7 @@ export default function MapView({
                 <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#9ca3af;border:1px solid rgba(255,255,255,0.12)">${typeLabel}</span>
                 ${isNATO && props.country ? `<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.12)">${props.country}</span>` : ""}
               </div>
-              ${isNATO && props.framework ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:4px">Framework Nation: ${props.framework}</div>` : ""}
+              ${isNATO && props.framework ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:4px">${t("map.frameworkNation")}: ${props.framework}</div>` : ""}
               <div style="font-size:11px;color:#d1d5db;line-height:1.4">${props.description}</div>
               ${props.significance ? `<div style="font-size:11px;color:#60a5fa;margin-top:4px">${props.significance}</div>` : ""}
             </div>`,
@@ -1972,8 +1972,8 @@ export default function MapView({
               `<div style="font-family: system-ui; color: #e8e8ed; padding: 4px;">
                   <div style="font-weight: 600; font-size: 12px; color: #fca5a5; margin-bottom: 4px;">${props.name}</div>
                   <div style="font-size: 10px; color: #b0b0c0;">
-                    <div>Fatalities: <span style="color: #ef4444; font-weight: 600;">${Number(props.fatalities).toLocaleString()}</span></div>
-                    <div>Events: <span style="color: #f97316; font-weight: 600;">${Number(props.events).toLocaleString()}</span></div>
+                    <div>${t("map.fatalities")}: <span style="color: #ef4444; font-weight: 600;">${Number(props.fatalities).toLocaleString()}</span></div>
+                    <div>${t("map.events")}: <span style="color: #f97316; font-weight: 600;">${Number(props.events).toLocaleString()}</span></div>
                   </div>
                 </div>`,
             )
