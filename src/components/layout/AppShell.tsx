@@ -12,6 +12,7 @@ import LayerControls from "@/components/map/LayerControls";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 import AirDefensePanel from "@/components/panels/AirDefensePanel";
 import EnergyPanel from "@/components/panels/EnergyPanel";
+import InternationalSupportPanel from "@/components/panels/InternationalSupportPanel";
 import SpendingPanel from "@/components/spending/SpendingPanel";
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
@@ -90,6 +91,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [spendingOpen, setSpendingOpen] = useState(false);
   const [energyOpen, setEnergyOpen] = useState(false);
   const [airDefenseOpen, setAirDefenseOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
   const [layersCollapsed, setLayersCollapsed] = useState(true);
   const [flyToTarget, setFlyToTarget] = useState<{
@@ -237,6 +239,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setAirDefenseOpen((prev) => !prev);
   }, []);
 
+  const handleToggleSupport = useCallback(() => {
+    setSupportOpen((prev) => !prev);
+  }, []);
+
   const handleMapMoveEnd = useCallback(
     (center: [number, number], zoom: number) => {
       // Skip URL updates during reset flyTo animation
@@ -299,6 +305,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSpendingOpen(true);
     setEnergyOpen(false);
     setAirDefenseOpen(false);
+    setSupportOpen(false);
     setStatsCollapsed(false);
     setLayersCollapsed(false);
     setTimelineKey((prev) => prev + 1);
@@ -451,6 +458,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
+        {supportOpen && (
+          <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw-230px)] sm:top-16">
+            <InternationalSupportPanel isOpen={true} onToggle={handleToggleSupport} />
+          </DraggablePanel>
+        )}
 
         <TimelineScrubber
           events={events}
@@ -468,6 +480,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             !spendingOpen ||
             !energyOpen ||
             !airDefenseOpen ||
+            !supportOpen ||
             layersCollapsed ? (
               <>
                 {statsCollapsed && displayData && (
@@ -505,6 +518,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                     onToggle={handleToggleAirDefense}
                     timelineDate={territoryDate ?? undefined}
                   />
+                )}
+                {!supportOpen && (
+                  <InternationalSupportPanel isOpen={false} onToggle={handleToggleSupport} />
                 )}
                 {layersCollapsed && (
                   <LayerControls

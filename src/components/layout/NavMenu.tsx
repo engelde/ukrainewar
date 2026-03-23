@@ -148,6 +148,24 @@ function NavContent({
                   view territory, equipment losses, battles, and conflict events. All data updates
                   daily from official sources.
                 </p>
+                <div className="mt-3 rounded-md border border-ua-blue/30 bg-ua-blue/5 px-2.5 py-2">
+                  <p className="text-[11px] text-ua-blue font-medium leading-relaxed">
+                    Stand with Ukraine
+                  </p>
+                  <p className="text-[10px] text-foreground/70 leading-relaxed mt-1">
+                    The people of Ukraine continue to defend their homeland, their freedom, and
+                    their future. Support their resilience and recovery.
+                  </p>
+                  <a
+                    href="https://u24.gov.ua"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1.5 inline-flex items-center gap-1 rounded bg-ua-blue/15 px-2 py-0.5 text-[10px] font-medium text-ua-blue hover:bg-ua-blue/25 transition-colors"
+                  >
+                    Donate via UNITED24
+                    <TbExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
             )}
 
@@ -266,6 +284,24 @@ function MobileSidebar({
                 view territory, equipment losses, battles, and conflict events. All data updates
                 daily from official sources.
               </p>
+              <div className="mt-2 rounded-md border border-ua-blue/30 bg-ua-blue/5 px-2.5 py-2">
+                <p className="text-[11px] text-ua-blue font-medium leading-relaxed">
+                  Stand with Ukraine
+                </p>
+                <p className="text-[10px] text-foreground/70 leading-relaxed mt-1">
+                  The people of Ukraine continue to defend their homeland, their freedom, and their
+                  future. Support their resilience and recovery.
+                </p>
+                <a
+                  href="https://u24.gov.ua"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1.5 inline-flex items-center gap-1 rounded bg-ua-blue/15 px-2 py-0.5 text-[10px] font-medium text-ua-blue hover:bg-ua-blue/25 transition-colors"
+                >
+                  Donate via UNITED24
+                  <TbExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </div>
           </SidebarSection>
 
