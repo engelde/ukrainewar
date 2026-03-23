@@ -18,7 +18,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WarEvent } from "@/data/events";
-import { getMonthsShort, t } from "@/i18n";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface TimelineScrubberProps {
@@ -50,10 +50,9 @@ function formatDateDisplay(dateStr: string): string {
 }
 
 function formatDateShort(dateStr: string): string {
-  const months = getMonthsShort();
-  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
+  const m = dateStr.slice(4, 6);
   const d = dateStr.slice(6, 8);
-  return `${months[m]} ${parseInt(d, 10)}`;
+  return `${m}.${d}`;
 }
 
 function generateDateRange(): string[] {

@@ -10,12 +10,15 @@ import type { Bridge, Dam, Port } from "@/data/infrastructure";
 import type { NATOBase } from "@/data/nato-bases";
 import type { NuclearPlant } from "@/data/nuclear-plants";
 import type { MilitaryOperation } from "@/data/operations";
+import type { RussiaBase } from "@/data/russia-bases";
+import type { UkraineBase } from "@/data/ukraine-bases";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
 import ukraineOblasts from "@/data/ukraine-oblasts.json";
-import { getMonthsShort, t } from "@/i18n";
+import { t } from "@/i18n";
 import { MAP_CENTER, MAP_STYLE, MAP_ZOOM } from "@/lib/constants";
 import type { EquipmentMarker, MapLayers } from "@/lib/types";
+import { formatDateRange, formatISODate } from "@/lib/utils";
 
 interface AcledOblastMonthly {
   month: string;
@@ -129,6 +132,302 @@ function loadEquipmentIcons(mapInstance: maplibregl.Map) {
   }
 }
 
+// ── Infrastructure & Base Icon Drawing ──
+
+type InfraCategory =
+  | "nuclear"
+  | "dam"
+  | "bridge"
+  | "port"
+  | "power-plant"
+  | "gas-station"
+  | "nato-base"
+  | "belarus-base"
+  | "ukraine-base"
+  | "russia-base";
+
+function drawNuclearSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.save();
+  const bladeR = r * 0.85;
+  const innerR = r * 0.22;
+  const gapAngle = Math.PI / 12;
+  for (let i = 0; i < 3; i++) {
+    const baseAngle = (i * 2 * Math.PI) / 3 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, bladeR, baseAngle + gapAngle, baseAngle + (2 * Math.PI) / 3 - gapAngle);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawWaveSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const amp = r * 0.35;
+  const waveW = r * 1.6;
+  const startX = cx - waveW / 2;
+  for (let row = -1; row <= 1; row++) {
+    const yOff = cy + row * amp * 1.1;
+    ctx.beginPath();
+    ctx.moveTo(startX, yOff);
+    for (let x = 0; x <= waveW; x += 1) {
+      const t = x / waveW;
+      ctx.lineTo(startX + x, yOff + Math.sin(t * Math.PI * 3) * amp * 0.4);
+    }
+    ctx.lineWidth = r * 0.2;
+    ctx.stroke();
+  }
+}
+
+function drawBridgeSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const w = r * 1.4;
+  const h = r * 0.9;
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, cy + h * 0.3);
+  ctx.quadraticCurveTo(cx, cy - h * 0.8, cx + w / 2, cy + h * 0.3);
+  ctx.lineWidth = r * 0.22;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, cy + h * 0.3);
+  ctx.lineTo(cx + w / 2, cy + h * 0.3);
+  ctx.lineWidth = r * 0.18;
+  ctx.stroke();
+  // pillars
+  ctx.lineWidth = r * 0.14;
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.25, cy - h * 0.05);
+  ctx.lineTo(cx - w * 0.25, cy + h * 0.3);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx + w * 0.25, cy - h * 0.05);
+  ctx.lineTo(cx + w * 0.25, cy + h * 0.3);
+  ctx.stroke();
+}
+
+function drawAnchorSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const topR = r * 0.22;
+  ctx.lineWidth = r * 0.18;
+  // ring at top
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.5, topR, 0, Math.PI * 2);
+  ctx.stroke();
+  // vertical shaft
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r * 0.5 + topR);
+  ctx.lineTo(cx, cy + r * 0.55);
+  ctx.stroke();
+  // horizontal crossbar
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.4, cy - r * 0.08);
+  ctx.lineTo(cx + r * 0.4, cy - r * 0.08);
+  ctx.stroke();
+  // curved arms
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.65, cy + r * 0.15);
+  ctx.quadraticCurveTo(cx - r * 0.6, cy + r * 0.6, cx, cy + r * 0.55);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx + r * 0.65, cy + r * 0.15);
+  ctx.quadraticCurveTo(cx + r * 0.6, cy + r * 0.6, cx, cy + r * 0.55);
+  ctx.stroke();
+}
+
+function drawLightningSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(cx + r * 0.05, cy - r * 0.8);
+  ctx.lineTo(cx - r * 0.3, cy + r * 0.05);
+  ctx.lineTo(cx + r * 0.05, cy - r * 0.05);
+  ctx.lineTo(cx - r * 0.05, cy + r * 0.8);
+  ctx.lineTo(cx + r * 0.3, cy - r * 0.05);
+  ctx.lineTo(cx - r * 0.05, cy + r * 0.05);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawFlameSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.7);
+  ctx.bezierCurveTo(cx - r * 0.6, cy + r * 0.3, cx - r * 0.55, cy - r * 0.3, cx, cy - r * 0.8);
+  ctx.bezierCurveTo(cx + r * 0.55, cy - r * 0.3, cx + r * 0.6, cy + r * 0.3, cx, cy + r * 0.7);
+  ctx.fill();
+  // inner lighter flame
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.5);
+  ctx.bezierCurveTo(cx - r * 0.25, cy + r * 0.2, cx - r * 0.25, cy - r * 0.1, cx, cy - r * 0.35);
+  ctx.bezierCurveTo(cx + r * 0.25, cy - r * 0.1, cx + r * 0.25, cy + r * 0.2, cx, cy + r * 0.5);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawNATOStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const outerR = r * 0.85;
+  const innerR = r * 0.3;
+  ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI) / 2 - Math.PI / 2;
+    const midAngle = angle + Math.PI / 4;
+    ctx.lineTo(cx + Math.cos(angle) * outerR, cy + Math.sin(angle) * outerR);
+    ctx.lineTo(cx + Math.cos(midAngle) * innerR, cy + Math.sin(midAngle) * innerR);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMilitaryStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const outerR = r * 0.85;
+  const innerR = r * 0.35;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const outerAngle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+    const innerAngle = outerAngle + Math.PI / 5;
+    ctx.lineTo(cx + Math.cos(outerAngle) * outerR, cy + Math.sin(outerAngle) * outerR);
+    ctx.lineTo(cx + Math.cos(innerAngle) * innerR, cy + Math.sin(innerAngle) * innerR);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawShieldSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const w = r * 0.75;
+  const h = r * 1.0;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - h);
+  ctx.lineTo(cx + w, cy - h * 0.5);
+  ctx.lineTo(cx + w, cy + h * 0.1);
+  ctx.quadraticCurveTo(cx, cy + h, cx, cy + h);
+  ctx.quadraticCurveTo(cx, cy + h, cx - w, cy + h * 0.1);
+  ctx.lineTo(cx - w, cy - h * 0.5);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function createMapIcon(
+  category: InfraCategory,
+  color: string,
+  size: number,
+): { width: number; height: number; data: Uint8ClampedArray } {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const cx = size / 2;
+  const cy = size / 2;
+  const symbolR = size * 0.3;
+
+  // Dark background circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, size / 2 - 1, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fill();
+
+  // Inner colored circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, size / 2 - 3, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // White symbol on top
+  ctx.fillStyle = "#fff";
+  ctx.strokeStyle = "#fff";
+
+  switch (category) {
+    case "nuclear":
+      drawNuclearSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "dam":
+      drawWaveSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "bridge":
+      drawBridgeSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "port":
+      drawAnchorSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "power-plant":
+      drawLightningSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "gas-station":
+      drawFlameSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "nato-base":
+      drawNATOStar(ctx, cx, cy, symbolR);
+      break;
+    case "belarus-base":
+      drawMilitaryStar(ctx, cx, cy, symbolR);
+      break;
+    case "ukraine-base":
+      drawShieldSymbol(ctx, cx, cy, symbolR);
+      break;
+    case "russia-base":
+      drawMilitaryStar(ctx, cx, cy, symbolR);
+      break;
+  }
+
+  const imgData = ctx.getImageData(0, 0, size, size);
+  return { width: size, height: size, data: imgData.data };
+}
+
+const INFRA_ICON_DEFS: {
+  id: string;
+  category: InfraCategory;
+  color: string;
+}[] = [
+  // Nuclear
+  { id: "infra-nuclear-active", category: "nuclear", color: "#22c55e" },
+  { id: "infra-nuclear-operational", category: "nuclear", color: "#22c55e" },
+  { id: "infra-nuclear-occupied", category: "nuclear", color: "#ef4444" },
+  { id: "infra-nuclear-decommissioned", category: "nuclear", color: "#6b7280" },
+  // Dam
+  { id: "infra-dam-operational", category: "dam", color: "#06b6d4" },
+  { id: "infra-dam-destroyed", category: "dam", color: "#ef4444" },
+  { id: "infra-dam-damaged", category: "dam", color: "#eab308" },
+  // Bridge
+  { id: "infra-bridge-operational", category: "bridge", color: "#8b5cf6" },
+  { id: "infra-bridge-destroyed", category: "bridge", color: "#ef4444" },
+  { id: "infra-bridge-damaged", category: "bridge", color: "#eab308" },
+  // Port
+  { id: "infra-port-operational", category: "port", color: "#3b82f6" },
+  { id: "infra-port-occupied", category: "port", color: "#ef4444" },
+  { id: "infra-port-limited", category: "port", color: "#eab308" },
+  // Power Plant
+  { id: "infra-power-plant-operational", category: "power-plant", color: "#f97316" },
+  { id: "infra-power-plant-destroyed", category: "power-plant", color: "#ef4444" },
+  { id: "infra-power-plant-damaged", category: "power-plant", color: "#eab308" },
+  // Gas Station
+  { id: "infra-gas-station-operational", category: "gas-station", color: "#a855f7" },
+  { id: "infra-gas-station-shutdown", category: "gas-station", color: "#6b7280" },
+  // NATO & Belarus bases
+  { id: "nato-base", category: "nato-base", color: "#1b69a1" },
+  { id: "belarus-base", category: "belarus-base", color: "#8b1a1a" },
+  // Ukraine & Russia bases
+  { id: "ukraine-base-active", category: "ukraine-base", color: "#005BBB" },
+  { id: "ukraine-base-destroyed", category: "ukraine-base", color: "#ef4444" },
+  { id: "ukraine-base-occupied", category: "ukraine-base", color: "#C53030" },
+  { id: "ukraine-base-relocated", category: "ukraine-base", color: "#3D8FD6" },
+  { id: "russia-base-active", category: "russia-base", color: "#C53030" },
+  { id: "russia-base-damaged", category: "russia-base", color: "#eab308" },
+  { id: "russia-base-destroyed", category: "russia-base", color: "#ef4444" },
+];
+
+function loadInfrastructureIcons(mapInstance: maplibregl.Map) {
+  for (const def of INFRA_ICON_DEFS) {
+    if (!mapInstance.hasImage(def.id)) {
+      mapInstance.addImage(def.id, createMapIcon(def.category, def.color, 28));
+    }
+  }
+}
+
 function battleGeoJSON(battles: Battle[], timelineDate?: string | null): GeoJSON.FeatureCollection {
   const filtered = timelineDate ? battles.filter((b) => b.startDate <= timelineDate) : battles;
 
@@ -149,19 +448,10 @@ function battleGeoJSON(battles: Battle[], timelineDate?: string | null): GeoJSON
           : false,
         description: b.description,
         outcome: b.outcome || "",
-        dateRange: formatBattleDateRange(b.startDate, b.endDate),
+        dateRange: formatDateRange(b.startDate, b.endDate),
       },
     })),
   };
-}
-
-function formatBattleDateRange(start: string, end?: string): string {
-  const fmt = (d: string) => {
-    const months = ["", ...getMonthsShort()];
-    return `${months[parseInt(d.slice(4, 6), 10)]} ${d.slice(6, 8)}, ${d.slice(0, 4)}`;
-  };
-  if (!end) return `${fmt(start)} – Present`;
-  return `${fmt(start)} – ${fmt(end)}`;
 }
 
 const MONTH_NAMES: Record<string, number> = {
@@ -188,26 +478,29 @@ function operationsGeoJSON(
   ops: MilitaryOperation[],
   timelineDate?: string | null,
 ): GeoJSON.FeatureCollection {
-  const filtered = timelineDate ? ops.filter((o) => o.startDate <= timelineDate) : ops;
+  // Default to today so completed operations are hidden on initial load
+  const now = new Date();
+  const effectiveDate =
+    timelineDate ??
+    `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  const filtered = ops.filter(
+    (o) => o.startDate <= effectiveDate && (!o.endDate || o.endDate >= effectiveDate),
+  );
 
   return {
     type: "FeatureCollection",
     features: filtered.map((op) => {
-      const active = timelineDate
-        ? op.startDate <= timelineDate && (!op.endDate || op.endDate >= timelineDate)
-        : false;
+      // All filtered operations are active within the date range
+      const active = true;
 
-      // Compute progress along waypoints for active operations
+      // Compute progress along waypoints
       let progress = 1;
-      if (active && timelineDate && op.endDate) {
+      if (op.endDate) {
         const start = parseInt(op.startDate, 10);
         const end = parseInt(op.endDate, 10);
-        const current = parseInt(timelineDate, 10);
+        const current = parseInt(effectiveDate, 10);
         progress =
           end === start ? 1 : Math.min(1, Math.max(0.05, (current - start) / (end - start)));
-      } else if (active && timelineDate && !op.endDate) {
-        // Ongoing operation — show full path
-        progress = 1;
       }
 
       // Build coordinate array (trimmed to progress for active ops)
@@ -246,7 +539,7 @@ function operationsGeoJSON(
           significance: op.significance,
           description: op.description,
           outcome: op.outcome || "",
-          dateRange: formatBattleDateRange(op.startDate, op.endDate),
+          dateRange: formatDateRange(op.startDate, op.endDate),
         },
       };
     }),
@@ -330,6 +623,8 @@ interface MapViewProps {
   gasPipelines?: GasPipeline[];
   gasStations?: GasStation[];
   powerPlants?: PowerPlant[];
+  ukraineBases?: UkraineBase[];
+  russiaBases?: RussiaBase[];
 }
 
 export default function MapView({
@@ -353,6 +648,8 @@ export default function MapView({
   gasPipelines = [],
   gasStations = [],
   powerPlants = [],
+  ukraineBases = [],
+  russiaBases = [],
 }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -370,6 +667,7 @@ export default function MapView({
   const operationPopupRef = useRef<maplibregl.Popup | null>(null);
   const infrastructurePopupRef = useRef<maplibregl.Popup | null>(null);
   const natoPopupRef = useRef<maplibregl.Popup | null>(null);
+  const militaryBasePopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
   const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
@@ -894,7 +1192,7 @@ export default function MapView({
               `<div style="font-size:12px;color:#e8e8ed;line-height:1.4">
                 <strong>${props.model}</strong><br/>
                 <span style="color:${STATUS_COLORS[props.status] || "#888"};text-transform:capitalize">${props.status}</span>
-                <span style="color:#8888a0"> · ${props.date}</span>
+                <span style="color:#8888a0"> · ${formatISODate(props.date || "")}</span>
               </div>`,
             )
             .addTo(mapInstance);
@@ -1067,7 +1365,7 @@ export default function MapView({
             `<div style="font-size:12px;color:#e8e8ed;line-height:1.4;max-width:240px">
                 <strong style="color:${eventColor}">${props.type}</strong><br/>
                 <span style="color:#ccc">${props.subtype || ""}</span><br/>
-                <span style="color:#8888a0">${props.location} · ${props.date}</span>
+                <span style="color:#8888a0">${props.location} · ${formatISODate(props.date || "")}</span>
                 ${fatalities > 0 ? `<br/><span style="color:#ef4444">⚔ ${fatalities} fatalities</span>` : ""}
               </div>`,
           )
@@ -1484,7 +1782,7 @@ export default function MapView({
           .setHTML(
             `<div style="font-family:var(--font-dm-sans);color:#e8e8ed;font-size:13px;">
               <div style="font-weight:600;color:#ff8c00;margin-bottom:6px;">Thermal Anomaly</div>
-              <div style="color:#aaa;font-size:11px;margin-bottom:6px;">${date}${timeStr ? ` ${timeStr} UTC` : ""}</div>
+              <div style="color:#aaa;font-size:11px;margin-bottom:6px;">${date.includes("-") ? formatISODate(date) : date}${timeStr ? ` ${timeStr} UTC` : ""}</div>
               <div style="margin-bottom:4px;"><span style="color:#888;">Fire Radiative Power:</span> ${frp} MW</div>
               <div style="margin-bottom:4px;"><span style="color:#888;">Confidence:</span> ${confidence}</div>
               <div style="color:#666;font-size:10px;margin-top:6px;">Source: NASA FIRMS / VIIRS</div>
@@ -1641,78 +1939,18 @@ export default function MapView({
         },
       });
 
-      // Main infrastructure point markers
+      // Register infrastructure icons
+      loadInfrastructureIcons(mapInstance);
+
+      // Main infrastructure point markers (symbol layer with icons)
       mapInstance.addLayer({
         id: "infrastructure-points",
-        type: "circle",
+        type: "symbol",
         source: "infrastructure",
-        paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            4,
-            ["case", ["==", ["get", "category"], "nuclear"], 5, 3],
-            8,
-            ["case", ["==", ["get", "category"], "nuclear"], 8, 5],
-            12,
-            ["case", ["==", ["get", "category"], "nuclear"], 12, 8],
-          ],
-          "circle-color": [
-            "match",
-            ["get", "category"],
-            "nuclear",
-            [
-              "case",
-              ["==", ["get", "status"], "occupied"],
-              "#ef4444",
-              ["==", ["get", "status"], "decommissioned"],
-              "#6b7280",
-              "#22c55e",
-            ],
-            "dam",
-            [
-              "case",
-              ["==", ["get", "status"], "destroyed"],
-              "#ef4444",
-              ["==", ["get", "status"], "damaged"],
-              "#eab308",
-              "#06b6d4",
-            ],
-            "bridge",
-            [
-              "case",
-              ["==", ["get", "status"], "destroyed"],
-              "#ef4444",
-              ["==", ["get", "status"], "damaged"],
-              "#eab308",
-              "#8b5cf6",
-            ],
-            "port",
-            [
-              "case",
-              ["==", ["get", "status"], "occupied"],
-              "#ef4444",
-              ["==", ["get", "status"], "limited"],
-              "#eab308",
-              "#3b82f6",
-            ],
-            "power-plant",
-            [
-              "case",
-              ["==", ["get", "status"], "destroyed"],
-              "#ef4444",
-              ["==", ["get", "status"], "damaged"],
-              "#eab308",
-              "#f97316",
-            ],
-            "gas-station",
-            ["case", ["==", ["get", "status"], "shutdown"], "#6b7280", "#a855f7"],
-            "#9ca3af",
-          ],
-          "circle-opacity": 0.85,
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "rgba(0, 0, 0, 0.5)",
+        layout: {
+          "icon-image": ["concat", "infra-", ["get", "category"], "-", ["get", "status"]],
+          "icon-size": 1,
+          "icon-allow-overlap": true,
         },
       });
 
@@ -1907,33 +2145,32 @@ export default function MapView({
         data: { type: "FeatureCollection", features },
       });
 
-      // NATO markers — blue
+      // Register NATO/Belarus icons
+      loadInfrastructureIcons(mapInstance);
+
+      // NATO markers — symbol layer with compass star icon
       mapInstance.addLayer({
         id: "nato-points",
-        type: "circle",
+        type: "symbol",
         source: "nato-belarus",
         filter: ["==", ["get", "side"], "nato"],
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 3, 6, 5, 10, 8],
-          "circle-color": "#60a5fa",
-          "circle-opacity": 0.85,
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#1e3a5f",
+        layout: {
+          "icon-image": "nato-base",
+          "icon-size": 1,
+          "icon-allow-overlap": true,
         },
       });
 
-      // Belarus markers — dark red
+      // Belarus markers — symbol layer with military star icon
       mapInstance.addLayer({
         id: "belarus-points",
-        type: "circle",
+        type: "symbol",
         source: "nato-belarus",
         filter: ["==", ["get", "side"], "belarus"],
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 3, 6, 5, 10, 8],
-          "circle-color": "#b91c1c",
-          "circle-opacity": 0.85,
-          "circle-stroke-width": 1.5,
-          "circle-stroke-color": "#450a0a",
+        layout: {
+          "icon-image": "belarus-base",
+          "icon-size": 1,
+          "icon-allow-overlap": true,
         },
       });
 
@@ -2006,6 +2243,163 @@ export default function MapView({
       }
     },
     [natoBases, belarusBases],
+  );
+
+  const loadMilitaryBaseLayers = useCallback(
+    (mapInstance: maplibregl.Map) => {
+      if (mapInstance.getSource("military-bases")) return;
+      loadInfrastructureIcons(mapInstance);
+
+      const features: GeoJSON.Feature[] = [];
+
+      for (const base of ukraineBases) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [base.lng, base.lat] },
+          properties: {
+            id: base.id,
+            name: base.name,
+            side: "ukraine",
+            baseType: base.type,
+            branch: base.branch,
+            description: base.description,
+            status: base.status,
+          },
+        });
+      }
+
+      for (const base of russiaBases) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [base.lng, base.lat] },
+          properties: {
+            name: base.name,
+            side: "russia",
+            baseType: base.type,
+            district: base.district,
+            description: base.description,
+            status: base.status,
+          },
+        });
+      }
+
+      mapInstance.addSource("military-bases", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features },
+      });
+
+      // Ukraine base markers — shield icons
+      mapInstance.addLayer({
+        id: "ukraine-base-points",
+        type: "symbol",
+        source: "military-bases",
+        filter: ["==", ["get", "side"], "ukraine"],
+        layout: {
+          "icon-image": ["concat", "ukraine-base-", ["get", "status"]],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 6, 0.75, 10, 1],
+          "icon-allow-overlap": true,
+        },
+      });
+
+      // Russia base markers — star icons
+      mapInstance.addLayer({
+        id: "russia-base-points",
+        type: "symbol",
+        source: "military-bases",
+        filter: ["==", ["get", "side"], "russia"],
+        layout: {
+          "icon-image": ["concat", "russia-base-", ["get", "status"]],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 6, 0.75, 10, 1],
+          "icon-allow-overlap": true,
+        },
+      });
+
+      // Military base labels
+      mapInstance.addLayer({
+        id: "military-base-labels",
+        type: "symbol",
+        source: "military-bases",
+        layout: {
+          "text-field": ["get", "name"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 4, 0, 6, 8, 10, 10],
+          "text-offset": [0, 1.2],
+          "text-anchor": "top",
+          "text-allow-overlap": false,
+          "text-font": ["Open Sans Semibold"],
+          "text-max-width": 10,
+        },
+        paint: {
+          "text-color": ["case", ["==", ["get", "side"], "ukraine"], "#93c5fd", "#fca5a5"],
+          "text-halo-color": "rgba(0, 0, 0, 0.85)",
+          "text-halo-width": 1.5,
+          "text-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0, 6, 0.7, 10, 1],
+        },
+      });
+
+      const statusColors: Record<string, string> = {
+        active: "#48BB78",
+        destroyed: "#E53E3E",
+        damaged: "#ED8936",
+        occupied: "#C53030",
+        relocated: "#3D8FD6",
+      };
+
+      const handleBaseClick = (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+        if (!e.features?.length) return;
+        const props = e.features[0].properties || {};
+        const coords = e.lngLat;
+
+        const isUkraine = props.side === "ukraine";
+        const color = isUkraine ? "#005BBB" : "#C53030";
+        const sideLabel = isUkraine ? "🇺🇦 Ukraine" : "🇷🇺 Russia";
+        const typeLabel = (props.baseType as string)
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c: string) => c.toUpperCase());
+        const statusColor = statusColors[props.status as string] || "#9ca3af";
+        const statusLabel = (props.status as string).replace(/\b\w/g, (c: string) =>
+          c.toUpperCase(),
+        );
+        const affiliationLabel = isUkraine
+          ? props.branch
+            ? `Branch: ${props.branch}`
+            : ""
+          : props.district
+            ? `District: ${props.district}`
+            : "";
+
+        militaryBasePopupRef.current?.remove();
+        militaryBasePopupRef.current = new maplibregl.Popup({
+          closeOnClick: true,
+          maxWidth: "280px",
+          className: "operation-popup",
+        })
+          .setLngLat(coords)
+          .setHTML(
+            `<div style="max-width:280px">
+              <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:4px">${props.name}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${color}22;color:${color};border:1px solid ${color}44">${sideLabel}</span>
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.08);color:#9ca3af;border:1px solid rgba(255,255,255,0.12)">${typeLabel}</span>
+                <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44">${statusLabel}</span>
+              </div>
+              ${affiliationLabel ? `<div style="font-size:11px;color:#9ca3af;margin-bottom:4px">${affiliationLabel}</div>` : ""}
+              <div style="font-size:11px;color:#d1d5db;line-height:1.4">${props.description}</div>
+            </div>`,
+          )
+          .addTo(mapInstance);
+      };
+
+      for (const layerId of ["ukraine-base-points", "russia-base-points"]) {
+        mapInstance.on("click", layerId, handleBaseClick);
+        mapInstance.on("mouseenter", layerId, () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", layerId, () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
+      }
+    },
+    [ukraineBases, russiaBases],
   );
 
   // Load ACLED regional heatmap (choropleth by oblast)
@@ -2186,6 +2580,7 @@ export default function MapView({
         }
         loadInfrastructureLayers(map.current);
         loadNATOBelarusLayers(map.current);
+        loadMilitaryBaseLayers(map.current);
         loadThermalLayer(map.current);
 
         // Safety net: retry territory load if source is still empty after 3s
@@ -2215,6 +2610,7 @@ export default function MapView({
       operationPopupRef.current?.remove();
       infrastructurePopupRef.current?.remove();
       natoPopupRef.current?.remove();
+      militaryBasePopupRef.current?.remove();
       thermalPopupRef.current?.remove();
       heatmapPopupRef.current?.remove();
       lastTerritoryFetchRef.current = null;
@@ -2343,6 +2739,18 @@ export default function MapView({
     // NATO/Belarus layers
     const natoLayers = ["nato-points", "belarus-points", "nato-belarus-labels"];
     for (const layer of natoLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.nato ? "visible" : "none");
+      }
+    }
+
+    // Ukraine/Russia military base layers
+    const militaryBaseLayers = [
+      "ukraine-base-points",
+      "russia-base-points",
+      "military-base-labels",
+    ];
+    for (const layer of militaryBaseLayers) {
       if (map.current?.getLayer(layer)) {
         map.current.setLayoutProperty(layer, "visibility", layers.nato ? "visible" : "none");
       }

@@ -94,6 +94,9 @@ export interface MapLayers {
 
 export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";
 
+export type { RussiaBase } from "@/data/russia-bases";
+export type { UkraineBase } from "@/data/ukraine-bases";
+
 export interface AcledEvent {
   event_id: string;
   event_date: string; // YYYY-MM-DD

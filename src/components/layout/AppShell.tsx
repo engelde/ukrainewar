@@ -23,6 +23,8 @@ import { BRIDGES, DAMS, PORTS } from "@/data/infrastructure";
 import { NATO_BASES } from "@/data/nato-bases";
 import { NUCLEAR_PLANTS } from "@/data/nuclear-plants";
 import { MAJOR_OPERATIONS } from "@/data/operations";
+import { RUSSIA_BASES } from "@/data/russia-bases";
+import { UKRAINE_BASES } from "@/data/ukraine-bases";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEvents } from "@/hooks/useEvents";
 import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
@@ -374,6 +376,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           ports={PORTS}
           natoBases={NATO_BASES}
           belarusBases={BELARUS_BASES}
+          ukraineBases={UKRAINE_BASES}
+          russiaBases={RUSSIA_BASES}
           gasPipelines={GAS_PIPELINES}
           gasStations={GAS_STATIONS}
           powerPlants={POWER_PLANTS}

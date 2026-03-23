@@ -27,7 +27,7 @@ function formatDate(yyyymmdd: string): string {
   const y = yyyymmdd.slice(0, 4);
   const m = yyyymmdd.slice(4, 6);
   const d = yyyymmdd.slice(6, 8);
-  return `${d}.${m}.${y}`;
+  return `${m}.${d}.${y}`;
 }
 
 function pct(intercepted: number, launched: number): number {

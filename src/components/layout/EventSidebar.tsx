@@ -28,7 +28,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { WarEvent } from "@/data/events";
-import { getMonthsShort, t } from "@/i18n";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export type EventCategory =
@@ -185,11 +185,10 @@ export function getEventIcon(label: string) {
 }
 
 export function formatEventDate(dateStr: string): string {
-  const months = getMonthsShort();
+  const m = dateStr.slice(4, 6);
+  const d = dateStr.slice(6, 8);
   const y = dateStr.slice(0, 4);
-  const m = parseInt(dateStr.slice(4, 6), 10) - 1;
-  const d = parseInt(dateStr.slice(6, 8), 10);
-  return `${months[m]} ${d}, ${y}`;
+  return `${m}.${d}.${y}`;
 }
 
 function getWarDay(dateStr: string): number {
