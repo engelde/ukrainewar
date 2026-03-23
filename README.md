@@ -202,6 +202,7 @@ This project aggregates data from the following authoritative sources. All data 
 | **NASA FIRMS** | Near-real-time satellite thermal anomaly detections (VIIRS) | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov) |
 | **ENTSO-E** | European electricity generation data (Transparency Platform) | [transparency.entsoe.eu](https://transparency.entsoe.eu) |
 | **ENTSOG** | European gas transit flow data (Transparency Platform) | [transparency.entsog.eu](https://transparency.entsog.eu) |
+| **Sanctions data** | Curated from EU Council, US Treasury OFAC, UK Government sanctions lists | Various official sources |
 
 ### Data Freshness
 
@@ -224,6 +225,7 @@ All API responses use a multi-layer persistent caching system (file-based in dev
 | Bilateral aid | 7 days | Monthly releases |
 | VIINA territory | Weekly | Weekly snapshots |
 | Missile attack dataset | Static | Curated (40 major waves) |
+| Sanctions data | 7 days | Curated (static, updated with new packages) |
 
 ---
 
