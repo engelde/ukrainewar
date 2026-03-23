@@ -20,7 +20,6 @@ interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
   initialDate?: string | null;
   externalDate?: string | null;
-  dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
   onReset?: () => void;
@@ -32,7 +31,6 @@ export default function TimelineScrubber({
   onDateChange,
   initialDate,
   externalDate,
-  dockSlot,
   eventsOpen,
   onToggleEvents,
   onReset,
@@ -469,11 +467,6 @@ export default function TimelineScrubber({
         "flex flex-col items-start pointer-events-none",
       )}
     >
-      {/* Collapsed panels dock slot */}
-      {dockSlot && (
-        <div className="flex flex-col gap-1.5 mb-1.5 pointer-events-auto">{dockSlot}</div>
-      )}
-
       {/* Timeline panel — always expanded */}
       <div
         className={cn(

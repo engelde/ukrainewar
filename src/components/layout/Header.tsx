@@ -5,44 +5,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { TbMenu2 } from "react-icons/tb";
 import { t } from "@/i18n";
-import { cn } from "@/lib/utils";
 import NavMenu from "./NavMenu";
 
-interface HeaderProps {
-  eventsOpen?: boolean;
-  onToggleEvents?: () => void;
-  panelToggles?: {
-    events?: () => void;
-    russianLosses?: () => void;
-    layers?: () => void;
-    humanitarian?: () => void;
-    spending?: () => void;
-    energy?: () => void;
-    airDefense?: () => void;
-    support?: () => void;
-    ukraineLosses?: () => void;
-    sanctions?: () => void;
-  };
-  panelStates?: {
-    events?: boolean;
-    russianLosses?: boolean;
-    layers?: boolean;
-    humanitarian?: boolean;
-    spending?: boolean;
-    energy?: boolean;
-    airDefense?: boolean;
-    support?: boolean;
-    ukraineLosses?: boolean;
-    sanctions?: boolean;
-  };
-}
-
-export default function Header({
-  eventsOpen,
-  onToggleEvents,
-  panelToggles,
-  panelStates,
-}: HeaderProps) {
+export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -65,26 +30,12 @@ export default function Header({
           </Link>
           <div className="hidden sm:contents">
             <div className="w-px h-4 bg-border/40" />
-            <NavMenu
-              eventsOpen={eventsOpen}
-              onToggleEvents={onToggleEvents}
-              panelToggles={panelToggles}
-              panelStates={panelStates}
-            />
+            <NavMenu />
           </div>
         </div>
       </header>
 
-      {mobileMenuOpen && (
-        <NavMenu
-          mobile
-          onClose={() => setMobileMenuOpen(false)}
-          eventsOpen={eventsOpen}
-          onToggleEvents={onToggleEvents}
-          panelToggles={panelToggles}
-          panelStates={panelStates}
-        />
-      )}
+      {mobileMenuOpen && <NavMenu mobile onClose={() => setMobileMenuOpen(false)} />}
     </>
   );
 }

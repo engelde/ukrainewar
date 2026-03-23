@@ -465,9 +465,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           initialZoom={urlZoom ?? undefined}
           activeEvent={activeMapEvent}
         />
-        <Header
-          eventsOpen={sidebarOpen}
-          onToggleEvents={handleToggleSidebar}
+        <Header />
+        <DayTracker
+          warDay={warDay}
+          territoryDate={territoryDate}
+          dates={events}
+          onDateChange={handleTimelineDateChange}
           panelToggles={{
             events: handleToggleSidebar,
             russianLosses: handleToggleStats,
@@ -492,12 +495,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             ukraineLosses: ukraineLossesOpen,
             sanctions: sanctionsOpen,
           }}
-        />
-        <DayTracker
-          warDay={warDay}
-          territoryDate={territoryDate}
-          dates={events}
-          onDateChange={handleTimelineDateChange}
         />
 
         {displayData && !statsCollapsed && (
@@ -591,81 +588,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onToggleEvents={handleToggleSidebar}
           onReset={handleReset}
           isHistorical={isViewingPast}
-          dockSlot={
-            statsCollapsed ||
-            !humanitarianOpen ||
-            !spendingOpen ||
-            !energyOpen ||
-            !airDefenseOpen ||
-            !supportOpen ||
-            !ukraineLossesOpen ||
-            !sanctionsOpen ||
-            layersCollapsed ? (
-              <>
-                {statsCollapsed && displayData && (
-                  <StatsOverlay
-                    data={displayData}
-                    isHistorical={isViewingPast && !!historicalData}
-                    collapsed={true}
-                    onExpand={() => setStatsCollapsed(false)}
-                  />
-                )}
-                {!humanitarianOpen && (
-                  <HumanitarianPanel
-                    isOpen={false}
-                    onToggle={handleToggleHumanitarian}
-                    timelineDate={territoryDate ?? undefined}
-                  />
-                )}
-                {!spendingOpen && (
-                  <SpendingPanel
-                    isOpen={false}
-                    onToggle={handleToggleSpending}
-                    timelineDate={territoryDate ?? undefined}
-                  />
-                )}
-                {!energyOpen && (
-                  <EnergyPanel
-                    isOpen={false}
-                    onToggle={handleToggleEnergy}
-                    timelineDate={territoryDate ?? undefined}
-                  />
-                )}
-                {!airDefenseOpen && (
-                  <AirDefensePanel
-                    isOpen={false}
-                    onToggle={handleToggleAirDefense}
-                    timelineDate={territoryDate ?? undefined}
-                  />
-                )}
-                {!supportOpen && (
-                  <InternationalSupportPanel isOpen={false} onToggle={handleToggleSupport} />
-                )}
-                {!ukraineLossesOpen && (
-                  <UkraineLossesPanel
-                    isOpen={false}
-                    onToggle={handleToggleUkraineLosses}
-                    timelineDate={territoryDate ?? undefined}
-                  />
-                )}
-                {!sanctionsOpen && (
-                  <SanctionsPanel
-                    isOpen={false}
-                    onToggle={handleToggleSanctions}
-                    timelineDate={territoryDate ?? undefined}
-                  />
-                )}
-                {layersCollapsed && (
-                  <LayerControls
-                    layers={layers}
-                    onToggle={handleToggleLayer}
-                    collapsed={true}
-                    onExpand={() => setLayersCollapsed(false)}
-                  />
-                )}
-              </>
-            ) : undefined
-          }
         />
 
         <Footer />

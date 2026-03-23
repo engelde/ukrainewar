@@ -6,15 +6,50 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import type { WarEvent } from "@/data/events";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+import OptionsPopup from "./OptionsPopup";
+
+interface PanelToggles {
+  events?: () => void;
+  russianLosses?: () => void;
+  layers?: () => void;
+  humanitarian?: () => void;
+  spending?: () => void;
+  energy?: () => void;
+  airDefense?: () => void;
+  support?: () => void;
+  ukraineLosses?: () => void;
+  sanctions?: () => void;
+}
+
+interface PanelStates {
+  events?: boolean;
+  russianLosses?: boolean;
+  layers?: boolean;
+  humanitarian?: boolean;
+  spending?: boolean;
+  energy?: boolean;
+  airDefense?: boolean;
+  support?: boolean;
+  ukraineLosses?: boolean;
+  sanctions?: boolean;
+}
 
 interface DayTrackerProps {
   warDay?: number;
   territoryDate?: string | null;
   dates?: WarEvent[];
   onDateChange?: (date: string) => void;
+  panelToggles?: PanelToggles;
+  panelStates?: PanelStates;
 }
 
-export default function DayTracker({ warDay, territoryDate, onDateChange }: DayTrackerProps) {
+export default function DayTracker({
+  warDay,
+  territoryDate,
+  onDateChange,
+  panelToggles,
+  panelStates,
+}: DayTrackerProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   if (warDay === undefined) return null;
@@ -29,6 +64,7 @@ export default function DayTracker({ warDay, territoryDate, onDateChange }: DayT
 
   return (
     <div className="fixed top-3 right-4 z-40 sm:top-4 sm:right-6 flex items-center gap-1.5">
+      <OptionsPopup panelToggles={panelToggles} panelStates={panelStates} />
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger
           render={
