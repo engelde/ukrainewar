@@ -37,11 +37,12 @@ export const GAS_PIPELINES: GasPipeline[] = [
     id: "russia-ukraine-transit",
     name: "Russia-Ukraine Transit (Sudzha-Uzhhorod)",
     waypoints: [
-      { lat: 51.189, lng: 35.271 }, // Sudzha, Russia
-      { lat: 50.748, lng: 33.476 }, // Romny
-      { lat: 50.45, lng: 30.52 }, // Kyiv area
-      { lat: 49.55, lng: 25.59 }, // Ternopil area
-      { lat: 48.626, lng: 22.297 }, // Uzhhorod
+      { lat: 51.19, lng: 35.27 }, // Sudzha entry (Russia border)
+      { lat: 50.75, lng: 33.47 }, // Romny compressor station
+      { lat: 49.84, lng: 33.0 }, // Orzhytsia (Poltava region)
+      { lat: 49.07, lng: 27.68 }, // Bar (Vinnytsia region)
+      { lat: 48.81, lng: 24.54 }, // Bohorodchany (Ivano-Frankivsk)
+      { lat: 48.62, lng: 22.3 }, // Uzhhorod (exit to Slovakia)
     ],
     status: "shutdown",
     description:
@@ -54,8 +55,9 @@ export const GAS_PIPELINES: GasPipeline[] = [
     id: "turkstream",
     name: "TurkStream",
     waypoints: [
-      { lat: 44.891, lng: 37.316 }, // Anapa, Russia
-      { lat: 41.703, lng: 27.966 }, // Kiyikoy, Turkey
+      { lat: 44.6, lng: 37.83 }, // Russkaya compressor station (Anapa coast)
+      { lat: 43.1, lng: 33.5 }, // Mid-Black Sea waypoint
+      { lat: 41.64, lng: 28.1 }, // Kıyıköy landing (Turkey)
     ],
     status: "operational",
     description:

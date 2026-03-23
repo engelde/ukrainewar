@@ -532,7 +532,7 @@ export default function TimelineScrubber({
         >
           <div
             className="relative cursor-crosshair"
-            style={{ width: `${totalWidth}px`, height: "90px" }}
+            style={{ width: `${totalWidth}px`, height: "140px" }}
             onClick={handleTimelineClick}
           >
             {/* Daily losses waveform (background) */}
@@ -615,42 +615,33 @@ export default function TimelineScrubber({
         </div>
 
         {/* Year / month progress tracker */}
-        <div className="mx-4 mb-2 flex items-center gap-1 h-5">
+        <div className="mx-4 mb-1.5 mt-1 flex items-end h-4">
           {YEAR_MARKS.map((year) => {
-            const yearStart = dates.indexOf(`${year}0101`);
+            const yearStartIdx = year === "2022" ? 0 : dates.indexOf(`${year}0101`);
+            if (yearStartIdx < 0) return null;
             const nextYear = String(Number(year) + 1);
-            const yearEnd = dates.indexOf(`${nextYear}0101`);
-            const endIdx = yearEnd >= 0 ? yearEnd : dates.length;
-            const startIdx = year === "2022" ? 0 : yearStart;
-            if (startIdx < 0) return null;
-            const isCurrentYear = currentDate.slice(0, 4) === year;
-            const yearDays = endIdx - startIdx;
+            const nextYearIdx = dates.indexOf(`${nextYear}0101`);
+            const yearEndIdx = nextYearIdx >= 0 ? nextYearIdx : dates.length;
+            const yearDays = yearEndIdx - yearStartIdx;
+            if (yearDays <= 0) return null;
             const widthPct = (yearDays / dates.length) * 100;
+            const isCurrentYear = currentDate.slice(0, 4) === year;
+            const isPastYear = currentDate.slice(0, 4) > year;
+            const fillPct = isCurrentYear
+              ? Math.min(100, ((currentIndex - yearStartIdx) / yearDays) * 100)
+              : isPastYear
+                ? 100
+                : 0;
 
             return (
               <div
                 key={year}
-                className="relative h-full flex items-center"
+                className="relative h-full flex flex-col justify-end"
                 style={{ width: `${widthPct}%` }}
               >
-                <div
-                  className={cn(
-                    "w-full h-1.5 rounded-full overflow-hidden",
-                    isCurrentYear ? "bg-ua-blue/15" : "bg-border/15",
-                  )}
-                >
-                  {isCurrentYear && (
-                    <div
-                      className="h-full bg-ua-blue/40 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${Math.min(100, ((currentIndex - startIdx) / yearDays) * 100)}%`,
-                      }}
-                    />
-                  )}
-                </div>
                 <span
                   className={cn(
-                    "absolute -top-0.5 left-1 text-[8px] font-mono tracking-wider",
+                    "text-[8px] font-mono tracking-wider leading-none mb-0.5 pl-0.5",
                     isCurrentYear ? "text-ua-blue" : "text-muted-foreground/40",
                   )}
                 >
@@ -661,6 +652,17 @@ export default function TimelineScrubber({
                     </span>
                   )}
                 </span>
+                <div
+                  className={cn(
+                    "w-full h-1 rounded-full overflow-hidden",
+                    isCurrentYear ? "bg-ua-blue/15" : "bg-border/15",
+                  )}
+                >
+                  <div
+                    className="h-full bg-ua-blue/40 rounded-full transition-all duration-300"
+                    style={{ width: `${fillPct}%` }}
+                  />
+                </div>
               </div>
             );
           })}

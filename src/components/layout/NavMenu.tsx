@@ -12,13 +12,17 @@ import {
   TbHeartHandshake,
   TbInfoCircle,
   TbLayoutGrid,
+  TbMinus,
+  TbPlus,
   TbScale,
   TbShieldCheck,
   TbSkull,
   TbStack,
+  TbTextSize,
   TbUserMinus,
   TbX,
 } from "react-icons/tb";
+import { useFontSize } from "@/hooks/useFontSize";
 import { t } from "@/i18n";
 import { DATA_SOURCES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -103,6 +107,8 @@ function NavContent({
 }) {
   const [active, setActive] = useState<NavItem>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { fontSize, increase, decrease, reset, canIncrease, canDecrease, isDefault } =
+    useFontSize();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -174,6 +180,48 @@ function NavContent({
         <TbBrandGithub className="h-3 w-3" />
         <span>GitHub</span>
       </a>
+
+      {/* Font size controls */}
+      <div className="flex items-center gap-0 ml-1 border-l border-border/30 pl-1.5">
+        <button
+          onClick={decrease}
+          disabled={!canDecrease}
+          aria-label="Decrease font size"
+          className={cn(
+            "rounded-md p-1 transition-colors",
+            canDecrease
+              ? "text-muted-foreground/70 hover:text-muted-foreground"
+              : "text-muted-foreground/30 cursor-not-allowed",
+          )}
+        >
+          <TbMinus className="h-3 w-3" />
+        </button>
+        <button
+          onClick={reset}
+          disabled={isDefault}
+          aria-label="Reset font size"
+          title={`${fontSize}px`}
+          className={cn(
+            "rounded-md px-0.5 py-1 transition-colors",
+            !isDefault ? "text-ua-blue hover:text-ua-blue-light" : "text-muted-foreground/50",
+          )}
+        >
+          <TbTextSize className="h-3 w-3" />
+        </button>
+        <button
+          onClick={increase}
+          disabled={!canIncrease}
+          aria-label="Increase font size"
+          className={cn(
+            "rounded-md p-1 transition-colors",
+            canIncrease
+              ? "text-muted-foreground/70 hover:text-muted-foreground"
+              : "text-muted-foreground/30 cursor-not-allowed",
+          )}
+        >
+          <TbPlus className="h-3 w-3" />
+        </button>
+      </div>
 
       {/* Dropdown panels */}
       {active && (
@@ -346,6 +394,8 @@ function MobileSidebar({
   panelStates?: PanelStates;
 }) {
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { fontSize, increase, decrease, reset, canIncrease, canDecrease, isDefault } =
+    useFontSize();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -493,6 +543,53 @@ function MobileSidebar({
             <TbBrandGithub className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-wider">GitHub</span>
           </a>
+
+          {/* Font size control */}
+          <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border/20">
+            <TbTextSize className="h-4 w-4 text-muted-foreground/70" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+              Text
+            </span>
+            <div className="flex items-center gap-1 ml-auto">
+              <button
+                onClick={decrease}
+                disabled={!canDecrease}
+                aria-label="Decrease font size"
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  canDecrease
+                    ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/30"
+                    : "text-muted-foreground/30 cursor-not-allowed",
+                )}
+              >
+                <TbMinus className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={reset}
+                disabled={isDefault}
+                aria-label="Reset font size"
+                className={cn(
+                  "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center",
+                  !isDefault ? "text-ua-blue hover:bg-ua-blue/10" : "text-muted-foreground/50",
+                )}
+              >
+                {fontSize}px
+              </button>
+              <button
+                onClick={increase}
+                disabled={!canIncrease}
+                aria-label="Increase font size"
+                className={cn(
+                  "rounded-md p-1.5 transition-colors",
+                  canIncrease
+                    ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/30"
+                    : "text-muted-foreground/30 cursor-not-allowed",
+                )}
+              >
+                <TbPlus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -224,8 +224,10 @@ export default function EventSidebar({
   onClose,
 }: EventSidebarProps) {
   const activeRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeFilters, setActiveFilters] = useState<Set<EventCategory>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredEvents = useMemo(() => {
@@ -257,14 +259,13 @@ export default function EventSidebar({
     return closest;
   }, [currentDate, filteredEvents]);
 
-  // Track which year is currently visible
+  // Track which year is currently visible via IntersectionObserver
   const [visibleYear, setVisibleYear] = useState<string>(
     currentDate ? currentDate.slice(0, 4) : years[years.length - 1] || "2022",
   );
   const yearRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Observe which year group is in view
   useEffect(() => {
     const container = contentRef.current;
     if (!container) return;
@@ -297,7 +298,6 @@ export default function EventSidebar({
     }
   }, []);
 
-  // Quarter helpers
   const getQuarter = (dateStr: string): string => {
     const month = parseInt(dateStr.slice(4, 6), 10);
     return `Q${Math.ceil(month / 3)}`;
@@ -321,6 +321,12 @@ export default function EventSidebar({
       activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [activeEventDate]);
+
+  useEffect(() => {
+    if (showSearch) {
+      requestAnimationFrame(() => searchInputRef.current?.focus());
+    }
+  }, [showSearch]);
 
   const handleEventClick = useCallback(
     (date: string) => {
@@ -353,6 +359,22 @@ export default function EventSidebar({
             <span className="text-xs text-muted-foreground">({filteredEvents.length})</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setShowSearch((p) => !p);
+                if (showSearch) setSearchQuery("");
+              }}
+              aria-label="Search events"
+              className={cn(
+                "rounded-md p-1.5 transition-colors",
+                showSearch
+                  ? "text-ua-blue bg-ua-blue/10"
+                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent",
+              )}
+              title="Search events"
+            >
+              <TbSearch className="h-4 w-4" />
+            </button>
             <button
               onClick={() => setShowFilters((p) => !p)}
               aria-label="Filter events by type"
@@ -411,51 +433,56 @@ export default function EventSidebar({
         )}
       </SidebarHeader>
 
-      {/* Search input */}
-      <div className="px-3 py-2 border-b border-sidebar-border">
-        <div className="relative">
-          <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t("events.searchPlaceholder")}
-            aria-label="Search events"
-            className="w-full rounded-md bg-sidebar-accent/50 border border-sidebar-border/50 pl-8 pr-8 py-1.5 text-xs text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ua-blue/50"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-sidebar-foreground"
-            >
-              <TbX className="h-3.5 w-3.5" />
-            </button>
-          )}
+      {/* Collapsible search input */}
+      {showSearch && (
+        <div className="px-3 py-2 border-b border-sidebar-border">
+          <div className="relative">
+            <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("events.searchPlaceholder")}
+              aria-label="Search events"
+              className="w-full rounded-md bg-sidebar-accent/50 border border-sidebar-border/50 pl-8 pr-8 py-1.5 text-xs text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ua-blue/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-sidebar-foreground"
+              >
+                <TbX className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Year / Quarter navigation */}
-      <div className="sticky top-0 z-10 bg-sidebar/95 backdrop-blur-sm border-b border-sidebar-border px-3 py-1.5">
-        <div className="flex items-center gap-1">
+      {/* Main content area with vertical year nav rail */}
+      <div className="flex-1 flex min-h-0">
+        {/* Vertical year navigation rail */}
+        <div className="flex flex-col items-center py-2 px-1 border-r border-sidebar-border/50 bg-sidebar/50 shrink-0">
           {years.map((year) => {
             const isActiveYear = year === visibleYear;
             const quarters = quarterGroups[year] ? Object.keys(quarterGroups[year]).sort() : [];
             return (
-              <div key={year} className="flex items-center gap-0.5">
+              <div key={year} className="flex flex-col items-center">
                 <button
                   onClick={() => scrollToYear(year)}
                   className={cn(
-                    "px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider transition-colors",
+                    "px-1 py-1 rounded text-[10px] font-bold tracking-wider transition-colors writing-mode-vertical",
                     isActiveYear
                       ? "text-ua-yellow bg-ua-yellow/10"
-                      : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-sidebar-accent",
+                      : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-sidebar-accent/50",
                   )}
+                  style={{ writingMode: "vertical-lr", textOrientation: "mixed" }}
                 >
                   {year}
                 </button>
                 {isActiveYear && quarters.length > 1 && (
-                  <div className="flex gap-0.5">
+                  <div className="flex flex-col items-center gap-0.5 my-0.5">
                     {quarters.map((q) => {
                       const qEvents = quarterGroups[year]?.[q] ?? [];
                       const qStart = qEvents[0]?.date;
@@ -471,7 +498,7 @@ export default function EventSidebar({
                             }
                           }}
                           className={cn(
-                            "px-1 py-0.5 rounded text-[9px] font-mono transition-colors",
+                            "px-0.5 py-0.5 rounded text-[8px] font-mono transition-colors",
                             hasActive
                               ? "text-ua-blue bg-ua-blue/10"
                               : "text-muted-foreground/40 hover:text-muted-foreground/70",
@@ -484,88 +511,94 @@ export default function EventSidebar({
                   </div>
                 )}
                 {year !== years[years.length - 1] && (
-                  <span className="text-border/30 text-[8px] mx-0.5">|</span>
+                  <div className="w-px h-2 bg-border/20 my-0.5" />
                 )}
               </div>
             );
           })}
         </div>
-      </div>
 
-      <SidebarContent ref={contentRef} className="scrollbar-thin scrollbar-thumb-border/30">
-        {years.map((year) => (
-          <SidebarGroup
-            key={year}
-            ref={(el: HTMLDivElement | null) => {
-              yearRefs.current[year] = el;
-            }}
-            data-year={year}
-          >
-            <SidebarGroupLabel className="text-xs font-bold tracking-widest uppercase text-ua-blue-light">
-              {year}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {yearGroups[year].map((event) => {
-                  const isActive = event.date === activeEventDate;
-                  const isFuture = currentDate ? event.date > currentDate : false;
+        {/* Scrollable event list */}
+        <SidebarContent
+          ref={contentRef}
+          className="scrollbar-thin scrollbar-thumb-border/30 flex-1"
+        >
+          {years.map((year) => (
+            <SidebarGroup
+              key={year}
+              ref={(el: HTMLDivElement | null) => {
+                yearRefs.current[year] = el;
+              }}
+              data-year={year}
+            >
+              <SidebarGroupLabel className="text-xs font-bold tracking-widest uppercase text-ua-blue-light">
+                {year}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {yearGroups[year].map((event) => {
+                    const isActive = event.date === activeEventDate;
+                    const isFuture = currentDate ? event.date > currentDate : false;
 
-                  return (
-                    <SidebarMenuItem
-                      key={`${event.date}-${event.label}`}
-                      data-event-date={event.date}
-                    >
-                      <SidebarMenuButton
-                        ref={isActive ? activeRef : undefined}
-                        onClick={() => handleEventClick(event.date)}
-                        isActive={isActive}
-                        className={cn("h-auto py-2 px-2", isFuture && "opacity-40")}
+                    return (
+                      <SidebarMenuItem
+                        key={`${event.date}-${event.label}`}
+                        data-event-date={event.date}
                       >
-                        <div className="flex items-start gap-2.5 w-full">
-                          <div
-                            className={cn(
-                              "mt-0.5 flex-shrink-0 rounded-md p-1",
-                              isActive ? "bg-sidebar-primary/20" : "bg-sidebar-accent",
-                            )}
-                          >
-                            {getEventIcon(event.label)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  "text-xs font-mono tabular-nums",
-                                  isActive ? "text-ua-yellow" : "text-muted-foreground",
-                                )}
-                              >
-                                {formatEventDate(event.date)}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground/60 font-mono">
-                                D{getWarDay(event.date)}
-                              </span>
-                            </div>
+                        <SidebarMenuButton
+                          ref={isActive ? activeRef : undefined}
+                          onClick={() => handleEventClick(event.date)}
+                          isActive={isActive}
+                          className={cn("h-auto py-2 px-2", isFuture && "opacity-40")}
+                        >
+                          <div className="flex items-start gap-2.5 w-full">
                             <div
                               className={cn(
-                                "text-sm font-semibold mt-0.5 whitespace-normal",
-                                isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/80",
+                                "mt-0.5 flex-shrink-0 rounded-md p-1",
+                                isActive ? "bg-sidebar-primary/20" : "bg-sidebar-accent",
                               )}
                             >
-                              {event.label}
+                              {getEventIcon(event.label)}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed whitespace-normal">
-                              {event.description}
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={cn(
+                                    "text-xs font-mono tabular-nums",
+                                    isActive ? "text-ua-yellow" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {formatEventDate(event.date)}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/60 font-mono">
+                                  D{getWarDay(event.date)}
+                                </span>
+                              </div>
+                              <div
+                                className={cn(
+                                  "text-sm font-semibold mt-0.5 whitespace-normal",
+                                  isActive
+                                    ? "text-sidebar-foreground"
+                                    : "text-sidebar-foreground/80",
+                                )}
+                              >
+                                {event.label}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed whitespace-normal">
+                                {event.description}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </SidebarContent>
+      </div>
 
       <SidebarFooter className="border-t border-sidebar-border">
         <p className="text-[10px] text-muted-foreground text-center py-1">
