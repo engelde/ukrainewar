@@ -119,6 +119,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Expand air defense panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -151,6 +152,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Close air defense panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3.5 w-3.5" />

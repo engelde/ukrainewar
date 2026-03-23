@@ -202,6 +202,7 @@ function NavContent({
                 setActive(null);
                 onItemClick?.();
               }}
+              aria-label="Close dropdown"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <TbX className="h-3.5 w-3.5" />
@@ -365,6 +366,7 @@ function MobileSidebar({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close navigation menu"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <TbX className="h-4 w-4" />
@@ -379,6 +381,7 @@ function MobileSidebar({
                 onToggleEvents();
                 onClose();
               }}
+              aria-label="Toggle events sidebar"
               className={cn(
                 "flex items-center gap-2 w-full px-4 py-2.5 transition-colors border-b border-border/20",
                 eventsOpen
@@ -408,6 +411,7 @@ function MobileSidebar({
                     panelToggles?.[key]?.();
                     onClose();
                   }}
+                  aria-label={`Toggle ${label} panel`}
                   className={cn(
                     "flex items-center gap-2 w-full rounded-md px-2 py-1.5 transition-colors",
                     panelStates?.[key]

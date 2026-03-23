@@ -10,6 +10,7 @@ import {
   TbShieldCheckered,
 } from "react-icons/tb";
 import { AnimatedCounter } from "@/components/stats/AnimatedCounter";
+import { PanelSkeleton } from "@/components/ui/PanelSkeleton";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +136,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
         </div>
         <button
           onClick={onToggle}
+          aria-label="Expand spending panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -166,6 +168,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
         </div>
         <button
           onClick={onToggle}
+          aria-label="Close spending panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3.5 w-3.5" />
@@ -173,11 +176,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
       </div>
 
       {loading || !data ? (
-        <div className="p-3 text-center">
-          <div className="text-[10px] text-muted-foreground animate-pulse">
-            {t("spending.loadingAidData")}
-          </div>
-        </div>
+        <PanelSkeleton rows={3} />
       ) : (
         <div className="p-2.5 space-y-2.5">
           {/* Total Aid */}

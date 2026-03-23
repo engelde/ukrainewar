@@ -249,6 +249,42 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUkraineLossesOpen((prev) => !prev);
   }, []);
 
+  // Global Escape key handler — closes the topmost open panel
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      // Close in reverse priority order: detail panel → draggable panels → sidebar
+      if (selectedMarker) {
+        setSelectedMarker(null);
+      } else if (ukraineLossesOpen) {
+        setUkraineLossesOpen(false);
+      } else if (supportOpen) {
+        setSupportOpen(false);
+      } else if (airDefenseOpen) {
+        setAirDefenseOpen(false);
+      } else if (energyOpen) {
+        setEnergyOpen(false);
+      } else if (spendingOpen) {
+        setSpendingOpen(false);
+      } else if (humanitarianOpen) {
+        setHumanitarianOpen(false);
+      } else if (sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [
+    selectedMarker,
+    ukraineLossesOpen,
+    supportOpen,
+    airDefenseOpen,
+    energyOpen,
+    spendingOpen,
+    humanitarianOpen,
+    sidebarOpen,
+  ]);
+
   const handleMapMoveEnd = useCallback(
     (center: [number, number], zoom: number) => {
       // Skip URL updates during reset flyTo animation

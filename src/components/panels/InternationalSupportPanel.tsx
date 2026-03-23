@@ -186,6 +186,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Expand international support panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -218,6 +219,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Close international support panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbX className="h-3.5 w-3.5" />

@@ -10,6 +10,7 @@ import {
   TbUsers,
   TbWorld,
 } from "react-icons/tb";
+import { PanelSkeleton } from "@/components/ui/PanelSkeleton";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
@@ -245,6 +246,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
         </div>
         <button
           onClick={onToggle}
+          aria-label="Expand humanitarian panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -276,6 +278,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
         </div>
         <button
           onClick={onToggle}
+          aria-label="Close humanitarian panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3.5 w-3.5" />
@@ -283,19 +286,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
       </div>
 
       {/* Loading skeleton */}
-      {loading && (
-        <div className="px-3 py-3 space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-2 animate-pulse">
-              <div className="h-3.5 w-3.5 rounded bg-border/30" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-24 rounded bg-border/30" />
-                <div className="h-4 w-16 rounded bg-border/20" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <PanelSkeleton rows={4} />}
 
       {/* Refugees Section */}
       <div className={cn("border-b border-border/20", loading && "hidden")}>

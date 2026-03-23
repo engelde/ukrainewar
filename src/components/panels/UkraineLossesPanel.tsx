@@ -154,6 +154,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Expand Ukrainian losses panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -186,6 +187,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Close Ukrainian losses panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbX className="h-3.5 w-3.5" />

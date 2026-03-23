@@ -10,6 +10,7 @@ import {
   TbFlame,
   TbSun,
 } from "react-icons/tb";
+import { PanelError, PanelSkeleton } from "@/components/ui/PanelSkeleton";
 import { cn } from "@/lib/utils";
 
 interface EnergyPlant {
@@ -156,6 +157,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Expand energy panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -190,6 +192,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
         <button
           type="button"
           onClick={onToggle}
+          aria-label="Close energy panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3.5 w-3.5" />
@@ -197,19 +200,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       </div>
 
       {/* Loading */}
-      {loading && (
-        <div className="px-3 py-3 space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-2 animate-pulse">
-              <div className="h-3.5 w-3.5 rounded bg-border/30" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-24 rounded bg-border/30" />
-                <div className="h-4 w-16 rounded bg-border/20" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <PanelSkeleton rows={3} />}
 
       {!loading && data && (
         <div className="p-2.5 space-y-2.5">
@@ -351,11 +342,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       )}
 
       {/* No data state */}
-      {!loading && !data && (
-        <div className="p-3 text-center">
-          <div className="text-[10px] text-muted-foreground">Energy data unavailable</div>
-        </div>
-      )}
+      {!loading && !data && <PanelError message="Energy data unavailable" />}
 
       {/* Source footer */}
       {data && (

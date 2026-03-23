@@ -297,6 +297,7 @@ export default function EventSidebar({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowFilters((p) => !p)}
+              aria-label="Filter events by type"
               className={cn(
                 "rounded-md p-1.5 transition-colors",
                 showFilters || activeFilters.size > 0
@@ -310,6 +311,7 @@ export default function EventSidebar({
             {onClose && (
               <button
                 onClick={onClose}
+                aria-label="Close events sidebar"
                 className="rounded-md p-1.5 text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
                 title={t("events.closeSidebar")}
               >
@@ -360,11 +362,13 @@ export default function EventSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t("events.searchPlaceholder")}
+            aria-label="Search events"
             className="w-full rounded-md bg-sidebar-accent/50 border border-sidebar-border/50 pl-8 pr-8 py-1.5 text-xs text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ua-blue/50"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-sidebar-foreground"
             >
               <TbX className="h-3.5 w-3.5" />

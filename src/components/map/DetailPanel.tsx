@@ -93,6 +93,7 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
         </div>
         <button
           onClick={onClose}
+          aria-label="Close detail panel"
           className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
         >
           <TbX className="h-4 w-4" />

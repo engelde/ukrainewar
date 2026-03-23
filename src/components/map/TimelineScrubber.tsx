@@ -553,6 +553,7 @@ export default function TimelineScrubber({
             </div>
             <button
               onClick={() => setDismissedEventDate(activeEvent.date)}
+              aria-label="Dismiss event info"
               className="flex-shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
               title="Dismiss"
             >
@@ -625,6 +626,7 @@ export default function TimelineScrubber({
           <div className="flex items-center gap-0.5">
             <button
               onClick={jumpToStart}
+              aria-label="Jump to start"
               className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
               title={t("timeline.jumpToStart")}
             >
@@ -638,6 +640,7 @@ export default function TimelineScrubber({
               onMouseUp={handleStepUp}
               onMouseLeave={handleStepUp}
               disabled={currentIndex <= 0}
+              aria-label="Step back one day"
               className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
             >
               <TbChevronLeft className="h-5 w-5" />
@@ -645,6 +648,7 @@ export default function TimelineScrubber({
             <div className="relative">
               <button
                 onClick={togglePlay}
+                aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
                 className={cn(
                   "relative z-10 flex h-10 w-10 items-center justify-center rounded-md transition-colors",
                   isPlaying
@@ -670,12 +674,14 @@ export default function TimelineScrubber({
               onMouseUp={handleStepUp}
               onMouseLeave={handleStepUp}
               disabled={currentIndex >= dates.length - 1}
+              aria-label="Step forward one day"
               className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
             >
               <TbChevronRight className="h-5 w-5" />
             </button>
             <button
               onClick={jumpToEnd}
+              aria-label="Jump to today"
               className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
               title={t("timeline.jumpToToday")}
             >
@@ -686,6 +692,7 @@ export default function TimelineScrubber({
           {/* Speed control */}
           <button
             onClick={cycleSpeed}
+            aria-label={`Playback speed: ${SPEED_OPTIONS[speedIndex].label}`}
             className={cn(
               "flex h-9 items-center justify-center rounded-md px-2.5 transition-colors",
               "text-xs font-mono font-semibold",
@@ -725,6 +732,7 @@ export default function TimelineScrubber({
             <button
               onClick={onToggleEvents}
               title={t("timeline.toggleEvents")}
+              aria-label="Toggle events sidebar"
               className={cn(
                 "flex h-7 items-center gap-1 rounded-md px-2.5 transition-colors",
                 "text-[10px] font-semibold uppercase tracking-wider",
@@ -742,6 +750,7 @@ export default function TimelineScrubber({
           {isHistorical && onReset && (
             <button
               onClick={onReset}
+              aria-label="Reset view"
               className={cn(
                 "flex h-7 items-center gap-1.5 rounded-md px-2.5 transition-colors",
                 "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",

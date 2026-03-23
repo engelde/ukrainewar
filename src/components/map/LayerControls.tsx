@@ -92,6 +92,7 @@ export default function LayerControls({
         </div>
         <button
           onClick={onExpand}
+          aria-label="Expand layer controls"
           className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -119,6 +120,7 @@ export default function LayerControls({
         </div>
         <button
           onClick={onCollapse}
+          aria-label="Collapse layer controls"
           className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <TbChevronDown className="h-3 w-3" />
@@ -129,6 +131,7 @@ export default function LayerControls({
           <button
             key={layer.key}
             onClick={() => onToggle(layer.key)}
+            aria-label={`Toggle ${t(layer.labelKey)} layer`}
             className={cn(
               "flex items-center gap-2 px-3 py-2",
               "border-b border-border/20",

@@ -296,6 +296,27 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 The application is deployed to [Cloudflare Workers](https://workers.cloudflare.com) using [OpenNextJS Cloudflare](https://opennext.js.org/cloudflare).
 
+### Cloudflare KV Setup
+
+Create a KV namespace for the persistent cache layer:
+
+```bash
+wrangler kv:namespace create "CACHE"
+```
+
+Copy the returned namespace ID and update `wrangler.jsonc`:
+
+```jsonc
+"kv_namespaces": [
+  {
+    "binding": "CACHE",
+    "id": "<your-kv-namespace-id>"
+  }
+]
+```
+
+### Deploy
+
 ```bash
 npm run build:worker
 npm run deploy

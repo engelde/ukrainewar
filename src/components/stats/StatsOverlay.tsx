@@ -211,6 +211,7 @@ export default function StatsOverlay({
           </div>
           <button
             onClick={onExpand}
+            aria-label="Expand stats panel"
             className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <TbChevronDown className="h-3 w-3 rotate-180" />
@@ -242,6 +243,7 @@ export default function StatsOverlay({
             </div>
             <button
               onClick={onCollapse}
+              aria-label="Collapse stats panel"
               className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <TbChevronDown className="h-3 w-3" />
