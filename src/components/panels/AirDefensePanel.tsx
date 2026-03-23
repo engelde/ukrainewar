@@ -10,6 +10,7 @@ import {
   TbUrgent,
 } from "react-icons/tb";
 import { ATTACK_STATS, MISSILE_ATTACKS, type MissileAttack } from "@/data/missile-attacks";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface AirDefensePanelProps {
@@ -113,7 +114,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbShieldChevron className="h-3.5 w-3.5 text-capture" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
-            Air Defense
+            {t("airDefense.title")}
           </span>
         </div>
         <button
@@ -146,7 +147,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
           <TbShieldChevron className="h-3.5 w-3.5 text-capture" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
-            Air Defense
+            {t("airDefense.title")}
           </span>
         </div>
         <button
@@ -164,19 +165,19 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         <div className="grid grid-cols-2 gap-1.5">
           <StatCard
             icon={<TbRocket className="h-3 w-3 text-destruction" />}
-            label="Missiles"
+            label={t("airDefense.missilesLaunched")}
             value={formatNumber(stats.totalMissilesLaunched)}
             sub={`${missileRate}% intercepted`}
           />
           <StatCard
             icon={<TbDrone className="h-3 w-3 text-orange-400" />}
-            label="Drones"
+            label={t("airDefense.dronesLaunched")}
             value={formatNumber(stats.totalDronesLaunched)}
             sub={`${droneRate}% intercepted`}
           />
           <StatCard
             icon={<TbUrgent className="h-3 w-3 text-red-400" />}
-            label="Massive attacks"
+            label={t("airDefense.majorAttacks")}
             value={String(stats.totalMassiveAttacks)}
             sub="50+ projectiles"
           />
@@ -191,7 +192,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         {/* Interception rate bars */}
         <div className="space-y-1.5 pt-1 border-t border-white/5">
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
-            Interception rates
+            {t("airDefense.interceptionRate")}
           </div>
           <InterceptionBar
             label="Missiles"
@@ -209,7 +210,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         {recentAttacks.length > 0 && (
           <div className="space-y-1 pt-1 border-t border-white/5">
             <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
-              {timelineDate ? "Attacks near date" : "Recent attacks"}
+              {timelineDate ? "Attacks near date" : t("airDefense.recentAttacks")}
             </div>
             <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-border/30">
               {recentAttacks.map((attack) => (
@@ -222,7 +223,9 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
 
       {/* Source footer */}
       <div className="px-3 py-1.5 border-t border-white/10">
-        <div className="text-[8px] text-muted-foreground/50">Source: Ukrainian Air Force</div>
+        <div className="text-[8px] text-muted-foreground/50">
+          {t("common.source")}: {t("airDefense.source")}
+        </div>
       </div>
     </div>
   );

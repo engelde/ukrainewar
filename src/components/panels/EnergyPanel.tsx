@@ -11,6 +11,7 @@ import {
   TbSun,
 } from "react-icons/tb";
 import { PanelError, PanelSkeleton } from "@/components/ui/PanelSkeleton";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface EnergyPlant {
@@ -151,7 +152,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbBolt className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Energy
+            {t("energy.title")}
           </span>
         </div>
         <button
@@ -186,7 +187,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
         <div className="flex items-center gap-1.5">
           <TbBolt className="h-3.5 w-3.5 text-ua-yellow" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-yellow">
-            Energy Infrastructure
+            {t("energy.title")}
           </span>
         </div>
         <button
@@ -223,7 +224,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
           <div className="space-y-1.5 pb-2 border-b border-border/20">
             <div className="flex justify-between items-baseline px-1">
               <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-                Generation capacity
+                {t("energy.capacity")}
               </span>
               <span className="text-[10px] font-mono text-foreground/80 tabular-nums">
                 {formatGW(data.totalCapacity)}
@@ -241,7 +242,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
                 <div
                   className="bg-[#E53E3E]/60 transition-all duration-700"
                   style={{ width: `${damagedPct}%` }}
-                  title={`Damaged/Destroyed: ${formatGW(data.damagedCapacity)}`}
+                  title={`${t("energy.damaged")}: ${formatGW(data.damagedCapacity)}`}
                 />
               </div>
             </div>
@@ -342,7 +343,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       )}
 
       {/* No data state */}
-      {!loading && !data && <PanelError message="Energy data unavailable" />}
+      {!loading && !data && <PanelError message={t("energy.unavailable")} />}
 
       {/* Source footer */}
       {data && (

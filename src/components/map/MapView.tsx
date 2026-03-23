@@ -7,6 +7,7 @@ import type { Battle } from "@/data/battles";
 import type { BelarusBase } from "@/data/belarus-bases";
 import type { GasPipeline, GasStation, PowerPlant } from "@/data/energy-assets";
 import type { Bridge, Dam, Port } from "@/data/infrastructure";
+import { getAttackLocations, MISSILE_ATTACKS } from "@/data/missile-attacks";
 import type { NATOBase } from "@/data/nato-bases";
 import type { NuclearPlant } from "@/data/nuclear-plants";
 import type { MilitaryOperation } from "@/data/operations";
@@ -18,7 +19,20 @@ import ukraineOblasts from "@/data/ukraine-oblasts.json";
 import { t } from "@/i18n";
 import { MAP_CENTER, MAP_STYLE, MAP_ZOOM } from "@/lib/constants";
 import type { EquipmentMarker, MapLayers } from "@/lib/types";
-import { formatDateRange, formatISODate } from "@/lib/utils";
+import { formatDateDisplay, formatISODate } from "@/lib/utils";
+import {
+  battleGeoJSON,
+  findFirstSymbolLayer,
+  monthIndex,
+  operationArrowheadsGeoJSON,
+  operationsGeoJSON,
+} from "./mapGeoJSON";
+import {
+  loadEquipmentIcons,
+  loadInfrastructureIcons,
+  normalizeEquipmentCategory,
+  STATUS_COLORS,
+} from "./mapIcons";
 
 interface AcledOblastMonthly {
   month: string;
@@ -41,546 +55,6 @@ interface AcledRegionalData {
   yearlyTotals: { year: number; events: number; fatalities: number }[];
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  destroyed: "#e53e3e",
-  damaged: "#ed8936",
-  captured: "#48bb78",
-  abandoned: "#9f7aea",
-};
-
-function normalizeEquipmentCategory(type: string): string {
-  const t = type.toLowerCase();
-  if (t.includes("tank")) return "tank";
-  if (t.includes("ifv") || t.includes("apc") || t.includes("mrap") || t.includes("imv"))
-    return "ifv";
-  if (t.includes("artillery") || t.includes("howitzer") || t.includes("mortar")) return "artillery";
-  if (t.includes("mlrs") || t.includes("rocket")) return "mlrs";
-  if (t.includes("uav") || t.includes("drone") || t.includes("uas")) return "uav";
-  if (t.includes("air defense") || t.includes("anti-air") || t.includes("sam")) return "aa";
-  if (t.includes("jet") || t.includes("aircraft") || t.includes("fighter") || t.includes("bomber"))
-    return "jet";
-  if (t.includes("helicopter") || t.includes("heli")) return "heli";
-  if (t.includes("ship") || t.includes("boat") || t.includes("vessel")) return "ship";
-  if (
-    t.includes("truck") ||
-    t.includes("vehicle") ||
-    t.includes("car") ||
-    t.includes("engineering") ||
-    t.includes("logistics")
-  )
-    return "vehicle";
-  return "other";
-}
-
-const CATEGORY_SYMBOLS: Record<string, string> = {
-  tank: "T",
-  ifv: "I",
-  artillery: "A",
-  mlrs: "R",
-  uav: "D",
-  aa: "S",
-  jet: "J",
-  heli: "H",
-  ship: "N",
-  vehicle: "V",
-  other: "•",
-};
-
-function createEquipmentIcon(
-  symbol: string,
-  statusColor: string,
-  size: number,
-): { width: number; height: number; data: Uint8ClampedArray } {
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-
-  // Outer dark border
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.fill();
-
-  // Inner colored circle
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, size / 2 - 3, 0, Math.PI * 2);
-  ctx.fillStyle = statusColor;
-  ctx.fill();
-
-  // Category letter
-  ctx.fillStyle = "#fff";
-  ctx.font = `bold ${Math.round(size * 0.42)}px sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(symbol, size / 2, size / 2 + 1);
-
-  const imgData = ctx.getImageData(0, 0, size, size);
-  return { width: size, height: size, data: imgData.data };
-}
-
-function loadEquipmentIcons(mapInstance: maplibregl.Map) {
-  const statuses = Object.entries(STATUS_COLORS);
-  const categories = Object.entries(CATEGORY_SYMBOLS);
-  for (const [status, color] of statuses) {
-    for (const [cat, symbol] of categories) {
-      const id = `equip-${cat}-${status}`;
-      if (!mapInstance.hasImage(id)) {
-        mapInstance.addImage(id, createEquipmentIcon(symbol, color, 24));
-      }
-    }
-  }
-}
-
-// ── Infrastructure & Base Icon Drawing ──
-
-type InfraCategory =
-  | "nuclear"
-  | "dam"
-  | "bridge"
-  | "port"
-  | "power-plant"
-  | "gas-station"
-  | "nato-base"
-  | "belarus-base"
-  | "ukraine-base"
-  | "russia-base";
-
-function drawNuclearSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.save();
-  const bladeR = r * 0.85;
-  const innerR = r * 0.22;
-  const gapAngle = Math.PI / 12;
-  for (let i = 0; i < 3; i++) {
-    const baseAngle = (i * 2 * Math.PI) / 3 - Math.PI / 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, bladeR, baseAngle + gapAngle, baseAngle + (2 * Math.PI) / 3 - gapAngle);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.beginPath();
-  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalCompositeOperation = "source-over";
-  ctx.beginPath();
-  ctx.arc(cx, cy, innerR * 0.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawWaveSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const amp = r * 0.35;
-  const waveW = r * 1.6;
-  const startX = cx - waveW / 2;
-  for (let row = -1; row <= 1; row++) {
-    const yOff = cy + row * amp * 1.1;
-    ctx.beginPath();
-    ctx.moveTo(startX, yOff);
-    for (let x = 0; x <= waveW; x += 1) {
-      const t = x / waveW;
-      ctx.lineTo(startX + x, yOff + Math.sin(t * Math.PI * 3) * amp * 0.4);
-    }
-    ctx.lineWidth = r * 0.2;
-    ctx.stroke();
-  }
-}
-
-function drawBridgeSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const w = r * 1.4;
-  const h = r * 0.9;
-  ctx.beginPath();
-  ctx.moveTo(cx - w / 2, cy + h * 0.3);
-  ctx.quadraticCurveTo(cx, cy - h * 0.8, cx + w / 2, cy + h * 0.3);
-  ctx.lineWidth = r * 0.22;
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx - w / 2, cy + h * 0.3);
-  ctx.lineTo(cx + w / 2, cy + h * 0.3);
-  ctx.lineWidth = r * 0.18;
-  ctx.stroke();
-  // pillars
-  ctx.lineWidth = r * 0.14;
-  ctx.beginPath();
-  ctx.moveTo(cx - w * 0.25, cy - h * 0.05);
-  ctx.lineTo(cx - w * 0.25, cy + h * 0.3);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx + w * 0.25, cy - h * 0.05);
-  ctx.lineTo(cx + w * 0.25, cy + h * 0.3);
-  ctx.stroke();
-}
-
-function drawAnchorSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const topR = r * 0.22;
-  ctx.lineWidth = r * 0.18;
-  // ring at top
-  ctx.beginPath();
-  ctx.arc(cx, cy - r * 0.5, topR, 0, Math.PI * 2);
-  ctx.stroke();
-  // vertical shaft
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - r * 0.5 + topR);
-  ctx.lineTo(cx, cy + r * 0.55);
-  ctx.stroke();
-  // horizontal crossbar
-  ctx.beginPath();
-  ctx.moveTo(cx - r * 0.4, cy - r * 0.08);
-  ctx.lineTo(cx + r * 0.4, cy - r * 0.08);
-  ctx.stroke();
-  // curved arms
-  ctx.beginPath();
-  ctx.moveTo(cx - r * 0.65, cy + r * 0.15);
-  ctx.quadraticCurveTo(cx - r * 0.6, cy + r * 0.6, cx, cy + r * 0.55);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cx + r * 0.65, cy + r * 0.15);
-  ctx.quadraticCurveTo(cx + r * 0.6, cy + r * 0.6, cx, cy + r * 0.55);
-  ctx.stroke();
-}
-
-function drawLightningSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(cx + r * 0.05, cy - r * 0.8);
-  ctx.lineTo(cx - r * 0.3, cy + r * 0.05);
-  ctx.lineTo(cx + r * 0.05, cy - r * 0.05);
-  ctx.lineTo(cx - r * 0.05, cy + r * 0.8);
-  ctx.lineTo(cx + r * 0.3, cy - r * 0.05);
-  ctx.lineTo(cx - r * 0.05, cy + r * 0.05);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawFlameSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(cx, cy + r * 0.7);
-  ctx.bezierCurveTo(cx - r * 0.6, cy + r * 0.3, cx - r * 0.55, cy - r * 0.3, cx, cy - r * 0.8);
-  ctx.bezierCurveTo(cx + r * 0.55, cy - r * 0.3, cx + r * 0.6, cy + r * 0.3, cx, cy + r * 0.7);
-  ctx.fill();
-  // inner lighter flame
-  ctx.save();
-  ctx.globalAlpha = 0.5;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy + r * 0.5);
-  ctx.bezierCurveTo(cx - r * 0.25, cy + r * 0.2, cx - r * 0.25, cy - r * 0.1, cx, cy - r * 0.35);
-  ctx.bezierCurveTo(cx + r * 0.25, cy - r * 0.1, cx + r * 0.25, cy + r * 0.2, cx, cy + r * 0.5);
-  ctx.fillStyle = "#fff";
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawNATOStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const outerR = r * 0.85;
-  const innerR = r * 0.3;
-  ctx.beginPath();
-  for (let i = 0; i < 4; i++) {
-    const angle = (i * Math.PI) / 2 - Math.PI / 2;
-    const midAngle = angle + Math.PI / 4;
-    ctx.lineTo(cx + Math.cos(angle) * outerR, cy + Math.sin(angle) * outerR);
-    ctx.lineTo(cx + Math.cos(midAngle) * innerR, cy + Math.sin(midAngle) * innerR);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawMilitaryStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const outerR = r * 0.85;
-  const innerR = r * 0.35;
-  ctx.beginPath();
-  for (let i = 0; i < 5; i++) {
-    const outerAngle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-    const innerAngle = outerAngle + Math.PI / 5;
-    ctx.lineTo(cx + Math.cos(outerAngle) * outerR, cy + Math.sin(outerAngle) * outerR);
-    ctx.lineTo(cx + Math.cos(innerAngle) * innerR, cy + Math.sin(innerAngle) * innerR);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawShieldSymbol(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const w = r * 0.75;
-  const h = r * 1.0;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - h);
-  ctx.lineTo(cx + w, cy - h * 0.5);
-  ctx.lineTo(cx + w, cy + h * 0.1);
-  ctx.quadraticCurveTo(cx, cy + h, cx, cy + h);
-  ctx.quadraticCurveTo(cx, cy + h, cx - w, cy + h * 0.1);
-  ctx.lineTo(cx - w, cy - h * 0.5);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function createMapIcon(
-  category: InfraCategory,
-  color: string,
-  size: number,
-): { width: number; height: number; data: Uint8ClampedArray } {
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const cx = size / 2;
-  const cy = size / 2;
-  const symbolR = size * 0.3;
-
-  // Dark background circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, size / 2 - 1, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(0,0,0,0.7)";
-  ctx.fill();
-
-  // Inner colored circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, size / 2 - 3, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-
-  // White symbol on top
-  ctx.fillStyle = "#fff";
-  ctx.strokeStyle = "#fff";
-
-  switch (category) {
-    case "nuclear":
-      drawNuclearSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "dam":
-      drawWaveSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "bridge":
-      drawBridgeSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "port":
-      drawAnchorSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "power-plant":
-      drawLightningSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "gas-station":
-      drawFlameSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "nato-base":
-      drawNATOStar(ctx, cx, cy, symbolR);
-      break;
-    case "belarus-base":
-      drawMilitaryStar(ctx, cx, cy, symbolR);
-      break;
-    case "ukraine-base":
-      drawShieldSymbol(ctx, cx, cy, symbolR);
-      break;
-    case "russia-base":
-      drawMilitaryStar(ctx, cx, cy, symbolR);
-      break;
-  }
-
-  const imgData = ctx.getImageData(0, 0, size, size);
-  return { width: size, height: size, data: imgData.data };
-}
-
-const INFRA_ICON_DEFS: {
-  id: string;
-  category: InfraCategory;
-  color: string;
-}[] = [
-  // Nuclear
-  { id: "infra-nuclear-active", category: "nuclear", color: "#22c55e" },
-  { id: "infra-nuclear-operational", category: "nuclear", color: "#22c55e" },
-  { id: "infra-nuclear-occupied", category: "nuclear", color: "#ef4444" },
-  { id: "infra-nuclear-decommissioned", category: "nuclear", color: "#6b7280" },
-  // Dam
-  { id: "infra-dam-operational", category: "dam", color: "#06b6d4" },
-  { id: "infra-dam-destroyed", category: "dam", color: "#ef4444" },
-  { id: "infra-dam-damaged", category: "dam", color: "#eab308" },
-  // Bridge
-  { id: "infra-bridge-operational", category: "bridge", color: "#8b5cf6" },
-  { id: "infra-bridge-destroyed", category: "bridge", color: "#ef4444" },
-  { id: "infra-bridge-damaged", category: "bridge", color: "#eab308" },
-  // Port
-  { id: "infra-port-operational", category: "port", color: "#3b82f6" },
-  { id: "infra-port-occupied", category: "port", color: "#ef4444" },
-  { id: "infra-port-limited", category: "port", color: "#eab308" },
-  // Power Plant
-  { id: "infra-power-plant-operational", category: "power-plant", color: "#f97316" },
-  { id: "infra-power-plant-destroyed", category: "power-plant", color: "#ef4444" },
-  { id: "infra-power-plant-damaged", category: "power-plant", color: "#eab308" },
-  // Gas Station
-  { id: "infra-gas-station-operational", category: "gas-station", color: "#a855f7" },
-  { id: "infra-gas-station-shutdown", category: "gas-station", color: "#6b7280" },
-  // NATO & Belarus bases
-  { id: "nato-base", category: "nato-base", color: "#1b69a1" },
-  { id: "belarus-base", category: "belarus-base", color: "#8b1a1a" },
-  // Ukraine & Russia bases
-  { id: "ukraine-base-active", category: "ukraine-base", color: "#005BBB" },
-  { id: "ukraine-base-destroyed", category: "ukraine-base", color: "#ef4444" },
-  { id: "ukraine-base-occupied", category: "ukraine-base", color: "#C53030" },
-  { id: "ukraine-base-relocated", category: "ukraine-base", color: "#3D8FD6" },
-  { id: "russia-base-active", category: "russia-base", color: "#C53030" },
-  { id: "russia-base-damaged", category: "russia-base", color: "#eab308" },
-  { id: "russia-base-destroyed", category: "russia-base", color: "#ef4444" },
-];
-
-function loadInfrastructureIcons(mapInstance: maplibregl.Map) {
-  for (const def of INFRA_ICON_DEFS) {
-    if (!mapInstance.hasImage(def.id)) {
-      mapInstance.addImage(def.id, createMapIcon(def.category, def.color, 28));
-    }
-  }
-}
-
-function battleGeoJSON(battles: Battle[], timelineDate?: string | null): GeoJSON.FeatureCollection {
-  const filtered = timelineDate ? battles.filter((b) => b.startDate <= timelineDate) : battles;
-
-  return {
-    type: "FeatureCollection",
-    features: filtered.map((b) => ({
-      type: "Feature" as const,
-      geometry: {
-        type: "Point" as const,
-        coordinates: [b.lng, b.lat],
-      },
-      properties: {
-        id: b.id,
-        name: b.name,
-        significance: b.significance,
-        active: timelineDate
-          ? b.startDate <= timelineDate && (!b.endDate || b.endDate >= timelineDate)
-          : false,
-        description: b.description,
-        outcome: b.outcome || "",
-        dateRange: formatDateRange(b.startDate, b.endDate),
-      },
-    })),
-  };
-}
-
-const MONTH_NAMES: Record<string, number> = {
-  January: 1,
-  February: 2,
-  March: 3,
-  April: 4,
-  May: 5,
-  June: 6,
-  July: 7,
-  August: 8,
-  September: 9,
-  October: 10,
-  November: 11,
-  December: 12,
-};
-
-function monthIndex(name: string): number {
-  return MONTH_NAMES[name] ?? 0;
-}
-
-// Convert operations to GeoJSON lines with arrow-friendly properties
-function operationsGeoJSON(
-  ops: MilitaryOperation[],
-  timelineDate?: string | null,
-): GeoJSON.FeatureCollection {
-  // Default to today so completed operations are hidden on initial load
-  const now = new Date();
-  const effectiveDate =
-    timelineDate ??
-    `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const filtered = ops.filter(
-    (o) => o.startDate <= effectiveDate && (!o.endDate || o.endDate >= effectiveDate),
-  );
-
-  return {
-    type: "FeatureCollection",
-    features: filtered.map((op) => {
-      // All filtered operations are active within the date range
-      const active = true;
-
-      // Compute progress along waypoints
-      let progress = 1;
-      if (op.endDate) {
-        const start = parseInt(op.startDate, 10);
-        const end = parseInt(op.endDate, 10);
-        const current = parseInt(effectiveDate, 10);
-        progress =
-          end === start ? 1 : Math.min(1, Math.max(0.05, (current - start) / (end - start)));
-      }
-
-      // Build coordinate array (trimmed to progress for active ops)
-      const allCoords = op.waypoints.map((wp) => [wp.lng, wp.lat]);
-      let coords = allCoords;
-      if (active && progress < 1 && allCoords.length > 1) {
-        // Interpolate along the path based on progress
-        const totalSegments = allCoords.length - 1;
-        const targetSegment = progress * totalSegments;
-        const segIndex = Math.floor(targetSegment);
-        const segFrac = targetSegment - segIndex;
-        coords = allCoords.slice(0, segIndex + 1);
-        if (segIndex < totalSegments) {
-          const from = allCoords[segIndex];
-          const to = allCoords[segIndex + 1];
-          coords.push([
-            from[0] + (to[0] - from[0]) * segFrac,
-            from[1] + (to[1] - from[1]) * segFrac,
-          ]);
-        }
-      }
-
-      return {
-        type: "Feature" as const,
-        geometry: {
-          type: "LineString" as const,
-          coordinates: coords,
-        },
-        properties: {
-          id: op.id,
-          name: op.name,
-          side: op.side,
-          type: op.type,
-          startDate: op.startDate,
-          active,
-          significance: op.significance,
-          description: op.description,
-          outcome: op.outcome || "",
-          dateRange: formatDateRange(op.startDate, op.endDate),
-        },
-      };
-    }),
-  };
-}
-
-// Generate arrowhead points at the end of each operation line
-function operationArrowheadsGeoJSON(
-  ops: MilitaryOperation[],
-  timelineDate?: string | null,
-): GeoJSON.FeatureCollection {
-  const lines = operationsGeoJSON(ops, timelineDate);
-
-  return {
-    type: "FeatureCollection",
-    features: lines.features
-      .filter((f) => (f.geometry as GeoJSON.LineString).coordinates.length >= 2)
-      .map((f) => {
-        const coords = (f.geometry as GeoJSON.LineString).coordinates;
-        const tip = coords[coords.length - 1];
-        const prev = coords[coords.length - 2];
-        // Calculate bearing for arrow rotation
-        const dx = tip[0] - prev[0];
-        const dy = tip[1] - prev[1];
-        const bearing = (Math.atan2(dx, dy) * 180) / Math.PI;
-
-        return {
-          type: "Feature" as const,
-          geometry: {
-            type: "Point" as const,
-            coordinates: tip,
-          },
-          properties: {
-            ...f.properties,
-            bearing,
-          },
-        };
-      }),
-  };
-}
-
 const ACLED_EVENT_COLORS: Record<string, string> = {
   Battles: "#ef4444",
   "Explosions/Remote violence": "#f97316",
@@ -589,15 +63,6 @@ const ACLED_EVENT_COLORS: Record<string, string> = {
   Protests: "#22c55e",
   Riots: "#eab308",
 };
-
-function findFirstSymbolLayer(mapInstance: maplibregl.Map): string | undefined {
-  const layers = mapInstance.getStyle().layers;
-  if (!layers) return undefined;
-  for (const layer of layers) {
-    if (layer.type === "symbol") return layer.id;
-  }
-  return undefined;
-}
 
 // VIINA covers Feb 2022 – July 2024; DeepState covers July 2024+
 const DEEPSTATE_START = "20240708";
@@ -669,6 +134,7 @@ export default function MapView({
   const natoPopupRef = useRef<maplibregl.Popup | null>(null);
   const militaryBasePopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
+  const attackPopupRef = useRef<maplibregl.Popup | null>(null);
   const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
   useEffect(() => {
@@ -2526,6 +1992,165 @@ export default function MapView({
     }
   }, []);
 
+  // ── Missile / Drone Attack Markers ──────────────────────
+
+  /** Convert a YYYYMMDD string to a day-count for easy ± comparison. */
+  const yyyymmddToDays = (d: string): number => {
+    const y = Number.parseInt(d.slice(0, 4), 10);
+    const m = Number.parseInt(d.slice(4, 6), 10);
+    const day = Number.parseInt(d.slice(6, 8), 10);
+    return Math.floor(Date.UTC(y, m - 1, day) / 86_400_000);
+  };
+
+  const loadAttackMarkers = useCallback(
+    (mapInstance: maplibregl.Map) => {
+      // Add source + layers once
+      if (!mapInstance.getSource("attacks-source")) {
+        mapInstance.addSource("attacks-source", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        const conflictsVis = layersRef.current.conflicts ? "visible" : "none";
+
+        // Outer pulse ring
+        mapInstance.addLayer({
+          id: "attacks-pulse",
+          type: "circle",
+          source: "attacks-source",
+          layout: { visibility: conflictsVis as "visible" | "none" },
+          paint: {
+            "circle-radius": ["match", ["get", "type"], "massive", 16, "major", 12, 10],
+            "circle-color": "#EF4444",
+            "circle-opacity": 0.15,
+          },
+        });
+
+        // Inner point
+        mapInstance.addLayer({
+          id: "attacks-points",
+          type: "circle",
+          source: "attacks-source",
+          layout: { visibility: conflictsVis as "visible" | "none" },
+          paint: {
+            "circle-radius": ["match", ["get", "type"], "massive", 8, "major", 6, 5],
+            "circle-color": "#EF4444",
+            "circle-opacity": 0.7,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#EF4444",
+            "circle-stroke-opacity": 0.3,
+          },
+        });
+
+        // Click popup
+        mapInstance.on("click", "attacks-points", (e) => {
+          if (!e.features?.length) return;
+          const p = e.features[0].properties;
+          if (!p) return;
+          const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
+
+          const typeBadge = `<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;background:${
+            p.type === "massive"
+              ? "rgba(239,68,68,0.25)"
+              : p.type === "major"
+                ? "rgba(249,115,22,0.25)"
+                : "rgba(234,179,8,0.25)"
+          };color:${
+            p.type === "massive" ? "#f87171" : p.type === "major" ? "#fb923c" : "#facc15"
+          }">${p.type}</span>`;
+
+          const missiles =
+            Number(p.missilesLaunched) > 0
+              ? `<div style="margin-top:4px">🚀 Missiles: ${p.missilesIntercepted}/${p.missilesLaunched} intercepted</div>`
+              : "";
+          const drones =
+            Number(p.dronesLaunched) > 0
+              ? `<div>🛩 Drones: ${p.dronesIntercepted}/${p.dronesLaunched} intercepted</div>`
+              : "";
+
+          const targets = p.targets
+            ? `<div style="margin-top:4px;color:#9ca3af">Targets: ${typeof p.targets === "string" ? p.targets : JSON.parse(p.targets).join(", ")}</div>`
+            : "";
+
+          const casualties = p.casualties
+            ? `<div style="color:#ef4444;margin-top:4px">⚠ ${typeof p.casualties === "string" ? p.casualties : p.casualties}</div>`
+            : "";
+
+          attackPopupRef.current?.remove();
+          attackPopupRef.current = new maplibregl.Popup({
+            offset: 10,
+            closeButton: true,
+            closeOnClick: false,
+            className: "acled-popup",
+          })
+            .setLngLat(coords)
+            .setHTML(
+              `<div style="font-size:12px;color:#e8e8ed;line-height:1.5;max-width:280px">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                  <strong style="color:#f87171">${formatDateDisplay(p.date)}</strong>
+                  ${typeBadge}
+                </div>
+                <div style="color:#d1d5db">${p.description}</div>
+                ${missiles}${drones}${targets}${casualties}
+              </div>`,
+            )
+            .addTo(mapInstance);
+        });
+
+        mapInstance.on("mouseenter", "attacks-points", () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", "attacks-points", () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
+      }
+
+      // Update data based on current timeline date
+      const source = mapInstance.getSource("attacks-source") as
+        | maplibregl.GeoJSONSource
+        | undefined;
+      if (!source) return;
+
+      if (!territoryDate) {
+        source.setData({ type: "FeatureCollection", features: [] });
+        return;
+      }
+
+      const currentDays = yyyymmddToDays(territoryDate);
+      const windowDays = 3;
+
+      const features: GeoJSON.Feature[] = [];
+      for (const attack of MISSILE_ATTACKS) {
+        const attackDays = yyyymmddToDays(attack.date);
+        if (Math.abs(attackDays - currentDays) > windowDays) continue;
+
+        const locations = getAttackLocations(attack);
+        for (const [lng, lat] of locations) {
+          features.push({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [lng, lat] },
+            properties: {
+              date: attack.date,
+              type: attack.type,
+              description: attack.description,
+              missilesLaunched: attack.missiles.launched,
+              missilesIntercepted: attack.missiles.intercepted,
+              dronesLaunched: attack.drones.launched,
+              dronesIntercepted: attack.drones.intercepted,
+              targets: JSON.stringify(attack.targets),
+              casualties: attack.casualties
+                ? `${attack.casualties.killed} killed, ${attack.casualties.injured} injured`
+                : "",
+            },
+          });
+        }
+      }
+
+      source.setData({ type: "FeatureCollection", features });
+    },
+    [territoryDate],
+  );
+
   // Store initial-load callbacks in refs so the init effect never re-runs
   const loadTerritoryDataRef = useRef(loadTerritoryData);
   useEffect(() => {
@@ -2582,6 +2207,7 @@ export default function MapView({
         loadNATOBelarusLayers(map.current);
         loadMilitaryBaseLayers(map.current);
         loadThermalLayer(map.current);
+        loadAttackMarkers(map.current);
 
         // Safety net: retry territory load if source is still empty after 3s
         const m = map.current;
@@ -2613,6 +2239,7 @@ export default function MapView({
       militaryBasePopupRef.current?.remove();
       thermalPopupRef.current?.remove();
       heatmapPopupRef.current?.remove();
+      attackPopupRef.current?.remove();
       lastTerritoryFetchRef.current = null;
       territoryAbortRef.current?.abort();
       setLoaded(false);
@@ -2686,6 +2313,14 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.conflicts ? "visible" : "none");
       }
     });
+
+    // Attack marker layers (tied to conflicts toggle)
+    const attackLayers = ["attacks-points", "attacks-pulse"];
+    for (const layer of attackLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.conflicts ? "visible" : "none");
+      }
+    }
 
     // ACLED regional heatmap layers
     const heatmapLayers = ["acled-heatmap-fill", "acled-heatmap-line"];
@@ -2958,6 +2593,9 @@ export default function MapView({
         }
       }
 
+      // --- Attack markers ---
+      loadAttackMarkers(m);
+
       // --- ACLED heatmap ---
       const heatmapSource = m.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
       if (heatmapSource && acledRegionalRef.current) {
@@ -3002,7 +2640,7 @@ export default function MapView({
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [loaded, territoryDate, battles, operations]);
+  }, [loaded, territoryDate, battles, operations, loadAttackMarkers]);
 
   // Fly to target location
   useEffect(() => {

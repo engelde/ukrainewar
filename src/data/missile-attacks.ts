@@ -937,3 +937,47 @@ function computeStats() {
  * data array.
  */
 export const ATTACK_STATS = computeStats();
+
+// ─── Target Coordinate Mapping ───────────────────────────
+
+/** Longitude/latitude pairs for common Ukrainian target cities. */
+const TARGET_COORDINATES: Record<string, [number, number]> = {
+  Kyiv: [30.52, 50.45],
+  Kharkiv: [36.23, 49.99],
+  Odesa: [30.73, 46.48],
+  Dnipro: [35.04, 48.46],
+  Zaporizhzhia: [35.14, 47.84],
+  Lviv: [24.03, 49.84],
+  Mykolaiv: [31.99, 46.97],
+  "Kryvyi Rih": [33.39, 47.91],
+  Vinnytsia: [28.47, 49.23],
+  Zhytomyr: [28.66, 50.26],
+  Chernihiv: [31.29, 51.5],
+  Sumy: [34.8, 50.91],
+  Poltava: [34.55, 49.59],
+  Ternopil: [25.59, 49.55],
+  "Ivano-Frankivsk": [24.71, 48.92],
+  Kherson: [32.62, 46.64],
+  Kramatorsk: [37.56, 48.74],
+};
+
+/**
+ * Resolve an attack's `targets` strings to known city coordinates.
+ *
+ * Falls back to Kyiv if none of the targets match a known city (e.g.
+ * generic labels like "energy infrastructure" or "nationwide").
+ */
+export function getAttackLocations(attack: MissileAttack): [number, number][] {
+  const coords: [number, number][] = [];
+  for (const target of attack.targets) {
+    for (const [city, coord] of Object.entries(TARGET_COORDINATES)) {
+      if (target.toLowerCase().includes(city.toLowerCase())) {
+        coords.push(coord);
+      }
+    }
+  }
+  if (coords.length === 0) {
+    coords.push(TARGET_COORDINATES.Kyiv);
+  }
+  return coords;
+}

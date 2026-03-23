@@ -126,5 +126,56 @@
   },
   "months": {
     "short": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  },
+  "energy": {
+    "title": "Energy Infrastructure",
+    "generation": "Electricity Generation",
+    "capacity": "Generation Capacity",
+    "preWar": "Pre-war",
+    "current": "Current",
+    "damaged": "Damaged/Destroyed",
+    "gasTransit": "Gas Transit",
+    "unavailable": "Energy data unavailable",
+    "source": "ENTSO-E / ENTSOG"
+  },
+  "airDefense": {
+    "title": "Air Defense",
+    "missilesLaunched": "Missiles Launched",
+    "missilesIntercepted": "Missiles Intercepted",
+    "dronesLaunched": "Drones Launched",
+    "dronesIntercepted": "Drones Intercepted",
+    "interceptionRate": "Interception Rate",
+    "majorAttacks": "Major Attacks",
+    "recentAttacks": "Recent Attacks",
+    "source": "Ukrainian Air Force"
+  },
+  "support": {
+    "title": "International Support",
+    "globalAlignment": "Global alignment",
+    "countries": "countries",
+    "proUkraine": "pro-Ukraine",
+    "proRussia": "pro-Russia",
+    "totalAid": "Total committed aid to Ukraine",
+    "supportingUkraine": "Supporting Ukraine",
+    "supportingRussia": "Supporting Russia",
+    "military": "Military",
+    "financial": "Financial",
+    "humanitarian": "Humanitarian",
+    "political": "Political",
+    "sanctions": "Sanctions",
+    "troops": "Troops",
+    "source": "Kiel Institute / Open data"
+  },
+  "ukraineLosses": {
+    "title": "Ukrainian Losses",
+    "latestEstimate": "Latest Estimate",
+    "mediazonaConfirmed": "Confirmed by Name",
+    "civilianCasualties": "Civilian Casualties",
+    "killed": "killed",
+    "wounded": "wounded",
+    "total": "total casualties",
+    "estimateTimeline": "Estimate Timeline",
+    "disclaimer": "Ukraine does not officially publish comprehensive military casualty figures. Estimates vary widely between sources. Mediazona counts are confirmed minimums based on named individuals.",
+    "source": "Mediazona / OHCHR"
   }
 }

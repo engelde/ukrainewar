@@ -8,6 +8,7 @@ import {
   UKRAINE_LOSS_ESTIMATES,
   type UkraineLossEstimate,
 } from "@/data/ukraine-losses";
+import { t } from "@/i18n";
 import { cn, formatDateDisplay } from "@/lib/utils";
 
 interface UkraineLossesPanelProps {
@@ -148,7 +149,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbUserMinus className="h-3.5 w-3.5 text-[#005BBB]" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            UA Losses
+            {t("ukraineLosses.title")}
           </span>
         </div>
         <button
@@ -181,7 +182,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         <div className="flex items-center gap-1.5">
           <TbUserMinus className="h-3.5 w-3.5 text-[#005BBB]" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[#005BBB]">
-            Ukrainian Losses
+            {t("ukraineLosses.title")}
           </span>
         </div>
         <button
@@ -198,7 +199,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         {/* Key figures */}
         <div className="flex gap-2 pb-2 border-b border-border/20">
           <KeyFigure
-            label="Latest estimate"
+            label={t("ukraineLosses.latestEstimate")}
             value={formatNumber(
               summary.latestEstimate.militaryKilled ?? summary.latestEstimate.militaryTotal,
             )}
@@ -207,16 +208,16 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
           />
           <div className="w-px bg-border/30 shrink-0" />
           <KeyFigure
-            label="Mediazona confirmed"
+            label={t("ukraineLosses.mediazonaConfirmed")}
             value={formatNumber(summary.mediazonaConfirmed?.militaryKilled)}
             sub="Named deaths"
             accent="text-[#FFD500]"
           />
           <div className="w-px bg-border/30 shrink-0" />
           <KeyFigure
-            label="OHCHR civilian"
+            label={t("ukraineLosses.civilianCasualties")}
             value={formatNumber(summary.civilianOHCHR.killed)}
-            sub={`+ ${formatNumber(summary.civilianOHCHR.injured)} injured`}
+            sub={`+ ${formatNumber(summary.civilianOHCHR.injured)} ${t("ukraineLosses.wounded")}`}
             accent="text-[#805AD5]"
           />
         </div>
@@ -226,15 +227,15 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
           <div className="flex items-center gap-1.5 mb-0.5">
             <TbShield className="h-3 w-3 text-[#805AD5]" />
             <span className="text-[9px] font-semibold text-[#805AD5] uppercase tracking-wider">
-              UN OHCHR Civilian Casualties
+              UN OHCHR {t("ukraineLosses.civilianCasualties")}
             </span>
           </div>
           <div className="flex gap-3 text-[9px] font-mono tabular-nums">
             <span className="text-[#E53E3E]">
-              {CIVILIAN_CASUALTIES_OHCHR.killed.toLocaleString()} killed
+              {CIVILIAN_CASUALTIES_OHCHR.killed.toLocaleString()} {t("ukraineLosses.killed")}
             </span>
             <span className="text-[#DD6B20]">
-              {CIVILIAN_CASUALTIES_OHCHR.injured.toLocaleString()} injured
+              {CIVILIAN_CASUALTIES_OHCHR.injured.toLocaleString()} {t("ukraineLosses.wounded")}
             </span>
             <span className="text-muted-foreground/50">
               as of {formatDateDisplay(CIVILIAN_CASUALTIES_OHCHR.asOf)}
@@ -249,7 +250,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
         <div>
           <div className="flex items-center justify-between px-1 mb-1.5">
             <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-              Estimate timeline
+              {t("ukraineLosses.estimateTimeline")}
             </span>
             <span className="text-[9px] font-mono text-muted-foreground tabular-nums">
               {UKRAINE_LOSS_ESTIMATES.length} reports
@@ -271,7 +272,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
           <div className="flex items-start gap-1.5">
             <TbAlertTriangle className="h-3 w-3 text-[#DD6B20] shrink-0 mt-0.5" />
             <p className="text-[8px] text-muted-foreground/70 leading-relaxed">
-              {summary.disclaimer}
+              {t("ukraineLosses.disclaimer")}
             </p>
           </div>
         </div>

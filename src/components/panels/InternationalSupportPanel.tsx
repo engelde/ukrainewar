@@ -19,6 +19,7 @@ import {
   SUPPORT_STATS,
   type SupportType,
 } from "@/data/international-support";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface InternationalSupportPanelProps {
@@ -62,7 +63,7 @@ function SupportBadge({ type }: { type: SupportType }) {
       )}
     >
       {SUPPORT_TYPE_ICON[type]}
-      {config.label}
+      {t(`support.${type}`)}
     </span>
   );
 }
@@ -128,7 +129,7 @@ function SideSection({
           {title}
         </span>
         <span className="text-[9px] font-mono text-muted-foreground tabular-nums">
-          {countries.length} countries
+          {countries.length} {t("support.countries")}
         </span>
       </div>
       {totalAid != null && totalAid > 0 && (
@@ -180,7 +181,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbShield className="h-3.5 w-3.5 text-[#005BBB]" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Intl Support
+            {t("support.title")}
           </span>
         </div>
         <button
@@ -213,7 +214,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         <div className="flex items-center gap-1.5">
           <TbShield className="h-3.5 w-3.5 text-[#005BBB]" />
           <span className="text-[10px] font-semibold uppercase tracking-wider text-[#005BBB]">
-            International Support
+            {t("support.title")}
           </span>
         </div>
         <button
@@ -231,10 +232,10 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         <div className="space-y-1.5">
           <div className="flex justify-between items-baseline px-1">
             <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
-              Global alignment
+              {t("support.globalAlignment")}
             </span>
             <span className="text-[9px] font-mono text-muted-foreground tabular-nums">
-              {total} countries
+              {total} {t("support.countries")}
             </span>
           </div>
 
@@ -260,15 +261,19 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
           </div>
 
           <div className="flex justify-between text-[9px] px-1">
-            <span className="text-[#005BBB]/80 font-mono tabular-nums">{uaCount} pro-Ukraine</span>
-            <span className="text-[#C53030]/80 font-mono tabular-nums">{ruCount} pro-Russia</span>
+            <span className="text-[#005BBB]/80 font-mono tabular-nums">
+              {uaCount} {t("support.proUkraine")}
+            </span>
+            <span className="text-[#C53030]/80 font-mono tabular-nums">
+              {ruCount} {t("support.proRussia")}
+            </span>
           </div>
         </div>
 
         {/* Aid total */}
         <div className="text-center pb-1.5 border-t border-b border-border/20 pt-1.5">
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
-            Total committed aid to Ukraine
+            {t("support.totalAid")}
           </div>
           <div className="text-lg font-bold text-[#005BBB] font-mono tabular-nums">
             {formatAid(SUPPORT_STATS.totalUkraineAidBillionUSD)}
@@ -278,7 +283,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         {/* Two-column layout */}
         <div className="flex flex-col sm:flex-row gap-2.5">
           <SideSection
-            title="Supporting Ukraine"
+            title={t("support.supportingUkraine")}
             accentColor="text-[#005BBB]"
             countries={ukraineSupporters}
             totalAid={SUPPORT_STATS.totalUkraineAidBillionUSD}
@@ -286,7 +291,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
           <div className="hidden sm:block w-px bg-border/30 shrink-0" />
           <div className="block sm:hidden h-px bg-border/30" />
           <SideSection
-            title="Supporting Russia"
+            title={t("support.supportingRussia")}
             accentColor="text-[#C53030]"
             countries={russiaSupporters}
           />
