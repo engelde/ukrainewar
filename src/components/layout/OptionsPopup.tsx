@@ -68,11 +68,11 @@ const PANEL_ITEMS: { label: string; icon: IconType; key: keyof PanelStates }[] =
   { label: "Events", icon: TbFlag, key: "events" },
   { label: "Russian Losses", icon: TbSkull, key: "russianLosses" },
   { label: "Humanitarian", icon: TbHeartHandshake, key: "humanitarian" },
-  { label: "Spending & Aid", icon: TbCoin, key: "spending" },
+  { label: "Bilateral Aid", icon: TbCoin, key: "spending" },
   { label: "Energy", icon: TbBolt, key: "energy" },
   { label: "Air Defense", icon: TbShieldCheck, key: "airDefense" },
   { label: "Intl Support", icon: TbGlobe, key: "support" },
-  { label: "UA Losses", icon: TbUserMinus, key: "ukraineLosses" },
+  { label: "Ukrainian Losses", icon: TbUserMinus, key: "ukraineLosses" },
   { label: "Sanctions", icon: TbScale, key: "sanctions" },
 ];
 

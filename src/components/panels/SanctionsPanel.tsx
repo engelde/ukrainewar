@@ -75,8 +75,8 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
         )}
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
-          <TbScale className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-amber-400">
+          <TbScale className="h-3.5 w-3.5 text-purple-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-purple-400">
             {t("sanctions.title")}
           </span>
         </div>
@@ -111,8 +111,8 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
       {/* Header */}
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
-          <TbScale className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-amber-400">
+          <TbScale className="h-3.5 w-3.5 text-purple-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-purple-400">
             {t("sanctions.title")}
           </span>
         </div>

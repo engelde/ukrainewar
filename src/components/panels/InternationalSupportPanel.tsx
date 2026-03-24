@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   TbChevronDown,
   TbChevronUp,
@@ -15,7 +15,6 @@ import {
 import {
   type CountrySupport,
   INTERNATIONAL_SUPPORT,
-  SUPPORT_STATS,
   type SupportType,
 } from "@/data/international-support";
 import { t } from "@/i18n";
@@ -24,7 +23,6 @@ import { cn } from "@/lib/utils";
 interface InternationalSupportPanelProps {
   isOpen: boolean;
   onToggle: () => void;
-  timelineDate?: string;
 }
 
 const SUPPORT_TYPE_CONFIG: Record<SupportType, { label: string; bg: string; text: string }> = {
@@ -119,14 +117,10 @@ function SideSection({
   title,
   accentColor,
   countries,
-  totalAid,
-  aidCurrency = "$",
 }: {
   title: string;
   accentColor: string;
   countries: CountrySupport[];
-  totalAid?: number;
-  aidCurrency?: string;
 }) {
   return (
     <div className="flex-1 min-w-0">
@@ -138,16 +132,6 @@ function SideSection({
           {countries.length} {t("support.countries")}
         </span>
       </div>
-      {totalAid != null && totalAid > 0 && (
-        <div className="px-1.5 mb-1.5">
-          <span className="text-[0.5625rem] text-muted-foreground">Total aid: </span>
-          <span className={cn("text-[0.625rem] font-mono font-semibold tabular-nums", accentColor)}>
-            {aidCurrency === "€"
-              ? `€${totalAid >= 10 ? totalAid.toFixed(0) : totalAid.toFixed(1)}B`
-              : formatAid(totalAid)}
-          </span>
-        </div>
-      )}
       <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-border/30 space-y-0.5">
         {countries.map((c) => (
           <CountryRow key={c.countryCode} country={c} />
@@ -157,53 +141,7 @@ function SideSection({
   );
 }
 
-interface SpendingCumulative {
-  date: string;
-  military: number;
-  financial: number;
-  humanitarian: number;
-  total: number;
-}
-
-function InternationalSupportPanelInner({
-  isOpen,
-  onToggle,
-  timelineDate,
-}: InternationalSupportPanelProps) {
-  const [spendingCumulative, setSpendingCumulative] = useState<SpendingCumulative[] | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/spending", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d?.cumulative) setSpendingCumulative(d.cumulative);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
-
-  // When a timeline date is active, find the cumulative aid total at that point
-  const timelineAidTotal = useMemo(() => {
-    if (!timelineDate || !spendingCumulative) return null;
-    const norm =
-      timelineDate.length === 8
-        ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}`
-        : timelineDate.slice(0, 7);
-    let found: SpendingCumulative | null = null;
-    for (const c of spendingCumulative) {
-      if (c.date <= norm) found = c;
-      else break;
-    }
-    return found;
-  }, [timelineDate, spendingCumulative]);
-
-  // Use timeline data when available, otherwise static
-  const displayAidTotal = timelineAidTotal
-    ? timelineAidTotal.total
-    : SUPPORT_STATS.totalUkraineAidBillionUSD;
-  const isHistorical = !!timelineAidTotal;
-
+function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSupportPanelProps) {
   const ukraineSupporters = useMemo(
     () =>
       INTERNATIONAL_SUPPORT.filter((c) => c.side === "ukraine").sort(
@@ -324,29 +262,12 @@ function InternationalSupportPanelInner({
           </div>
         </div>
 
-        {/* Aid total */}
-        <div className="text-center pb-1.5 border-t border-b border-border/20 pt-1.5">
-          <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider mb-0.5">
-            {t("support.totalAid")}
-          </div>
-          <div className="text-lg font-bold text-[#005BBB] font-mono tabular-nums">
-            {isHistorical ? `€${displayAidTotal.toFixed(1)}B` : formatAid(displayAidTotal)}
-          </div>
-          {isHistorical && (
-            <div className="text-[0.5rem] text-muted-foreground/50 mt-0.5">
-              Bilateral aid through {timelineAidTotal.date} (Kiel Institute)
-            </div>
-          )}
-        </div>
-
         {/* Two-column layout */}
         <div className="flex flex-col sm:flex-row gap-2.5">
           <SideSection
             title={t("support.supportingUkraine")}
             accentColor="text-[#005BBB]"
             countries={ukraineSupporters}
-            totalAid={isHistorical ? displayAidTotal : SUPPORT_STATS.totalUkraineAidBillionUSD}
-            aidCurrency={isHistorical ? "€" : "$"}
           />
           <div className="hidden sm:block w-px bg-border/30 shrink-0" />
           <div className="block sm:hidden h-px bg-border/30" />

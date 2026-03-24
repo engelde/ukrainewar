@@ -79,7 +79,7 @@ export function TimelineControls({
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-mono text-foreground font-medium">
+                <span className="text-lg font-mono text-foreground font-medium">
                   {formatDateDisplay(currentDate)}
                 </span>
                 {currentIndex === datesLength - 1 && (

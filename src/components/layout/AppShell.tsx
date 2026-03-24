@@ -766,11 +766,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         )}
         {panelOpen.support && (
           <DraggablePanel panelKey="support" defaultPosition={panelPositions.support}>
-            <InternationalSupportPanel
-              isOpen={true}
-              onToggle={handleMinimizeSupport}
-              timelineDate={territoryDate ?? undefined}
-            />
+            <InternationalSupportPanel isOpen={true} onToggle={handleMinimizeSupport} />
           </DraggablePanel>
         )}
         {panelOpen.ukraineLosses && (
@@ -839,11 +835,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                 />
               )}
               {panelVisibility.support && panelMinimized.support && (
-                <InternationalSupportPanel
-                  isOpen={false}
-                  onToggle={handleExpandSupport}
-                  timelineDate={territoryDate ?? undefined}
-                />
+                <InternationalSupportPanel isOpen={false} onToggle={handleExpandSupport} />
               )}
               {panelVisibility.ukraineLosses && panelMinimized.ukraineLosses && (
                 <UkraineLossesPanel
