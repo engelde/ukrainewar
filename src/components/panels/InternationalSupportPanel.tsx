@@ -171,8 +171,8 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         )}
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
-          <TbShield className="h-3.5 w-3.5 text-cyan-400" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+          <TbShield className="h-3.5 w-3.5 text-white" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-white">
             {t("support.title")}
           </span>
         </div>

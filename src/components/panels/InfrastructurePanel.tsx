@@ -147,8 +147,8 @@ function InfrastructurePanelInner({ isOpen, onToggle, timelineDate }: Infrastruc
         onClick={onToggle}
         className="flex items-center gap-1.5 rounded-md border border-border/30 bg-background/80 px-2.5 py-1 backdrop-blur-sm transition-colors hover:bg-background/90"
       >
-        <TbBuildingBridge className="h-3 w-3 text-amber-400" />
-        <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-amber-400">
+        <TbBuildingBridge className="h-3 w-3 text-indigo-400" />
+        <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-indigo-400">
           Infrastructure
         </span>
       </button>
@@ -166,8 +166,8 @@ function InfrastructurePanelInner({ isOpen, onToggle, timelineDate }: Infrastruc
       {/* Header */}
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
-          <TbBuildingBridge className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-amber-400">
+          <TbBuildingBridge className="h-3.5 w-3.5 text-indigo-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-indigo-400">
             Infrastructure
           </span>
         </div>

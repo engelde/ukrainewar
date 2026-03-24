@@ -51,8 +51,8 @@ const OVERLAY_ITEMS: LegendItem[] = [
   { label: "Conflict heatmap", color: "#ef4444", type: "fill", secondary: "gradient" },
   { label: "Thermal anomalies", color: "#ff6b00", type: "circle" },
   { label: "Equipment losses", color: "#a855f7", type: "circle" },
-  { label: "Pro-Ukraine alliance", color: "#4a9ad4", type: "line" },
-  { label: "Pro-Russia alliance", color: "#e85454", type: "line" },
+  { label: "Pro-Ukraine support", color: "#4a9ad4", type: "line" },
+  { label: "Pro-Russia support", color: "#e85454", type: "line" },
 ];
 
 function LegendSwatch({ item }: { item: LegendItem }) {

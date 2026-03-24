@@ -240,7 +240,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-ua-yellow">
             {t("humanitarian.title")}
           </span>
         </div>

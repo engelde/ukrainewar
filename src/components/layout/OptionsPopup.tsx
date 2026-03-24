@@ -92,7 +92,7 @@ const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Infrastructure", icon: TbBuildingBridge, key: "infrastructure" },
   { label: "Military Bases", icon: TbShield, key: "nato" },
   { label: "Thermal", icon: TbSatellite, key: "thermal" },
-  { label: "Alliance", icon: TbUsers, key: "alliance" },
+  { label: "Support", icon: TbUsers, key: "alliance" },
 ];
 
 function Checkbox({ checked }: { checked: boolean }) {

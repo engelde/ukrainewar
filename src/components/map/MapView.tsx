@@ -13,6 +13,7 @@ import type { NATOBase } from "@/data/nato-bases";
 import type { NuclearPlant } from "@/data/nuclear-plants";
 import type { MilitaryOperation } from "@/data/operations";
 import type { RussiaBase } from "@/data/russia-bases";
+import russiaBorder from "@/data/russia-border.json";
 import type { UkraineBase } from "@/data/ukraine-bases";
 import ukraineBorder from "@/data/ukraine-border.json";
 import ukraineMask from "@/data/ukraine-mask.json";
@@ -214,6 +215,43 @@ export default function MapView({
         source: "ukraine-border",
         paint: {
           "line-color": "#7bbde8",
+          "line-width": 2.5,
+          "line-opacity": 0.85,
+        },
+      },
+      beforeLayer,
+    );
+
+    // Russia border source
+    mapInstance.addSource("russia-border", {
+      type: "geojson",
+      data: russiaBorder as GeoJSON.FeatureCollection,
+    });
+
+    // Russia border glow
+    mapInstance.addLayer(
+      {
+        id: "russia-border-glow",
+        type: "line",
+        source: "russia-border",
+        paint: {
+          "line-color": "#d44a4a",
+          "line-width": 12,
+          "line-opacity": 0.25,
+          "line-blur": 8,
+        },
+      },
+      beforeLayer,
+    );
+
+    // Russia main border line
+    mapInstance.addLayer(
+      {
+        id: "russia-border-line",
+        type: "line",
+        source: "russia-border",
+        paint: {
+          "line-color": "#e87b7b",
           "line-width": 2.5,
           "line-opacity": 0.85,
         },
@@ -2439,6 +2477,8 @@ export default function MapView({
       "ukraine-inner-glow",
       "ukraine-border-glow",
       "ukraine-border-line",
+      "russia-border-glow",
+      "russia-border-line",
     ];
 
     borderLayers.forEach((layer) => {
