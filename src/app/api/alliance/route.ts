@@ -10,11 +10,17 @@ const NAME_TO_ISO2: Record<string, string> = {
   Norway: "NO",
 };
 
+// In-memory cache for the filtered result (avoids re-fetching 19MB on every request)
+let cachedResult: { data: GeoJSON.FeatureCollection; ts: number } | null = null;
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 export async function GET() {
   try {
-    const res = await fetch(WORLD_GEOJSON_URL, {
-      next: { revalidate: 7 * 24 * 60 * 60 },
-    });
+    if (cachedResult && Date.now() - cachedResult.ts < CACHE_TTL) {
+      return NextResponse.json(cachedResult.data);
+    }
+
+    const res = await fetch(WORLD_GEOJSON_URL, { cache: "no-store" });
     if (!res.ok) return NextResponse.json({ error: "Failed to fetch" }, { status: 502 });
 
     const world = (await res.json()) as GeoJSON.FeatureCollection;
@@ -51,10 +57,10 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      type: "FeatureCollection",
-      features,
-    });
+    const result: GeoJSON.FeatureCollection = { type: "FeatureCollection", features };
+    cachedResult = { data: result, ts: Date.now() };
+
+    return NextResponse.json(result);
   } catch {
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
