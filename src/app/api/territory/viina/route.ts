@@ -111,17 +111,28 @@ function computeFrontline(occupiedIds: number[], tess: Tessellation): GeoJSON.Fe
   const visited = new Set<string>();
   const lines: number[][][] = [];
 
-  for (const [startKey, startNode] of adjacency) {
+  // Find endpoints (nodes with degree != 2) for open chains
+  const endpoints = [...adjacency.entries()].filter(([, n]) => n.neighbors.length !== 2);
+
+  // Walk open chains from endpoints first
+  for (const [startKey] of endpoints) {
     if (visited.has(startKey)) continue;
-    // Start from endpoints (degree != 2) or any unvisited node
-    if (startNode.neighbors.length === 2) continue;
+    const chain: number[][] = [];
+    let current = startKey;
+
+    while (current && !visited.has(current)) {
+      visited.add(current);
+      const node = adjacency.get(current)!;
+      chain.push(node.coord);
+      const next = node.neighbors.find((n) => !visited.has(n));
+      current = next ?? "";
+    }
+
+    if (chain.length >= 2) lines.push(chain);
   }
 
-  // Walk chains starting from endpoints first, then any remaining
-  const endpoints = [...adjacency.entries()].filter(([, n]) => n.neighbors.length !== 2);
-  const starts = endpoints.length > 0 ? endpoints : [...adjacency.entries()];
-
-  for (const [startKey] of starts) {
+  // Walk remaining closed loops (all degree-2 nodes that weren't reached)
+  for (const [startKey] of adjacency) {
     if (visited.has(startKey)) continue;
     const chain: number[][] = [];
     let current = startKey;
@@ -135,6 +146,8 @@ function computeFrontline(occupiedIds: number[], tess: Tessellation): GeoJSON.Fe
     }
 
     if (chain.length >= 2) {
+      // Close the loop by connecting back to the start
+      chain.push([...chain[0]]);
       lines.push(chain);
     }
   }

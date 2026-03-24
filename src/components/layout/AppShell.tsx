@@ -204,6 +204,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
+
+  // Sync territoryDate when urlDate changes externally (URL navigation, calendar, etc.)
+  useEffect(() => {
+    setTerritoryDate(urlDate);
+  }, [urlDate]);
   const [statsCollapsed, setStatsCollapsed] = useState(urlStats === true);
   const [flyToTarget, setFlyToTarget] = useState<{
     lat: number;
@@ -421,6 +426,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       const wasVisible = next.has(key);
       if (wasVisible) {
         next.delete(key);
+        // When hiding events via Options, also close the sidebar
+        if (key === "events") {
+          setSidebarOpen(false);
+        }
       } else {
         next.add(key);
         // When making visible, also ensure it's not minimized
@@ -515,8 +524,21 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   );
 
   const handleToggleSidebar = useCallback(() => {
-    setSidebarOpen((prev) => !prev);
-  }, []);
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      // Ensure events panel visibility stays in sync
+      const current = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
+      if (next && !current.has("events")) {
+        const updated = new Set(current);
+        updated.add("events");
+        const isDefault =
+          updated.size === DEFAULT_VISIBLE_PANELS.length &&
+          DEFAULT_VISIBLE_PANELS.every((k) => updated.has(k));
+        setUrlPanels(isDefault ? null : updated);
+      }
+      return next;
+    });
+  }, [urlPanels, setUrlPanels]);
 
   const handleReset = useCallback(() => {
     resetPendingRef.current = true;
