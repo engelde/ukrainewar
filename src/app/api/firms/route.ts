@@ -102,54 +102,33 @@ function todayYMD(): string {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export async function GET(request: Request) {
-  const limited = checkRateLimit(request, "firms", 30, 60_000);
-  if (limited) return limited;
+// In-flight request deduplication — concurrent requests for the same date share one outbound call
+const inflight = new Map<string, Promise<GeoJSON.FeatureCollection>>();
 
-  const { searchParams } = new URL(request.url);
-  const dateParam = searchParams.get("date"); // YYYYMMDD
+async function fetchFirmsData(
+  dateParam: string | null,
+): Promise<{ geojson: GeoJSON.FeatureCollection; source: string; isRecent: boolean }> {
+  const today = todayYMD();
+  const isRecent = !dateParam || daysBetween(dateParam, today) <= 2;
+  const source = isRecent ? "VIIRS_SNPP_NRT" : "VIIRS_SNPP_SP";
+  const days = isRecent ? 2 : 1;
+  const cacheKey = isRecent ? "firms:ukraine:nrt" : `firms:ukraine:${dateParam}`;
+  const cacheTTL = isRecent ? 3 * 60 * 60 : 30 * 24 * 60 * 60;
 
-  try {
-    // DEMO_KEY does not support area queries reliably — return empty collection
-    // so the frontend layer still initialises (with zero points) instead of failing.
-    if (MAP_KEY === "DEMO_KEY") {
-      const empty: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
-      return NextResponse.json(empty, {
-        headers: {
-          "X-Cache": "SKIP",
-          "X-Firms-Key": "DEMO_KEY",
-          "Cache-Control": "public, max-age=300",
-        },
-      });
-    }
+  // Check persistent cache first
+  const cached = await cacheGet<GeoJSON.FeatureCollection>(cacheKey);
+  if (cached && isFresh(cached)) {
+    return { geojson: cached.data, source, isRecent };
+  }
 
-    // Determine source + days + cache key based on whether a date was requested
-    const today = todayYMD();
-    const isRecent = !dateParam || daysBetween(dateParam, today) <= 2;
+  // Check if an identical outbound request is already in-flight
+  if (inflight.has(cacheKey)) {
+    const geojson = await inflight.get(cacheKey)!;
+    return { geojson, source, isRecent };
+  }
 
-    // NRT for recent, standard-processed archive for historical
-    const source = isRecent ? "VIIRS_SNPP_NRT" : "VIIRS_SNPP_SP";
-    const days = isRecent ? 2 : 1;
-    const cacheKey = isRecent ? "firms:ukraine:nrt" : `firms:ukraine:${dateParam}`;
-
-    // Historical data is immutable — cache for 30 days; NRT refreshes every 3 hours
-    const cacheTTL = isRecent ? 3 * 60 * 60 : 30 * 24 * 60 * 60;
-
-    // Check cache first
-    const cached = await cacheGet<GeoJSON.FeatureCollection>(cacheKey);
-    if (cached && isFresh(cached)) {
-      return NextResponse.json(cached.data, {
-        headers: {
-          "X-Cache": "HIT",
-          "X-Firms-Source": source,
-          "Cache-Control": `public, max-age=${isRecent ? 1800 : 86400}`,
-        },
-      });
-    }
-
-    // Build FIRMS API URL
-    // NRT: .../VIIRS_SNPP_NRT/{BBOX}/{DAYS}
-    // Archive: .../VIIRS_SNPP_SP/{BBOX}/{DAYS}/{DATE}
+  // Make the outbound call, sharing the promise with concurrent callers
+  const promise = (async () => {
     let url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/${source}/${BBOX}/${days}`;
     if (!isRecent && dateParam) {
       url += `/${toIsoDate(dateParam)}`;
@@ -161,29 +140,53 @@ export async function GET(request: Request) {
     });
 
     if (!res.ok) {
-      // Serve stale if available
-      if (cached && isUsableStale(cached)) {
-        return NextResponse.json(cached.data, {
-          headers: {
-            "X-Cache": "STALE",
-            "X-Firms-Source": source,
-            "Cache-Control": "public, max-age=300",
-          },
-        });
-      }
-      return NextResponse.json({ error: "NASA FIRMS API unavailable" }, { status: 502 });
+      if (cached && isUsableStale(cached)) return cached.data;
+      throw new Error(`NASA FIRMS returned ${res.status}`);
     }
 
     const csv = await res.text();
     const records = csvToRecords(csv);
     const geojson = toGeoJSON(records);
 
-    // Cache the result
     await cacheSet(cacheKey, geojson, cacheTTL);
+    return geojson;
+  })();
+
+  inflight.set(cacheKey, promise);
+  try {
+    const geojson = await promise;
+    return { geojson, source, isRecent };
+  } finally {
+    inflight.delete(cacheKey);
+  }
+}
+
+export async function GET(request: Request) {
+  const limited = checkRateLimit(request, "firms", 60, 60_000);
+  if (limited) return limited;
+
+  const { searchParams } = new URL(request.url);
+  const dateParam = searchParams.get("date"); // YYYYMMDD
+
+  try {
+    if (MAP_KEY === "DEMO_KEY") {
+      const empty: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+      return NextResponse.json(empty, {
+        headers: {
+          "X-Cache": "SKIP",
+          "X-Firms-Key": "DEMO_KEY",
+          "Cache-Control": "public, max-age=300",
+        },
+      });
+    }
+
+    const { geojson, source, isRecent } = await fetchFirmsData(dateParam);
 
     return NextResponse.json(geojson, {
       headers: {
-        "X-Cache": "MISS",
+        "X-Cache": inflight.has(dateParam ? `firms:ukraine:${dateParam}` : "firms:ukraine:nrt")
+          ? "DEDUP"
+          : "MISS",
         "X-Firms-Source": source,
         "Cache-Control": `public, max-age=${isRecent ? 1800 : 86400}`,
       },

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   TbAtom,
   TbBolt,
@@ -87,24 +87,48 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
   const [data, setData] = useState<EnergyData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const energyCacheRef = useRef(new Map<string, EnergyData>());
 
   useEffect(() => {
     const controller = new AbortController();
-    async function fetchData() {
-      try {
-        const url = timelineDate ? `/api/energy?date=${timelineDate}` : "/api/energy";
-        const r = await fetch(url, { signal: controller.signal });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const d = await r.json();
-        if (d?.totalCapacity != null) setData(d);
-      } catch (e) {
-        if (e instanceof Error && e.name !== "AbortError") console.error("Energy fetch error:", e);
-      } finally {
+    // 2-second debounce — energy data changes on monthly/yearly scale,
+    // rapid updates during timeline playback are unnecessary
+    const timer = setTimeout(() => {
+      const dateKey = timelineDate ?? "live";
+      const cached = energyCacheRef.current.get(dateKey);
+      if (cached) {
+        setData(cached);
         setLoading(false);
+        return;
       }
-    }
-    fetchData();
-    return () => controller.abort();
+      async function fetchData() {
+        try {
+          const url = timelineDate ? `/api/energy?date=${timelineDate}` : "/api/energy";
+          const r = await fetch(url, { signal: controller.signal });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const d = await r.json();
+          if (d?.totalCapacity != null) {
+            energyCacheRef.current.set(dateKey, d);
+            // Evict old entries (keep last 30)
+            if (energyCacheRef.current.size > 30) {
+              const first = energyCacheRef.current.keys().next().value;
+              if (first) energyCacheRef.current.delete(first);
+            }
+            setData(d);
+          }
+        } catch (e) {
+          if (e instanceof Error && e.name !== "AbortError")
+            console.error("Energy fetch error:", e);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchData();
+    }, 2000);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [timelineDate]);
 
   const operationalCapacity = useMemo(() => {

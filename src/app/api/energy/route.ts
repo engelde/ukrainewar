@@ -646,10 +646,8 @@ function getHistoricalEnergyData(dateStr: string): EnergyData {
 // ---------------------------------------------------------------------------
 
 export async function GET(request: Request) {
-  const limited = checkRateLimit(request, "energy", 30, 60_000);
-  if (limited) return limited;
-
-  // Check for historical date parameter (timeline playback)
+  // Historical date parameter (timeline playback) — computed locally, no external call.
+  // Skip rate limiting entirely for these since they never touch ENTSO-E.
   const url = new URL(request.url);
   const dateParam = url.searchParams.get("date");
   if (dateParam && /^\d{8}$/.test(dateParam)) {
@@ -658,6 +656,10 @@ export async function GET(request: Request) {
       headers: { "X-Cache": "HISTORICAL", "Cache-Control": "public, max-age=86400" },
     });
   }
+
+  // Live data — rate limit since it may call ENTSO-E
+  const limited = checkRateLimit(request, "energy", 30, 60_000);
+  if (limited) return limited;
 
   try {
     // 1. Serve from fresh cache (current/live data only)

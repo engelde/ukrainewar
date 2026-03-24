@@ -1416,10 +1416,11 @@ export default function MapView({
   // ── Thermal Anomaly Layer (NASA FIRMS satellite detections) ──
   const thermalPopupRef = useRef<maplibregl.Popup | null>(null);
   const thermalDateRef = useRef<string | null>(null);
+  const thermalCacheRef = useRef(new Map<string, GeoJSON.FeatureCollection>());
 
   /** Fetch thermal data for a given date and update the source, or create layers on first call */
   const loadThermalLayer = useCallback(async (mapInstance: maplibregl.Map, dateStr?: string) => {
-    const url = dateStr ? `/api/firms?date=${dateStr}` : "/api/firms";
+    const dateKey = dateStr ?? "nrt";
 
     // If source already exists, just update the data
     const existingSource = mapInstance.getSource("thermal-anomalies") as
@@ -1427,13 +1428,29 @@ export default function MapView({
       | undefined;
     if (existingSource) {
       // Skip if we already loaded this date
-      if (thermalDateRef.current === (dateStr ?? "nrt")) return;
+      if (thermalDateRef.current === dateKey) return;
+
+      // Check client-side cache first (no network call)
+      const clientCached = thermalCacheRef.current.get(dateKey);
+      if (clientCached) {
+        existingSource.setData(clientCached);
+        thermalDateRef.current = dateKey;
+        return;
+      }
+
       try {
+        const url = dateStr ? `/api/firms?date=${dateStr}` : "/api/firms";
         const res = await fetch(url);
         if (!res.ok) return;
         const geojson: GeoJSON.FeatureCollection = await res.json();
+        thermalCacheRef.current.set(dateKey, geojson);
+        // Evict old entries if cache grows too large (keep last 60 dates)
+        if (thermalCacheRef.current.size > 60) {
+          const first = thermalCacheRef.current.keys().next().value;
+          if (first) thermalCacheRef.current.delete(first);
+        }
         existingSource.setData(geojson);
-        thermalDateRef.current = dateStr ?? "nrt";
+        thermalDateRef.current = dateKey;
       } catch {
         /* keep existing data on error */
       }
@@ -1441,16 +1458,19 @@ export default function MapView({
     }
 
     try {
+      const url = dateStr ? `/api/firms?date=${dateStr}` : "/api/firms";
       const res = await fetch(url);
       if (!res.ok) return;
       const geojson: GeoJSON.FeatureCollection = await res.json();
       if (!mapInstance.isStyleLoaded()) return;
 
+      thermalCacheRef.current.set(dateKey, geojson);
+
       mapInstance.addSource("thermal-anomalies", {
         type: "geojson",
         data: geojson,
       });
-      thermalDateRef.current = dateStr ?? "nrt";
+      thermalDateRef.current = dateKey;
 
       // Outer glow — large, dim orange circle
       mapInstance.addLayer({
@@ -3136,9 +3156,8 @@ export default function MapView({
       }
 
       // --- Thermal anomalies (FIRMS) ---
-      if (m.getSource("thermal-anomalies") && layersRef.current.thermal) {
-        loadThermalLayer(m, territoryDate || undefined);
-      }
+      // Thermal data is NOT updated here during rapid date changes.
+      // It has its own debounced effect (2s) below to avoid hammering the NASA API.
     }, 150);
 
     return () => clearTimeout(timer);
@@ -3149,10 +3168,24 @@ export default function MapView({
     operations,
     loadAttackMarkers,
     loadBuildupLayer,
-    loadThermalLayer,
     buildInfraFeatures,
     gasPipelines,
   ]);
+
+  // ── Thermal layer date update (heavily debounced — 2s) ──
+  // Separate from the main date-change effect to avoid flooding NASA FIRMS.
+  // Satellite data has ~12h granularity, so rapid updates during playback are noise.
+  useEffect(() => {
+    if (!loaded || !map.current) return;
+    const m = map.current;
+    if (!m.getSource("thermal-anomalies") || !layers.thermal) return;
+
+    const timer = setTimeout(() => {
+      loadThermalLayer(m, territoryDate || undefined);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [loaded, territoryDate, layers.thermal, loadThermalLayer]);
 
   // Fly to target location
   useEffect(() => {
