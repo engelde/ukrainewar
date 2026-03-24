@@ -24,6 +24,9 @@ const UkraineLossesPanel = dynamic(() => import("@/components/panels/UkraineLoss
   ssr: false,
 });
 const SanctionsPanel = dynamic(() => import("@/components/panels/SanctionsPanel"), { ssr: false });
+const InfrastructurePanel = dynamic(() => import("@/components/panels/InfrastructurePanel"), {
+  ssr: false,
+});
 const SpendingPanel = dynamic(() => import("@/components/spending/SpendingPanel"), { ssr: false });
 
 import StatsOverlay from "@/components/stats/StatsOverlay";
@@ -87,16 +90,17 @@ const PANEL_KEYS = [
   "support",
   "ukraineLosses",
   "sanctions",
+  "infrastructurePanel",
 ] as const;
 type PanelKey = (typeof PANEL_KEYS)[number];
 const DEFAULT_VISIBLE_PANELS: PanelKey[] = [...PANEL_KEYS];
 const DEFAULT_MINIMIZED_PANELS: PanelKey[] = [
   "events",
   "energy",
-  "airDefense",
   "support",
   "ukraineLosses",
   "sanctions",
+  "infrastructurePanel",
 ];
 
 // Custom nuqs parser: comma-separated set of strings
@@ -394,6 +398,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     () => handleMinimizePanel("sanctions"),
     [handleMinimizePanel],
   );
+  const handleMinimizeInfrastructure = useCallback(
+    () => handleMinimizePanel("infrastructurePanel"),
+    [handleMinimizePanel],
+  );
   const handleMinimizeStats = useCallback(() => {
     setStatsCollapsed(true);
     setUrlStats(true);
@@ -432,6 +440,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   );
   const handleExpandSanctions = useCallback(
     () => handleExpandPanel("sanctions"),
+    [handleExpandPanel],
+  );
+  const handleExpandInfrastructure = useCallback(
+    () => handleExpandPanel("infrastructurePanel"),
     [handleExpandPanel],
   );
   const handleExpandStats = useCallback(() => {
@@ -478,6 +490,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       if (e.key !== "Escape") return;
       if (selectedMarker) {
         setSelectedMarker(null);
+      } else if (panelOpen.infrastructurePanel) {
+        handleMinimizePanel("infrastructurePanel");
       } else if (panelOpen.sanctions) {
         handleMinimizePanel("sanctions");
       } else if (panelOpen.ukraineLosses) {
@@ -641,10 +655,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       "humanitarian",
       "spending",
       "energy",
-      "airDefense",
       "support",
       "ukraineLosses",
       "sanctions",
+      "infrastructurePanel",
     ];
     let col = 0;
     let row = 0;
@@ -720,6 +734,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             support: () => handleVisibilityToggle("support"),
             ukraineLosses: () => handleVisibilityToggle("ukraineLosses"),
             sanctions: () => handleVisibilityToggle("sanctions"),
+            infrastructurePanel: () => handleVisibilityToggle("infrastructurePanel"),
           }}
           panelStates={{
             events: panelVisibility.events,
@@ -731,6 +746,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             support: panelVisibility.support,
             ukraineLosses: panelVisibility.ukraineLosses,
             sanctions: panelVisibility.sanctions,
+            infrastructurePanel: panelVisibility.infrastructurePanel,
           }}
         />
 
@@ -777,7 +793,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           </DraggablePanel>
         )}
         {panelOpen.airDefense && (
-          <DraggablePanel panelKey="airDefense" defaultPosition={panelPositions.airDefense}>
+          <DraggablePanel
+            panelKey="airDefense"
+            className="fixed right-[calc(1rem+20rem+0.75rem)] top-14 z-30 sm:right-[calc(1.5rem+20rem+0.75rem)] sm:top-16 max-w-xs"
+          >
+            {" "}
             <AirDefensePanel
               isOpen={true}
               onToggle={handleMinimizeAirDefense}
@@ -804,6 +824,18 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             <SanctionsPanel
               isOpen={true}
               onToggle={handleMinimizeSanctions}
+              timelineDate={territoryDate ?? undefined}
+            />
+          </DraggablePanel>
+        )}
+        {panelOpen.infrastructurePanel && (
+          <DraggablePanel
+            panelKey="infrastructurePanel"
+            defaultPosition={panelPositions.infrastructurePanel}
+          >
+            <InfrastructurePanel
+              isOpen={true}
+              onToggle={handleMinimizeInfrastructure}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
@@ -869,6 +901,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                 <SanctionsPanel
                   isOpen={false}
                   onToggle={handleExpandSanctions}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelVisibility.infrastructurePanel && panelMinimized.infrastructurePanel && (
+                <InfrastructurePanel
+                  isOpen={false}
+                  onToggle={handleExpandInfrastructure}
                   timelineDate={territoryDate ?? undefined}
                 />
               )}

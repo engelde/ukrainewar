@@ -20,6 +20,7 @@ interface PanelToggles {
   support?: () => void;
   ukraineLosses?: () => void;
   sanctions?: () => void;
+  infrastructurePanel?: () => void;
 }
 
 interface PanelStates {
@@ -32,6 +33,7 @@ interface PanelStates {
   support?: boolean;
   ukraineLosses?: boolean;
   sanctions?: boolean;
+  infrastructurePanel?: boolean;
 }
 
 interface DayTrackerProps {

@@ -185,8 +185,8 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       {/* Header */}
       <div className="drag-handle sticky top-0 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
-          <TbBolt className="h-3.5 w-3.5 text-ua-yellow" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-ua-yellow">
+          <TbBolt className="h-3.5 w-3.5 text-orange-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-orange-400">
             {t("energy.title")}
           </span>
         </div>

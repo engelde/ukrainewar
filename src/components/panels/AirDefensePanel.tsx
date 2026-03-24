@@ -97,8 +97,8 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
         )}
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
-          <TbShieldChevron className="h-3.5 w-3.5 text-orange-400" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-orange-400">
+          <TbShieldChevron className="h-3.5 w-3.5 text-cyan-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-cyan-400">
             {t("airDefense.title")}
           </span>
         </div>
@@ -130,8 +130,8 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
       {/* Header */}
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
-          <TbShieldChevron className="h-3.5 w-3.5 text-orange-400" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-orange-400">
+          <TbShieldChevron className="h-3.5 w-3.5 text-cyan-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-cyan-400">
             {t("airDefense.title")}
           </span>
         </div>
@@ -155,7 +155,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
             sub={`${missileRate}% intercepted`}
           />
           <StatCard
-            icon={<TbDrone className="h-3 w-3 text-orange-400" />}
+            icon={<TbDrone className="h-3 w-3 text-cyan-400" />}
             label={t("airDefense.dronesLaunched")}
             value={formatNumber(stats.totalDronesLaunched)}
             sub={`${droneRate}% intercepted`}

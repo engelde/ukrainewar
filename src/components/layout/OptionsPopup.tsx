@@ -44,6 +44,7 @@ interface PanelToggles {
   support?: () => void;
   ukraineLosses?: () => void;
   sanctions?: () => void;
+  infrastructurePanel?: () => void;
 }
 
 interface PanelStates {
@@ -56,6 +57,7 @@ interface PanelStates {
   support?: boolean;
   ukraineLosses?: boolean;
   sanctions?: boolean;
+  infrastructurePanel?: boolean;
 }
 
 interface OptionsPopupProps {
@@ -75,6 +77,7 @@ const PANEL_ITEMS: { label: string; icon: IconType; key: keyof PanelStates }[] =
   { label: "Intl Support", icon: TbGlobe, key: "support" },
   { label: "Ukrainian Losses", icon: TbUserMinus, key: "ukraineLosses" },
   { label: "Sanctions", icon: TbScale, key: "sanctions" },
+  { label: "Infrastructure", icon: TbBuildingBridge, key: "infrastructurePanel" },
 ];
 
 const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
