@@ -4,6 +4,7 @@
  * Runs every 6 hours to:
  * 1. Pre-warm the ACLED persistent cache via /api/cache/refresh (slow API, ~45s)
  * 2. Warm all other API endpoint caches by hitting them
+ * 3. Pre-warm FIRMS thermal anomaly cache for historical dates (every 7th day)
  *
  * All endpoints now use persistent multi-layer caching (file dev / KV prod).
  *
@@ -97,7 +98,39 @@ export default {
     });
 
     ctx.waitUntil(
-      Promise.all(tasks).then(() => {
+      Promise.all(tasks).then(async () => {
+        // 3. Pre-warm FIRMS historical cache (every 7th day from invasion to now)
+        const firmsStart = Date.now();
+        try {
+          const headers: Record<string, string> = {
+            "User-Agent": "UkraineWarTracker-CronWorker/1.0",
+            "Content-Type": "application/json",
+          };
+          if (env.CACHE_REFRESH_SECRET) {
+            headers["Authorization"] = `Bearer ${env.CACHE_REFRESH_SECRET}`;
+          }
+
+          const res = await fetch(`${baseUrl}/api/cache/refresh-firms`, {
+            method: "POST",
+            headers,
+          });
+          const body = await res.json() as { warmed: number; skipped: number; failed: number };
+          results.push({
+            endpoint: "/api/cache/refresh-firms",
+            status: res.status,
+            ms: Date.now() - firmsStart,
+          });
+          console.log(
+            `FIRMS pre-warm: ${body.warmed} warmed, ${body.skipped} skipped, ${body.failed} failed`
+          );
+        } catch (err) {
+          results.push({
+            endpoint: "/api/cache/refresh-firms",
+            status: err instanceof Error ? err.message : "error",
+            ms: Date.now() - firmsStart,
+          });
+        }
+
         console.log(
           "Data refresh complete:",
           JSON.stringify(results, null, 2)
@@ -111,7 +144,7 @@ export default {
       JSON.stringify({
         name: "ukrainewar-data-refresh",
         description: "Daily cron worker for warming data caches",
-        endpoints: ["/api/cache/refresh (POST)", ...GET_ENDPOINTS],
+        endpoints: ["/api/cache/refresh (POST)", "/api/cache/refresh-firms (POST)", ...GET_ENDPOINTS],
         schedule: "0 */6 * * * (every 6 hours)",
       }),
       {
