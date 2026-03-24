@@ -229,12 +229,16 @@ export default function MapView({
       data: { type: "FeatureCollection", features: [] },
     });
 
+    // All layers start hidden to prevent flash; visibility set after data loads
+    const hidden = { visibility: "none" as const };
+
     // RU-controlled territory fill (matching DeepState style)
     mapInstance.addLayer({
       id: "viina-ru",
       type: "fill",
       source: "viina-territory",
       filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Polygon"]],
+      layout: hidden,
       paint: {
         "fill-color": "#c53030",
         "fill-opacity": 0.3,
@@ -247,6 +251,7 @@ export default function MapView({
       type: "line",
       source: "viina-territory",
       filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Polygon"]],
+      layout: hidden,
       paint: {
         "line-color": "#c53030",
         "line-width": 0.3,
@@ -260,6 +265,7 @@ export default function MapView({
       type: "fill",
       source: "viina-territory",
       filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Polygon"]],
+      layout: hidden,
       paint: {
         "fill-color": "#eab308",
         "fill-opacity": 0.25,
@@ -272,6 +278,7 @@ export default function MapView({
       type: "line",
       source: "viina-territory",
       filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Polygon"]],
+      layout: hidden,
       paint: {
         "line-color": "#eab308",
         "line-width": 0.3,
@@ -285,6 +292,7 @@ export default function MapView({
       type: "circle",
       source: "viina-territory",
       filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Point"]],
+      layout: hidden,
       paint: {
         "circle-color": "#c53030",
         "circle-opacity": 0.45,
@@ -298,6 +306,7 @@ export default function MapView({
       type: "circle",
       source: "viina-territory",
       filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Point"]],
+      layout: hidden,
       paint: {
         "circle-color": "#eab308",
         "circle-opacity": 0.5,

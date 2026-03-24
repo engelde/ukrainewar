@@ -2,20 +2,30 @@
 
 import type { MouseEvent, ReactNode, TouchEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePanelPositionStore } from "@/stores/panelPositionStore";
 
 interface DraggablePanelProps {
   children: ReactNode;
   className?: string;
   dragHandleClassName?: string;
+  panelKey?: string;
+  defaultPosition?: { x: number; y: number };
 }
 
 export default function DraggablePanel({
   children,
   className,
   dragHandleClassName = "drag-handle",
+  panelKey,
+  defaultPosition,
 }: DraggablePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const storedPositions = usePanelPositionStore((s) => s.positions);
+  const setStoredPosition = usePanelPositionStore((s) => s.setPosition);
+  const stored = panelKey ? storedPositions[panelKey] : undefined;
+
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [mounted, setMounted] = useState(false);
   const dragState = useRef<{
     isDragging: boolean;
     startX: number;
@@ -23,6 +33,14 @@ export default function DraggablePanel({
     offsetX: number;
     offsetY: number;
   }>({ isDragging: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0 });
+
+  // Initialize offset from zustand store after mount
+  useEffect(() => {
+    if (stored) {
+      setOffset(stored);
+    }
+    setMounted(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const clampOffset = useCallback(
     (x: number, y: number) => {
@@ -32,7 +50,6 @@ export default function DraggablePanel({
       const vh = window.innerHeight;
       const pad = 4;
 
-      // Keep entire panel visible on screen (with padding from edges)
       const naturalLeft = rect.left - offset.x;
       const naturalTop = rect.top - offset.y;
 
@@ -52,7 +69,6 @@ export default function DraggablePanel({
   const handlePointerDown = useCallback(
     (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
-      // Only drag from elements with the drag handle class or its children
       if (!target.closest(`.${dragHandleClassName}`)) return;
 
       e.preventDefault();
@@ -85,6 +101,13 @@ export default function DraggablePanel({
     };
 
     const handleUp = () => {
+      if (dragState.current.isDragging && panelKey) {
+        // Persist final position to zustand
+        setStoredPosition(panelKey, {
+          x: offset.x,
+          y: offset.y,
+        });
+      }
       dragState.current.isDragging = false;
     };
 
@@ -99,15 +122,27 @@ export default function DraggablePanel({
       window.removeEventListener("mouseup", handleUp);
       window.removeEventListener("touchend", handleUp);
     };
-  }, [clampOffset]);
+  }, [clampOffset, panelKey, offset, setStoredPosition]);
+
+  // Build style: use defaultPosition for absolute placement, or className for fixed
+  const style: React.CSSProperties = {
+    transform: `translate(${offset.x}px, ${offset.y}px)`,
+  };
+
+  if (defaultPosition) {
+    style.position = "fixed";
+    style.left = defaultPosition.x;
+    style.top = defaultPosition.y;
+    style.zIndex = 30;
+    // Prevent flash of unstyled position before zustand loads
+    if (!mounted) style.opacity = 0;
+  }
 
   return (
     <div
       ref={panelRef}
-      className={className}
-      style={{
-        transform: `translate(${offset.x}px, ${offset.y}px)`,
-      }}
+      className={defaultPosition ? "max-w-xs" : className}
+      style={style}
       onMouseDown={handlePointerDown}
       onTouchStart={handlePointerDown}
     >

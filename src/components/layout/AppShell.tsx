@@ -42,6 +42,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useEvents } from "@/hooks/useEvents";
 import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
 import type { CasualtyData, EquipmentMarker, MapLayers } from "@/lib/types";
+import { usePanelPositionStore } from "@/stores/panelPositionStore";
 
 const MapView = dynamic(() => import("@/components/map/MapView"), {
   ssr: false,
@@ -87,7 +88,7 @@ const PANEL_KEYS = [
   "sanctions",
 ] as const;
 type PanelKey = (typeof PANEL_KEYS)[number];
-const DEFAULT_VISIBLE_PANELS: PanelKey[] = ["events", "russianLosses"];
+const DEFAULT_VISIBLE_PANELS: PanelKey[] = ["humanitarian", "spending", "russianLosses"];
 
 // Custom nuqs parser: comma-separated set of strings
 const parseAsStringSet = createParser({
@@ -139,6 +140,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     "stats",
     parseAsBoolean.withOptions({ shallow: true }),
   );
+  // Minimized panels as comma-separated keys (default: none minimized)
+  const [urlMinimized, setUrlMinimized] = useQueryState(
+    "pmin",
+    parseAsStringSet.withOptions({ shallow: true }),
+  );
 
   // Derive layer state from URL (default: all on; URL stores which are off)
   const layers = useMemo<MapLayers>(() => {
@@ -165,7 +171,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     [urlLayersOff, setUrlLayersOff],
   );
 
-  // Derive panel visibility from URL (default: events + russianLosses)
+  // Derive panel visibility from URL
   const panelVisibility = useMemo(() => {
     const visible = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
     const result = {} as Record<PanelKey, boolean>;
@@ -175,15 +181,29 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     return result;
   }, [urlPanels]);
 
+  // Derive panel minimized state from URL (default: none minimized)
+  const panelMinimized = useMemo(() => {
+    const min = urlMinimized ?? new Set<string>();
+    const result = {} as Record<PanelKey, boolean>;
+    for (const key of PANEL_KEYS) {
+      result[key] = min.has(key);
+    }
+    return result;
+  }, [urlMinimized]);
+
+  // Panel open = visible AND not minimized
+  const panelOpen = useMemo(() => {
+    const result = {} as Record<PanelKey, boolean>;
+    for (const key of PANEL_KEYS) {
+      result[key] = panelVisibility[key] && !panelMinimized[key];
+    }
+    return result;
+  }, [panelVisibility, panelMinimized]);
+
+  const clearPanelPositions = usePanelPositionStore((s) => s.clearPositions);
+
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
-  const [humanitarianOpen, setHumanitarianOpen] = useState(false);
-  const [spendingOpen, setSpendingOpen] = useState(false);
-  const [energyOpen, setEnergyOpen] = useState(false);
-  const [airDefenseOpen, setAirDefenseOpen] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
-  const [ukraineLossesOpen, setUkraineLossesOpen] = useState(false);
-  const [sanctionsOpen, setSanctionsOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(urlStats === true);
   const [flyToTarget, setFlyToTarget] = useState<{
     lat: number;
@@ -198,22 +218,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUrlEvents(sidebarOpen ? true : null);
   }, [sidebarOpen, setUrlEvents]);
 
-  // Open panels and sidebar defaults after first render (mount only)
+  // Open sidebar defaults after first render (mount only)
   const didMountDefaultsRef = useRef(false);
   useEffect(() => {
     if (didMountDefaultsRef.current) return;
     didMountDefaultsRef.current = true;
 
-    // Open panels that are visible per URL state
-    if (!isMobile) {
-      if (panelVisibility.humanitarian) setHumanitarianOpen(true);
-      if (panelVisibility.spending) setSpendingOpen(true);
-      if (panelVisibility.energy) setEnergyOpen(true);
-      if (panelVisibility.airDefense) setAirDefenseOpen(true);
-      if (panelVisibility.support) setSupportOpen(true);
-      if (panelVisibility.ukraineLosses) setUkraineLossesOpen(true);
-      if (panelVisibility.sanctions) setSanctionsOpen(true);
-    }
     // Open sidebar by default on XL screens if no URL preference set
     if (urlEvents === null && typeof window !== "undefined" && window.innerWidth >= 1280) {
       setSidebarOpen(true);
@@ -323,27 +333,81 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     }
   }, [territoryDate, fetchCasualties]);
 
-  // Minimize handlers — called by panel X/close buttons (collapse to dock)
-  const handleMinimizeHumanitarian = useCallback(() => setHumanitarianOpen(false), []);
-  const handleMinimizeSpending = useCallback(() => setSpendingOpen(false), []);
-  const handleMinimizeEnergy = useCallback(() => setEnergyOpen(false), []);
-  const handleMinimizeAirDefense = useCallback(() => setAirDefenseOpen(false), []);
-  const handleMinimizeSupport = useCallback(() => setSupportOpen(false), []);
-  const handleMinimizeUkraineLosses = useCallback(() => setUkraineLossesOpen(false), []);
-  const handleMinimizeSanctions = useCallback(() => setSanctionsOpen(false), []);
+  // Minimize handler — adds panel key to minimized set
+  const handleMinimizePanel = useCallback(
+    (key: string) => {
+      const current = urlMinimized ?? new Set<string>();
+      const next = new Set(current);
+      next.add(key);
+      setUrlMinimized(next.size > 0 ? next : null);
+    },
+    [urlMinimized, setUrlMinimized],
+  );
+  const handleMinimizeHumanitarian = useCallback(
+    () => handleMinimizePanel("humanitarian"),
+    [handleMinimizePanel],
+  );
+  const handleMinimizeSpending = useCallback(
+    () => handleMinimizePanel("spending"),
+    [handleMinimizePanel],
+  );
+  const handleMinimizeEnergy = useCallback(
+    () => handleMinimizePanel("energy"),
+    [handleMinimizePanel],
+  );
+  const handleMinimizeAirDefense = useCallback(
+    () => handleMinimizePanel("airDefense"),
+    [handleMinimizePanel],
+  );
+  const handleMinimizeSupport = useCallback(
+    () => handleMinimizePanel("support"),
+    [handleMinimizePanel],
+  );
+  const handleMinimizeUkraineLosses = useCallback(
+    () => handleMinimizePanel("ukraineLosses"),
+    [handleMinimizePanel],
+  );
+  const handleMinimizeSanctions = useCallback(
+    () => handleMinimizePanel("sanctions"),
+    [handleMinimizePanel],
+  );
   const handleMinimizeStats = useCallback(() => {
     setStatsCollapsed(true);
     setUrlStats(true);
   }, [setUrlStats]);
 
-  // Expand handlers — called by dock collapsed bars
-  const handleExpandHumanitarian = useCallback(() => setHumanitarianOpen(true), []);
-  const handleExpandSpending = useCallback(() => setSpendingOpen(true), []);
-  const handleExpandEnergy = useCallback(() => setEnergyOpen(true), []);
-  const handleExpandAirDefense = useCallback(() => setAirDefenseOpen(true), []);
-  const handleExpandSupport = useCallback(() => setSupportOpen(true), []);
-  const handleExpandUkraineLosses = useCallback(() => setUkraineLossesOpen(true), []);
-  const handleExpandSanctions = useCallback(() => setSanctionsOpen(true), []);
+  // Expand handler — removes panel key from minimized set
+  const handleExpandPanel = useCallback(
+    (key: string) => {
+      const current = urlMinimized ?? new Set<string>();
+      const next = new Set(current);
+      next.delete(key);
+      setUrlMinimized(next.size > 0 ? next : null);
+    },
+    [urlMinimized, setUrlMinimized],
+  );
+  const handleExpandHumanitarian = useCallback(
+    () => handleExpandPanel("humanitarian"),
+    [handleExpandPanel],
+  );
+  const handleExpandSpending = useCallback(
+    () => handleExpandPanel("spending"),
+    [handleExpandPanel],
+  );
+  const handleExpandEnergy = useCallback(() => handleExpandPanel("energy"), [handleExpandPanel]);
+  const handleExpandAirDefense = useCallback(
+    () => handleExpandPanel("airDefense"),
+    [handleExpandPanel],
+  );
+  const handleExpandSupport = useCallback(() => handleExpandPanel("support"), [handleExpandPanel]);
+  const handleExpandUkraineLosses = useCallback(
+    () => handleExpandPanel("ukraineLosses"),
+    [handleExpandPanel],
+  );
+  const handleExpandSanctions = useCallback(
+    () => handleExpandPanel("sanctions"),
+    [handleExpandPanel],
+  );
   const handleExpandStats = useCallback(() => {
     setStatsCollapsed(false);
     setUrlStats(null);
@@ -359,36 +423,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         next.delete(key);
       } else {
         next.add(key);
-        // When making visible, also expand the panel
-        switch (key) {
-          case "events":
-            setSidebarOpen(true);
-            break;
-          case "russianLosses":
-            setStatsCollapsed(false);
-            setUrlStats(null);
-            break;
-          case "humanitarian":
-            setHumanitarianOpen(true);
-            break;
-          case "spending":
-            setSpendingOpen(true);
-            break;
-          case "energy":
-            setEnergyOpen(true);
-            break;
-          case "airDefense":
-            setAirDefenseOpen(true);
-            break;
-          case "support":
-            setSupportOpen(true);
-            break;
-          case "ukraineLosses":
-            setUkraineLossesOpen(true);
-            break;
-          case "sanctions":
-            setSanctionsOpen(true);
-            break;
+        // When making visible, also ensure it's not minimized
+        if (key === "events") {
+          setSidebarOpen(true);
+        } else if (key === "russianLosses") {
+          setStatsCollapsed(false);
+          setUrlStats(null);
+        } else {
+          handleExpandPanel(key);
         }
       }
       // Store null if matches defaults to keep URL clean
@@ -397,47 +439,36 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         DEFAULT_VISIBLE_PANELS.every((k) => next.has(k));
       setUrlPanels(isDefault ? null : next);
     },
-    [urlPanels, setUrlPanels, setUrlStats],
+    [urlPanels, setUrlPanels, setUrlStats, handleExpandPanel],
   );
 
-  // Global Escape key handler — closes the topmost open panel
+  // Global Escape key handler — minimizes the topmost open panel
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      // Close in reverse priority order: detail panel → draggable panels → sidebar
       if (selectedMarker) {
         setSelectedMarker(null);
-      } else if (sanctionsOpen) {
-        setSanctionsOpen(false);
-      } else if (ukraineLossesOpen) {
-        setUkraineLossesOpen(false);
-      } else if (supportOpen) {
-        setSupportOpen(false);
-      } else if (airDefenseOpen) {
-        setAirDefenseOpen(false);
-      } else if (energyOpen) {
-        setEnergyOpen(false);
-      } else if (spendingOpen) {
-        setSpendingOpen(false);
-      } else if (humanitarianOpen) {
-        setHumanitarianOpen(false);
+      } else if (panelOpen.sanctions) {
+        handleMinimizePanel("sanctions");
+      } else if (panelOpen.ukraineLosses) {
+        handleMinimizePanel("ukraineLosses");
+      } else if (panelOpen.support) {
+        handleMinimizePanel("support");
+      } else if (panelOpen.airDefense) {
+        handleMinimizePanel("airDefense");
+      } else if (panelOpen.energy) {
+        handleMinimizePanel("energy");
+      } else if (panelOpen.spending) {
+        handleMinimizePanel("spending");
+      } else if (panelOpen.humanitarian) {
+        handleMinimizePanel("humanitarian");
       } else if (sidebarOpen) {
         setSidebarOpen(false);
       }
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    selectedMarker,
-    sanctionsOpen,
-    ukraineLossesOpen,
-    supportOpen,
-    airDefenseOpen,
-    energyOpen,
-    spendingOpen,
-    humanitarianOpen,
-    sidebarOpen,
-  ]);
+  }, [selectedMarker, panelOpen, handleMinimizePanel, sidebarOpen]);
 
   const handleMapMoveEnd = useCallback(
     (center: [number, number], zoom: number) => {
@@ -498,18 +529,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUrlLayersOff(null);
     setUrlPanels(null);
     setUrlStats(null);
+    setUrlMinimized(null);
     setFlyToTarget({ lat: MAP_CENTER[1], lng: MAP_CENTER[0], zoom: MAP_ZOOM });
     setSelectedMarker(null);
-    setHumanitarianOpen(true);
-    setSpendingOpen(true);
-    setEnergyOpen(false);
-    setAirDefenseOpen(false);
-    setSupportOpen(false);
-    setUkraineLossesOpen(false);
-    setSanctionsOpen(false);
     setStatsCollapsed(false);
     setTimelineKey((prev) => prev + 1);
     setSidebarOpen(false);
+    clearPanelPositions();
   }, [
     setUrlDate,
     setUrlLng,
@@ -519,6 +545,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUrlLayersOff,
     setUrlPanels,
     setUrlStats,
+    setUrlMinimized,
+    clearPanelPositions,
   ]);
 
   const today = new Date();
@@ -555,6 +583,43 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     }
     return null;
   })();
+
+  // Dynamic panel positioning — compute non-overlapping positions for left-side panels
+  const PANEL_W = 320; // max-w-xs = 20rem = 320px
+  const PANEL_GAP = 12;
+  const TOP_OFFSET = 64; // below header
+  const SIDE_PAD = 24;
+  const panelPositions = useMemo(() => {
+    const positions: Record<string, { x: number; y: number }> = {};
+    // Russian Losses uses CSS right-positioning — not computed here
+
+    // Left-side panels: stack from top-left, wrapping to next column
+    const leftPanelOrder: PanelKey[] = [
+      "humanitarian",
+      "spending",
+      "energy",
+      "airDefense",
+      "support",
+      "ukraineLosses",
+      "sanctions",
+    ];
+    let col = 0;
+    let row = 0;
+    const maxRowsPerCol = 2;
+
+    for (const key of leftPanelOrder) {
+      if (!panelOpen[key]) continue;
+      const x = SIDE_PAD + col * (PANEL_W + PANEL_GAP);
+      const y = TOP_OFFSET + row * 280;
+      positions[key] = { x, y };
+      row++;
+      if (row >= maxRowsPerCol) {
+        row = 0;
+        col++;
+      }
+    }
+    return positions;
+  }, [panelOpen]);
 
   return (
     <SidebarProvider
@@ -625,9 +690,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           }}
         />
 
-        {/* Expanded panels — only when visible AND open */}
-        {panelVisibility.russianLosses && displayData && !statsCollapsed && (
-          <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-xs">
+        {/* Expanded panels — only when visible AND not minimized */}
+        {panelOpen.russianLosses && displayData && !statsCollapsed && (
+          <DraggablePanel
+            panelKey="russianLosses"
+            className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-xs"
+          >
             <StatsOverlay
               data={displayData}
               isHistorical={isViewingPast && !!historicalData}
@@ -637,8 +705,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           </DraggablePanel>
         )}
         {selectedMarker && <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />}
-        {panelVisibility.humanitarian && humanitarianOpen && (
-          <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-xs">
+        {panelOpen.humanitarian && (
+          <DraggablePanel panelKey="humanitarian" defaultPosition={panelPositions.humanitarian}>
             <HumanitarianPanel
               isOpen={true}
               onToggle={handleMinimizeHumanitarian}
@@ -646,8 +714,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
-        {panelVisibility.spending && spendingOpen && (
-          <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[303px] sm:top-16 max-w-xs">
+        {panelOpen.spending && (
+          <DraggablePanel panelKey="spending" defaultPosition={panelPositions.spending}>
             <SpendingPanel
               isOpen={true}
               onToggle={handleMinimizeSpending}
@@ -655,8 +723,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
-        {panelVisibility.energy && energyOpen && (
-          <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[600px] sm:top-16 max-w-xs">
+        {panelOpen.energy && (
+          <DraggablePanel panelKey="energy" defaultPosition={panelPositions.energy}>
             <EnergyPanel
               isOpen={true}
               onToggle={handleMinimizeEnergy}
@@ -664,8 +732,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
-        {panelVisibility.airDefense && airDefenseOpen && (
-          <DraggablePanel className="fixed left-4 top-[360px] z-30 sm:left-[600px] sm:top-[300px] max-w-xs">
+        {panelOpen.airDefense && (
+          <DraggablePanel panelKey="airDefense" defaultPosition={panelPositions.airDefense}>
             <AirDefensePanel
               isOpen={true}
               onToggle={handleMinimizeAirDefense}
@@ -673,13 +741,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
-        {panelVisibility.support && supportOpen && (
-          <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw-230px)] sm:top-16">
+        {panelOpen.support && (
+          <DraggablePanel panelKey="support" defaultPosition={panelPositions.support}>
             <InternationalSupportPanel isOpen={true} onToggle={handleMinimizeSupport} />
           </DraggablePanel>
         )}
-        {panelVisibility.ukraineLosses && ukraineLossesOpen && (
-          <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw-180px)] sm:top-16">
+        {panelOpen.ukraineLosses && (
+          <DraggablePanel panelKey="ukraineLosses" defaultPosition={panelPositions.ukraineLosses}>
             <UkraineLossesPanel
               isOpen={true}
               onToggle={handleMinimizeUkraineLosses}
@@ -687,8 +755,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             />
           </DraggablePanel>
         )}
-        {panelVisibility.sanctions && sanctionsOpen && (
-          <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw+120px)] sm:top-16">
+        {panelOpen.sanctions && (
+          <DraggablePanel panelKey="sanctions" defaultPosition={panelPositions.sanctions}>
             <SanctionsPanel
               isOpen={true}
               onToggle={handleMinimizeSanctions}
@@ -717,45 +785,45 @@ export default function AppShell({ casualtyData }: AppShellProps) {
                   onExpand={handleExpandStats}
                 />
               )}
-              {panelVisibility.humanitarian && !humanitarianOpen && (
+              {panelVisibility.humanitarian && panelMinimized.humanitarian && (
                 <HumanitarianPanel
                   isOpen={false}
                   onToggle={handleExpandHumanitarian}
                   timelineDate={territoryDate ?? undefined}
                 />
               )}
-              {panelVisibility.spending && !spendingOpen && (
+              {panelVisibility.spending && panelMinimized.spending && (
                 <SpendingPanel
                   isOpen={false}
                   onToggle={handleExpandSpending}
                   timelineDate={territoryDate ?? undefined}
                 />
               )}
-              {panelVisibility.energy && !energyOpen && (
+              {panelVisibility.energy && panelMinimized.energy && (
                 <EnergyPanel
                   isOpen={false}
                   onToggle={handleExpandEnergy}
                   timelineDate={territoryDate ?? undefined}
                 />
               )}
-              {panelVisibility.airDefense && !airDefenseOpen && (
+              {panelVisibility.airDefense && panelMinimized.airDefense && (
                 <AirDefensePanel
                   isOpen={false}
                   onToggle={handleExpandAirDefense}
                   timelineDate={territoryDate ?? undefined}
                 />
               )}
-              {panelVisibility.support && !supportOpen && (
+              {panelVisibility.support && panelMinimized.support && (
                 <InternationalSupportPanel isOpen={false} onToggle={handleExpandSupport} />
               )}
-              {panelVisibility.ukraineLosses && !ukraineLossesOpen && (
+              {panelVisibility.ukraineLosses && panelMinimized.ukraineLosses && (
                 <UkraineLossesPanel
                   isOpen={false}
                   onToggle={handleExpandUkraineLosses}
                   timelineDate={territoryDate ?? undefined}
                 />
               )}
-              {panelVisibility.sanctions && !sanctionsOpen && (
+              {panelVisibility.sanctions && panelMinimized.sanctions && (
                 <SanctionsPanel
                   isOpen={false}
                   onToggle={handleExpandSanctions}
