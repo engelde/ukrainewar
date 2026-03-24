@@ -32,6 +32,8 @@ export interface MilitaryOperation {
     | "Ongoing";
   /** Ordered waypoints tracing the direction of advance / movement */
   waypoints: Waypoint[];
+  /** True when the end date is a projection or the operation is still active */
+  isOngoing?: boolean;
 }
 
 /**
@@ -503,6 +505,7 @@ export const MILITARY_OPERATIONS: MilitaryOperation[] = [
       "toward Pokrovsk. Captured Novohrodivka, Selydove, Myrnohrad, " +
       "and ultimately Pokrovsk in early 2026.",
     outcome: "Russian victory",
+    isOngoing: true,
     waypoints: [
       { lat: 48.14, lng: 37.75, label: "Avdiivka (start point)" },
       { lat: 48.21, lng: 37.47, label: "Ocheretyne" },

@@ -1110,10 +1110,11 @@ export default function MapView({
         .setLngLat(coords)
         .setHTML(
           `<div style="max-width:280px">
-              <div style="font-weight:700;font-size:13px;color:#fbbf24;margin-bottom:4px">${props.name}</div>
+              <div style="font-weight:700;font-size:13px;color:#fbbf24;margin-bottom:4px">${props.name}${props.source === "acled" ? ' <span style="font-size:9px;color:#9ca3af;font-weight:400;background:#374151;padding:1px 4px;border-radius:3px;vertical-align:middle">ACLED</span>' : ""}${props.isOngoing ? ' <span style="font-size:9px;color:#fbbf24;font-weight:400;background:#78350f;padding:1px 4px;border-radius:3px;vertical-align:middle">ONGOING</span>' : ""}</div>
               <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">${props.dateRange}</div>
               <div style="font-size:11px;color:#d1d5db;margin-bottom:6px;line-height:1.4">${props.description}</div>
               ${props.outcome ? `<div style="font-size:11px;color:#60a5fa;margin-bottom:4px"><strong>${t("map.outcome")}:</strong> ${props.outcome}</div>` : ""}
+              ${props.fatalities > 0 ? `<div style="font-size:11px;color:#f87171;margin-bottom:4px"><strong>Fatalities:</strong> ${props.fatalities}</div>` : ""}
               <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em">${props.significance}</div>
             </div>`,
         )
@@ -1205,7 +1206,7 @@ export default function MapView({
         id: "operation-lines",
         type: "line",
         source: "operations",
-        filter: ["!=", ["get", "type"], "retreat"],
+        filter: ["all", ["!=", ["get", "type"], "retreat"], ["!", ["get", "isOngoing"]]],
         layout: {
           "line-cap": "round",
           "line-join": "round",
@@ -1214,6 +1215,24 @@ export default function MapView({
           "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#22d3ee", "#fb923c"],
           "line-width": ["case", ["get", "active"], 4, 2.5],
           "line-opacity": ["case", ["get", "active"], 0.95, 0.5],
+        },
+      });
+
+      // Ongoing operation lines (dashed to indicate projected / still active)
+      mapInstance.addLayer({
+        id: "operation-lines-ongoing",
+        type: "line",
+        source: "operations",
+        filter: ["all", ["!=", ["get", "type"], "retreat"], ["get", "isOngoing"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": ["case", ["==", ["get", "side"], "ukraine"], "#22d3ee", "#fb923c"],
+          "line-width": ["case", ["get", "active"], 4, 2.5],
+          "line-opacity": ["case", ["get", "active"], 0.75, 0.4],
+          "line-dasharray": [6, 4],
         },
       });
 
@@ -1309,7 +1328,7 @@ export default function MapView({
           .setLngLat(coords)
           .setHTML(
             `<div style="max-width:280px">
-              <div style="font-weight:700;font-size:13px;color:${sideColor};margin-bottom:4px">${props.name}</div>
+              <div style="font-weight:700;font-size:13px;color:${sideColor};margin-bottom:4px">${props.name}${props.isOngoing ? ' <span style="font-size:9px;color:#fbbf24;font-weight:400;background:#78350f;padding:1px 4px;border-radius:3px;vertical-align:middle">ONGOING</span>' : ""}</div>
               <div style="font-size:11px;color:#9ca3af;margin-bottom:2px">${props.dateRange}</div>
               <div style="display:flex;gap:6px;margin-bottom:6px">
                 <span style="font-size:10px;padding:1px 6px;border-radius:3px;background:${sideColor}22;color:${sideColor};border:1px solid ${sideColor}44">${sideLabel}</span>
@@ -1327,7 +1346,11 @@ export default function MapView({
         }
       };
 
-      for (const layerId of ["operation-lines", "operation-lines-retreat"]) {
+      for (const layerId of [
+        "operation-lines",
+        "operation-lines-ongoing",
+        "operation-lines-retreat",
+      ]) {
         mapInstance.on("click", layerId, handleOperationClick);
         mapInstance.on("mouseenter", layerId, () => {
           mapInstance.getCanvas().style.cursor = "pointer";
@@ -2533,6 +2556,7 @@ export default function MapView({
     const operationLayers = [
       "operation-line-glow",
       "operation-lines",
+      "operation-lines-ongoing",
       "operation-lines-retreat",
       "operation-arrowheads",
       "operation-labels",

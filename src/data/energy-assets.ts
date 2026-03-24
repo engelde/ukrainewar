@@ -30,6 +30,17 @@ export interface GasStation {
   statusHistory?: import("./infrastructure").StatusChange[];
 }
 
+export interface Substation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  voltageKV: number;
+  status: "operational" | "damaged" | "destroyed";
+  warContext: string;
+  statusHistory?: import("./infrastructure").StatusChange[];
+}
+
 // ── Gas Pipelines ──────────────────────────────────────────────────────
 
 /**
@@ -185,6 +196,16 @@ export const POWER_PLANTS: PowerPlant[] = [
         status: "damaged",
         note: "Damaged in spring 2024 energy strikes campaign",
       },
+      {
+        date: "20240828",
+        status: "damaged",
+        note: "Further damage in August 2024 strike wave",
+      },
+      {
+        date: "20241119",
+        status: "damaged",
+        note: "Hit again in winter 2024-2025 campaign",
+      },
     ],
   },
   {
@@ -205,6 +226,16 @@ export const POWER_PLANTS: PowerPlant[] = [
         status: "damaged",
         note: "Damaged in Oct 2022 energy infrastructure campaign",
       },
+      {
+        date: "20231012",
+        status: "damaged",
+        note: "Further damage in second winter campaign (Oct 2023)",
+      },
+      {
+        date: "20240322",
+        status: "damaged",
+        note: "Spring 2024 energy campaign strikes",
+      },
     ],
   },
   {
@@ -214,13 +245,24 @@ export const POWER_PLANTS: PowerPlant[] = [
     lng: 36.375,
     plantType: "thermal",
     capacityMW: 2175,
-    status: "damaged",
+    status: "destroyed",
     warContext:
       "Located near Kharkiv, heavily damaged by repeated Russian " +
       "strikes. Key target in the systematic campaign to degrade " +
       "Ukraine's thermal generation capacity.",
     statusHistory: [
       { date: "20220312", status: "damaged", note: "Damaged during early fighting near Kharkiv" },
+      {
+        date: "20221010",
+        status: "damaged",
+        note: "Further damage in October 2022 energy strikes",
+      },
+      { date: "20240322", status: "damaged", note: "Severely damaged in spring 2024 strikes" },
+      {
+        date: "20240901",
+        status: "destroyed",
+        note: "Effectively destroyed after cumulative strike damage",
+      },
     ],
   },
   {
@@ -237,9 +279,182 @@ export const POWER_PLANTS: PowerPlant[] = [
       { date: "20220601", status: "destroyed", note: "Destroyed during fighting around Sloviansk" },
     ],
   },
+  {
+    id: "kurakhove-tpp",
+    name: "Kurakhove TPP",
+    lat: 47.993,
+    lng: 37.294,
+    plantType: "thermal",
+    capacityMW: 1460,
+    status: "destroyed",
+    warContext:
+      "Located in Donetsk Oblast near the front line. Suffered progressive " +
+      "damage from shelling throughout the war and was effectively destroyed " +
+      "as fighting reached the area in late 2024.",
+    statusHistory: [
+      { date: "20220501", status: "damaged", note: "Damaged by shelling near Donetsk front" },
+      { date: "20231015", status: "damaged", note: "Further damage from proximity to front line" },
+      { date: "20241201", status: "destroyed", note: "Destroyed as front line reached Kurakhove" },
+    ],
+  },
+  {
+    id: "vuhlehirska-tpp",
+    name: "Vuhlehirska TPP",
+    lat: 48.321,
+    lng: 38.098,
+    plantType: "thermal",
+    capacityMW: 3600,
+    status: "occupied",
+    warContext:
+      "One of Ukraine's largest thermal plants. Occupied by Russian " +
+      "forces in July 2022 during the Donbas offensive. Sustained " +
+      "significant damage during fighting.",
+    statusHistory: [
+      { date: "20220601", status: "damaged", note: "Damaged in fighting around Svitlodarsk" },
+      { date: "20220727", status: "occupied", note: "Occupied by Russian forces" },
+    ],
+  },
+  {
+    id: "kryvorizka-tpp",
+    name: "Kryvorizka TPP",
+    lat: 47.934,
+    lng: 33.413,
+    plantType: "thermal",
+    capacityMW: 2820,
+    status: "damaged",
+    warContext:
+      "Major thermal plant in Dnipropetrovsk Oblast. Repeatedly " +
+      "targeted by Russian missile and drone strikes as part of the " +
+      "systematic campaign against energy infrastructure.",
+    statusHistory: [
+      { date: "20221010", status: "damaged", note: "Damaged in October 2022 energy strikes" },
+      { date: "20240322", status: "damaged", note: "Further damage in spring 2024 strikes" },
+    ],
+  },
+  {
+    id: "zaporizka-tpp",
+    name: "Zaporizka TPP",
+    lat: 47.662,
+    lng: 34.574,
+    plantType: "thermal",
+    capacityMW: 3600,
+    status: "damaged",
+    warContext:
+      "Located in Zaporizhzhia Oblast, one of the largest thermal " +
+      "plants in Europe. Sustained damage from Russian strikes " +
+      "targeting energy infrastructure across southern Ukraine.",
+    statusHistory: [
+      { date: "20221010", status: "damaged", note: "Damaged in October 2022 energy campaign" },
+      { date: "20240322", status: "damaged", note: "Further damage in spring 2024 strikes" },
+    ],
+  },
 ];
 
 // ── Combined Export ────────────────────────────────────────────────────
+
+// ── Key Substations ────────────────────────────────────────────────────
+
+/**
+ * High-voltage substations targeted in Russia's systematic campaign
+ * against Ukraine's electricity transmission network (2022-2025).
+ */
+export const SUBSTATIONS: Substation[] = [
+  {
+    id: "substation-kharkiv-north",
+    name: "Kharkiv Northern 330kV Substation",
+    lat: 50.05,
+    lng: 36.25,
+    voltageKV: 330,
+    status: "damaged",
+    warContext:
+      "Repeatedly struck as part of targeted attacks on Kharkiv's " +
+      "power supply, causing prolonged blackouts across the region.",
+    statusHistory: [
+      { date: "20221010", status: "damaged", note: "Hit in October 2022 energy campaign" },
+      { date: "20230115", status: "damaged", note: "Struck again in winter 2022-2023 wave" },
+      { date: "20240322", status: "damaged", note: "Targeted in spring 2024 campaign" },
+    ],
+  },
+  {
+    id: "substation-odesa-main",
+    name: "Odesa Main 330kV Substation",
+    lat: 46.47,
+    lng: 30.73,
+    voltageKV: 330,
+    status: "damaged",
+    warContext:
+      "Key hub for power distribution in the Odesa region. Targeted " +
+      "repeatedly, causing widespread blackouts in southern Ukraine.",
+    statusHistory: [
+      { date: "20221010", status: "damaged", note: "Hit in October 2022 campaign" },
+      { date: "20231201", status: "damaged", note: "Struck in December 2023 attacks" },
+      { date: "20240828", status: "damaged", note: "Damaged again in August 2024 strikes" },
+    ],
+  },
+  {
+    id: "substation-dnipro-750",
+    name: "Dnipro 750kV Substation",
+    lat: 48.47,
+    lng: 35.04,
+    voltageKV: 750,
+    status: "damaged",
+    warContext:
+      "Critical backbone substation in the 750kV transmission " +
+      "network. Damage here disrupts power flows across central " +
+      "and eastern Ukraine.",
+    statusHistory: [
+      { date: "20221010", status: "damaged", note: "Hit in October 2022 energy campaign" },
+      { date: "20240322", status: "damaged", note: "Targeted in spring 2024 strikes" },
+      { date: "20241119", status: "damaged", note: "Further strikes in winter 2024-2025 campaign" },
+    ],
+  },
+  {
+    id: "substation-kyiv-west",
+    name: "Kyiv Western 330kV Substation",
+    lat: 50.41,
+    lng: 30.35,
+    voltageKV: 330,
+    status: "damaged",
+    warContext:
+      "Serves western Kyiv and surrounding suburbs. Part of the " +
+      "Kyiv metro area power grid targeted in winter strike campaigns.",
+    statusHistory: [
+      { date: "20221010", status: "damaged", note: "Damaged in October 2022 strikes" },
+      { date: "20231201", status: "damaged", note: "Struck during winter 2023-2024 campaign" },
+      { date: "20241119", status: "damaged", note: "Hit in winter 2024-2025 campaign" },
+    ],
+  },
+  {
+    id: "substation-zaporizhzhia-main",
+    name: "Zaporizhzhia Central 330kV Substation",
+    lat: 47.84,
+    lng: 35.14,
+    voltageKV: 330,
+    status: "damaged",
+    warContext:
+      "Key distribution point for the Zaporizhzhia region. " +
+      "Repeatedly targeted alongside the DniproHES and thermal plants.",
+    statusHistory: [
+      { date: "20220301", status: "damaged", note: "Damaged during early fighting" },
+      { date: "20240322", status: "damaged", note: "Struck in spring 2024 energy campaign" },
+    ],
+  },
+  {
+    id: "substation-vinnytsia-750",
+    name: "Vinnytsia 750kV Substation",
+    lat: 49.23,
+    lng: 28.47,
+    voltageKV: 750,
+    status: "damaged",
+    warContext:
+      "Part of the 750kV backbone connecting western Ukraine to " +
+      "the central grid. Damage disrupts EU interconnection capacity.",
+    statusHistory: [
+      { date: "20231012", status: "damaged", note: "Struck in October 2023 campaign" },
+      { date: "20240322", status: "damaged", note: "Targeted in spring 2024 strikes" },
+    ],
+  },
+];
 
 /**
  * Convenience aggregate of all energy-infrastructure datasets.
@@ -248,4 +463,5 @@ export const ALL_ENERGY_ASSETS = {
   pipelines: GAS_PIPELINES,
   stations: GAS_STATIONS,
   powerPlants: POWER_PLANTS,
+  substations: SUBSTATIONS,
 } as const;

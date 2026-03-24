@@ -3,9 +3,7 @@ import { join } from "node:path";
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
-
-const KIEL_XLSX_URL =
-  "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/62a94ad1-2d28-401e-afd0-8a8089b48f2a-Ukraine_Support_Tracker_Release_27.xlsx";
+import { discoverLatestRelease } from "@/lib/kiel-url";
 
 const PREBUILD_PATH = join(process.cwd(), "public", "data", "kiel-spending.json");
 
@@ -29,7 +27,8 @@ function excelDateToISO(serial: number): string {
 }
 
 async function processKielXLSX(): Promise<Record<string, unknown>> {
-  const res = await fetch(KIEL_XLSX_URL);
+  const { release, url } = await discoverLatestRelease();
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Kiel XLSX download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
@@ -175,7 +174,7 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
 
   return {
     lastUpdated: new Date().toISOString().split("T")[0],
-    release: 27,
+    release,
     currency: "EUR",
     unit: "billions",
     donors: byCountry.length,
@@ -192,7 +191,7 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
     source: {
       name: "Kiel Institute Ukraine Support Tracker",
       url: "https://www.kielinstitut.de/topics/war-against-ukraine/ukraine-support-tracker/",
-      release: "Release 27 (Dec 2025)",
+      release: `Release ${release}`,
     },
   };
 }

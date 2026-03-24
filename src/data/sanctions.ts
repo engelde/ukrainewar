@@ -3,7 +3,7 @@
  *
  * Sources: EU Council, US Treasury OFAC, UK Government, official gazettes.
  * Numbers are approximate and reflect the state at package adoption.
- * Future: integrate with OpenSanctions API for live data.
+ * Live data from UK OFSI is merged in via src/lib/ofsi.ts.
  */
 
 export interface SanctionsPackage {

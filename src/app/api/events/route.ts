@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { WarEvent } from "@/data/events";
 import { KEY_EVENTS } from "@/data/events";
 import { SEED_EVENTS } from "@/data/events-seed";
-import { MISSILE_ATTACKS } from "@/data/missile-attacks";
+import { ATTACK_STATS, MISSILE_ATTACKS } from "@/data/missile-attacks";
 import { fetchAcledPages } from "@/lib/acled";
 import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { CACHE_TTL } from "@/lib/constants";
@@ -233,6 +233,75 @@ function buildAcledLabel(ev: AcledEvent): string {
 }
 
 /**
+ * Fetch recent ACLED "Explosions/Remote violence" events that supplement
+ * the static {@link MISSILE_ATTACKS} seed data.
+ *
+ * Only fetches events after the last curated static entry so there is no
+ * overlap.  Filters for fatalities ≥ 3 to surface significant strikes
+ * while keeping the timeline manageable.
+ */
+async function fetchAcledMissileAttacks(): Promise<WarEvent[]> {
+  // Start one day after the latest static seed entry
+  const lastSeedDate = ATTACK_STATS.latestAttack;
+  const year = Number.parseInt(lastSeedDate.slice(0, 4), 10);
+  const month = Number.parseInt(lastSeedDate.slice(4, 6), 10);
+  const day = Number.parseInt(lastSeedDate.slice(6, 8), 10);
+  const startDate = new Date(year, month - 1, day + 1);
+  const startStr = startDate.toISOString().slice(0, 10);
+  const endStr = new Date().toISOString().slice(0, 10);
+
+  // Nothing to fetch if the seed data is current
+  if (startStr >= endStr) return [];
+
+  const remoteViolence = await fetchAcledPages(startStr, endStr, {
+    event_type: "Explosions/Remote violence",
+    fatalities: "3",
+    fatalities_where: ">=",
+  });
+
+  const events: WarEvent[] = [];
+  const seenIds = new Set<string>();
+
+  for (const ev of remoteViolence) {
+    if (seenIds.has(ev.event_id)) continue;
+    seenIds.add(ev.event_id);
+
+    const dateKey = ev.event_date.replace(/-/g, "");
+    if (dateKey <= lastSeedDate) continue;
+
+    const location = ev.location || ev.admin1 || "Ukraine";
+    const subType = ev.sub_event_type.toLowerCase();
+
+    let label: string;
+    if (subType.includes("drone") || subType.includes("suicide")) {
+      label = `Drone strike: ${location}`;
+    } else if (subType.includes("missile") || subType.includes("shelling")) {
+      label = `Missile/shelling strike: ${location}`;
+    } else if (subType.includes("air")) {
+      label = `Aerial strike: ${location}`;
+    } else {
+      label = `Remote strike: ${location}`;
+    }
+
+    if (ev.fatalities >= 10) {
+      label += ` (${ev.fatalities} killed)`;
+    }
+
+    const description = ev.notes.length > 200 ? `${ev.notes.slice(0, 197)}...` : ev.notes;
+
+    events.push({
+      date: dateKey,
+      label,
+      description,
+      lat: ev.latitude,
+      lng: ev.longitude,
+    });
+  }
+
+  return events;
+}
+
+/**
  * Calculate distance between two points in km using the Haversine formula.
  */
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -306,12 +375,13 @@ function mergeEvents(wikidata: WarEvent[], seed: WarEvent[], acled: WarEvent[] =
 
 /**
  * Main event aggregation pipeline.
- * Sources: Wikidata SPARQL + ACLED high-impact events + curated seed events.
+ * Sources: Wikidata SPARQL + ACLED high-impact events + ACLED remote-violence
+ * attacks (post-seed) + curated seed events + static missile attacks.
  */
 async function aggregateEvents(): Promise<WarEvent[]> {
   try {
-    // Fetch Wikidata and ACLED in parallel
-    const [wikidataEvents, acledEvents] = await Promise.all([
+    // Fetch Wikidata, ACLED key events, and ACLED missile attacks in parallel
+    const [wikidataEvents, acledEvents, acledMissileEvents] = await Promise.all([
       fetchWikidataEvents().catch((err) => {
         console.error("[events] Wikidata fetch failed:", err);
         return [] as WarEvent[];
@@ -320,14 +390,22 @@ async function aggregateEvents(): Promise<WarEvent[]> {
         console.error("[events] ACLED fetch failed:", err);
         return [] as WarEvent[];
       }),
+      fetchAcledMissileAttacks().catch((err) => {
+        console.error("[events] ACLED missile attacks fetch failed:", err);
+        return [] as WarEvent[];
+      }),
     ]);
 
     const missileEvents = getMissileAttackEvents();
     console.log(
-      `[events] Wikidata: ${wikidataEvents.length}, ACLED: ${acledEvents.length}, Missiles: ${missileEvents.length}, Seed: ${SEED_EVENTS.length}`,
+      `[events] Wikidata: ${wikidataEvents.length}, ACLED: ${acledEvents.length}, ACLED-missiles: ${acledMissileEvents.length}, Missiles: ${missileEvents.length}, Seed: ${SEED_EVENTS.length}`,
     );
 
-    const merged = mergeEvents(wikidataEvents, SEED_EVENTS, [...acledEvents, ...missileEvents]);
+    const merged = mergeEvents(wikidataEvents, SEED_EVENTS, [
+      ...acledEvents,
+      ...missileEvents,
+      ...acledMissileEvents,
+    ]);
 
     // Overlay highlight flags from curated KEY_EVENTS
     const highlightMap = new Map<string, boolean>();

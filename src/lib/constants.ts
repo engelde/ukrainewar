@@ -15,6 +15,7 @@ export const CACHE_TTL = {
   TERRITORY: 12 * 60 * 60, // 12 hours
   ACLED: 24 * 60 * 60, // 24 hours
   EVENTS: 24 * 60 * 60, // 24 hours
+  BATTLES: 24 * 60 * 60, // 24 hours
 } as const;
 
 export const ACLED_API = "https://acleddata.com/api/acled/read";

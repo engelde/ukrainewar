@@ -25,9 +25,11 @@ export function formatISODate(isoDate: string): string {
 }
 
 /**
- * Format a YYYYMMDD date range as "MM.DD.YYYY – MM.DD.YYYY" or "MM.DD.YYYY – Present".
+ * Format a YYYYMMDD date range as "MM.DD.YYYY – MM.DD.YYYY", "MM.DD.YYYY – Present",
+ * or "MM.DD.YYYY – Ongoing" when the entry is flagged as ongoing.
  */
-export function formatDateRange(start: string, end?: string): string {
+export function formatDateRange(start: string, end?: string, isOngoing?: boolean): string {
+  if (isOngoing) return `${formatDateDisplay(start)} – Ongoing`;
   if (!end) return `${formatDateDisplay(start)} – Present`;
   return `${formatDateDisplay(start)} – ${formatDateDisplay(end)}`;
 }

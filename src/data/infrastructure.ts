@@ -99,6 +99,22 @@ export const DAMS: Dam[] = [
       "reduced power generation capacity.",
     statusHistory: [
       { date: "20220228", status: "damaged", note: "Initial strikes during early fighting" },
+      { date: "20220416", status: "damaged", note: "Continued shelling around Zaporizhzhia" },
+      {
+        date: "20230610",
+        status: "damaged",
+        note: "Major strikes intensify after Kakhovka dam destruction",
+      },
+      {
+        date: "20240122",
+        status: "damaged",
+        note: "Severe strikes damage dam structure and HPP equipment",
+      },
+      {
+        date: "20240322",
+        status: "damaged",
+        note: "Spring 2024 energy campaign strikes cause further damage",
+      },
     ],
   },
   {
@@ -167,6 +183,11 @@ export const BRIDGES: Bridge[] = [
         status: "damaged",
         note: "Truck bomb attack damages road and rail spans",
       },
+      {
+        date: "20230717",
+        status: "damaged",
+        note: "Naval drone attack damages road span again; rail span repaired but road restricted",
+      },
     ],
   },
   {
@@ -212,6 +233,16 @@ export const BRIDGES: Bridge[] = [
         status: "damaged",
         note: "Damaged during early combat around Zaporizhzhia",
       },
+      {
+        date: "20230610",
+        status: "damaged",
+        note: "Further strikes alongside DniproHES dam after Kakhovka destruction",
+      },
+      {
+        date: "20240122",
+        status: "damaged",
+        note: "Additional damage during 2024 strike campaign",
+      },
     ],
   },
   {
@@ -227,7 +258,15 @@ export const BRIDGES: Bridge[] = [
       "Repeatedly targeted by Russian missile strikes and subsequently " +
       "repaired. The bridge is a key link for western Black Sea access " +
       "and alternative grain export routes via the Danube.",
-    statusHistory: [{ date: "20220226", status: "damaged", note: "First Russian missile strike" }],
+    statusHistory: [
+      { date: "20220226", status: "damaged", note: "First Russian missile strike" },
+      { date: "20220401", status: "damaged", note: "Repaired and struck again by cruise missiles" },
+      {
+        date: "20230724",
+        status: "damaged",
+        note: "Struck during post-grain-deal retaliation attacks",
+      },
+    ],
   },
 ];
 
@@ -245,6 +284,28 @@ export const PORTS: Port[] = [
       "Ukraine's primary grain export hub. Operates under periodic " +
       "Russian missile and drone attacks. Central to the Black Sea " +
       "Grain Initiative and subsequent Ukrainian grain corridor.",
+    statusHistory: [
+      {
+        date: "20220226",
+        status: "limited",
+        note: "Black Sea mined and blockaded by Russian Navy",
+      },
+      {
+        date: "20220722",
+        status: "operational",
+        note: "Black Sea Grain Initiative enables exports",
+      },
+      {
+        date: "20230717",
+        status: "limited",
+        note: "Russia exits grain deal; missile strikes hit port infrastructure",
+      },
+      {
+        date: "20230901",
+        status: "operational",
+        note: "Ukrainian grain corridor established despite ongoing risks",
+      },
+    ],
   },
   {
     id: "chornomorsk-port",
@@ -256,6 +317,16 @@ export const PORTS: Port[] = [
     warContext:
       "Major grain corridor port near Odesa. Handles significant " +
       "export volumes as part of Ukraine's wartime maritime logistics.",
+    statusHistory: [
+      { date: "20220226", status: "limited", note: "Black Sea blockade restricts operations" },
+      { date: "20220722", status: "operational", note: "Grain Initiative enables exports" },
+      {
+        date: "20230717",
+        status: "limited",
+        note: "Russia exits grain deal; port struck by missiles",
+      },
+      { date: "20230901", status: "operational", note: "Ukrainian grain corridor operational" },
+    ],
   },
   {
     id: "pivdennyi-port",
@@ -268,6 +339,10 @@ export const PORTS: Port[] = [
       "One of Ukraine's largest cargo ports by throughput. Continues " +
       "to operate despite the threat of Russian strikes on port " +
       "infrastructure in the Odesa region.",
+    statusHistory: [
+      { date: "20220226", status: "limited", note: "Black Sea blockade restricts cargo movements" },
+      { date: "20220722", status: "operational", note: "Grain Initiative restores shipping" },
+    ],
   },
   {
     id: "mykolaiv-port",
@@ -340,6 +415,14 @@ export const PORTS: Port[] = [
       "Alternative grain export route via the Danube River. Gained " +
       "strategic importance after the collapse of the Black Sea Grain " +
       "Initiative, enabling Ukrainian exports through Romanian waters.",
+    statusHistory: [
+      {
+        date: "20230802",
+        status: "limited",
+        note: "Russian drone strikes hit Danube grain terminals",
+      },
+      { date: "20230915", status: "operational", note: "Repairs completed, operations resume" },
+    ],
   },
   {
     id: "izmail-port",
@@ -352,6 +435,14 @@ export const PORTS: Port[] = [
       "Major Danube port that became a critical alternative export " +
       "route. Targeted by Russian strikes in 2023 as grain shipments " +
       "shifted to the Danube corridor.",
+    statusHistory: [
+      {
+        date: "20230802",
+        status: "limited",
+        note: "Russian strikes target Danube port infrastructure",
+      },
+      { date: "20230915", status: "operational", note: "Repairs completed, operations resume" },
+    ],
   },
 ];
 

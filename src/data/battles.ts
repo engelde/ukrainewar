@@ -8,6 +8,10 @@ export interface Battle {
   description: string;
   outcome?: string;
   significance: "critical" | "major" | "significant";
+  source?: "static" | "acled";
+  fatalities?: number;
+  /** True when the end date is unconfirmed or the battle is still active */
+  isOngoing?: boolean;
 }
 
 // Major battles of the Russo-Ukrainian War (2022-present)
@@ -215,6 +219,7 @@ export const MAJOR_BATTLES: Battle[] = [
       "Russian offensive toward the strategic logistics hub of Pokrovsk. One of the most active frontline sectors with heavy daily fighting.",
     outcome: "Ongoing",
     significance: "critical",
+    isOngoing: true,
   },
   {
     id: "vuhledar-fall",

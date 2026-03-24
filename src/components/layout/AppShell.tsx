@@ -32,7 +32,6 @@ const SpendingPanel = dynamic(() => import("@/components/spending/SpendingPanel"
 import StatsOverlay from "@/components/stats/StatsOverlay";
 import DraggablePanel from "@/components/ui/DraggablePanel";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { MAJOR_BATTLES } from "@/data/battles";
 import { BELARUS_BASES } from "@/data/belarus-bases";
 import { GAS_PIPELINES, GAS_STATIONS, POWER_PLANTS } from "@/data/energy-assets";
 import { BRIDGES, DAMS, PORTS } from "@/data/infrastructure";
@@ -42,6 +41,7 @@ import { MAJOR_OPERATIONS } from "@/data/operations";
 import { RUSSIA_BASES } from "@/data/russia-bases";
 import { UKRAINE_BASES } from "@/data/ukraine-bases";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useBattles } from "@/hooks/useBattles";
 import { useEvents } from "@/hooks/useEvents";
 import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
 import type { CasualtyData, EquipmentMarker, MapLayers } from "@/lib/types";
@@ -119,6 +119,7 @@ const parseAsStringSet = createParser({
 export default function AppShell({ casualtyData }: AppShellProps) {
   const isMobile = useIsMobile();
   const { events } = useEvents();
+  const { battles } = useBattles();
   const [urlDate, setUrlDate] = useQueryState(
     "t",
     parseAsString.withOptions({ shallow: true, throttleMs: 500 }),
@@ -699,7 +700,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onMoveEnd={handleMapMoveEnd}
           onDateChange={handleTimelineDateChange}
           territoryDate={territoryDate}
-          battles={MAJOR_BATTLES}
+          battles={battles}
           operations={MAJOR_OPERATIONS}
           nuclearPlants={NUCLEAR_PLANTS}
           dams={DAMS}

@@ -12,13 +12,11 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as XLSX from "xlsx";
+import { discoverLatestRelease } from "../src/lib/kiel-url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = join(__dirname, "..", "public", "data");
 const OUTPUT = join(OUTPUT_DIR, "kiel-spending.json");
-
-const KIEL_XLSX_URL =
-  "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/62a94ad1-2d28-401e-afd0-8a8089b48f2a-Ukraine_Support_Tracker_Release_27.xlsx";
 
 function round(n: number): number {
   return Math.round((n || 0) * 1000) / 1000;
@@ -33,8 +31,12 @@ function excelDateToISO(serial: number): string {
 }
 
 async function main() {
+  console.log("Discovering latest Kiel Institute release...");
+  const { release, url } = await discoverLatestRelease();
+  console.log(`Found Release ${release}`);
+
   console.log("Downloading Kiel Institute XLSX...");
-  const res = await fetch(KIEL_XLSX_URL);
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
 
@@ -182,7 +184,7 @@ async function main() {
 
   const output = {
     lastUpdated: new Date().toISOString().split("T")[0],
-    release: 27,
+    release,
     currency: "EUR",
     unit: "billions",
     donors: byCountry.length,
@@ -199,7 +201,7 @@ async function main() {
     source: {
       name: "Kiel Institute Ukraine Support Tracker",
       url: "https://www.kielinstitut.de/topics/war-against-ukraine/ukraine-support-tracker/",
-      release: "Release 27 (Dec 2025)",
+      release: `Release ${release}`,
     },
   };
 

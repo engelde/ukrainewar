@@ -10,8 +10,8 @@ import {
   TbX,
 } from "react-icons/tb";
 import { t } from "@/i18n";
-import { DATA_SOURCES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { DataFreshness } from "./DataFreshness";
 
 type NavItem = "about" | "legend" | "sources" | null;
 
@@ -235,7 +235,9 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
             </button>
           </div>
 
-          <div className="px-3 py-2.5">
+          <div
+            className={cn("px-3 py-2.5", active === "sources" && "max-h-[65vh] overflow-y-auto")}
+          >
             {active === "about" && (
               <div className="space-y-2">
                 <p className="text-[0.6875rem] text-foreground/80 leading-relaxed">
@@ -279,29 +281,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
               </div>
             )}
 
-            {active === "sources" && (
-              <div className="flex flex-col gap-1">
-                {DATA_SOURCES.map((source) => (
-                  <a
-                    key={source.name}
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-2 rounded px-1.5 py-1 -mx-1.5 hover:bg-surface-elevated/50 transition-colors group"
-                  >
-                    <div>
-                      <div className="text-[0.625rem] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
-                        {source.name}
-                      </div>
-                      <div className="text-[0.5625rem] text-muted-foreground/60">
-                        {source.description}
-                      </div>
-                    </div>
-                    <TbExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-ua-blue transition-colors flex-shrink-0" />
-                  </a>
-                ))}
-              </div>
-            )}
+            {active === "sources" && <DataFreshness />}
           </div>
         </div>
       )}
@@ -401,26 +381,8 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
           </SidebarSection>
 
           <SidebarSection title="Data Sources">
-            <div className="flex flex-col gap-0.5 px-2 pb-3">
-              {DATA_SOURCES.map((source) => (
-                <a
-                  key={source.name}
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-surface-elevated/50 transition-colors group"
-                >
-                  <div>
-                    <div className="text-[0.625rem] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
-                      {source.name}
-                    </div>
-                    <div className="text-[0.5625rem] text-muted-foreground/60">
-                      {source.description}
-                    </div>
-                  </div>
-                  <TbExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-ua-blue transition-colors flex-shrink-0" />
-                </a>
-              ))}
+            <div className="px-2 pb-3">
+              <DataFreshness />
             </div>
           </SidebarSection>
 

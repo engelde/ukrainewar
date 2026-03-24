@@ -145,6 +145,80 @@ const PSR_CATEGORIES: Record<string, EnergyPlant["type"]> = {
 };
 
 /**
+ * Known attack campaign windows where generation drops indicate infrastructure damage.
+ * Each entry defines a date range and the expected impact on generation types.
+ */
+const ATTACK_CAMPAIGN_WINDOWS: {
+  start: string;
+  end: string;
+  label: string;
+  /** Expected generation reduction thresholds (fraction of normal) */
+  thermalThreshold: number;
+}[] = [
+  {
+    start: "20221010",
+    end: "20230315",
+    label: "First winter energy campaign (Oct 2022 – Mar 2023)",
+    thermalThreshold: 0.5,
+  },
+  {
+    start: "20231010",
+    end: "20240315",
+    label: "Second winter energy campaign (Oct 2023 – Mar 2024)",
+    thermalThreshold: 0.4,
+  },
+  {
+    start: "20240322",
+    end: "20240601",
+    label: "Spring 2024 energy strikes",
+    thermalThreshold: 0.35,
+  },
+  {
+    start: "20241015",
+    end: "20250315",
+    label: "Third winter energy campaign (Oct 2024 – Mar 2025)",
+    thermalThreshold: 0.3,
+  },
+];
+
+/**
+ * Detect infrastructure damage from ENTSO-E generation data.
+ * Compares actual generation mix against pre-war baselines to identify
+ * capacity losses that correlate with known attack campaigns.
+ */
+function detectDamageFromGeneration(generationByType: Map<string, number>): {
+  campaignActive: boolean;
+  label: string | null;
+  thermalReduction: number | null;
+} {
+  const now = new Date();
+  const dateStr = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(now.getUTCDate()).padStart(2, "0")}`;
+
+  const activeCampaign = ATTACK_CAMPAIGN_WINDOWS.find(
+    (w) => dateStr >= w.start && dateStr <= w.end,
+  );
+
+  // Pre-war thermal baseline: ~28 GW capacity, ~60% utilization = ~16.8 GW average
+  const PRE_WAR_THERMAL_GWH_PER_WEEK = 16_800 * 168; // MW * hours
+  let thermalGen = 0;
+  for (const [psr, mwh] of generationByType) {
+    const cat = PSR_CATEGORIES[psr] ?? "other";
+    if (cat === "thermal") thermalGen += mwh;
+  }
+
+  const thermalReduction =
+    PRE_WAR_THERMAL_GWH_PER_WEEK > 0
+      ? Math.round((1 - thermalGen / PRE_WAR_THERMAL_GWH_PER_WEEK) * 100)
+      : null;
+
+  return {
+    campaignActive: activeCampaign !== undefined,
+    label: activeCampaign?.label ?? null,
+    thermalReduction,
+  };
+}
+
+/**
  * Convert ENTSO-E generation data into our response format.
  * Merges live generation shares with the curated plant list.
  */
@@ -171,11 +245,21 @@ function entsoeToEnergyData(generationByType: Map<string, number>): EnergyData {
     .filter((p) => !p.operational)
     .reduce((sum, p) => sum + p.capacity, 0);
 
+  // Dynamic damage detection: if we're in an attack campaign window and
+  // generation is anomalously low, escalate the system status
+  const damageSignal = detectDamageFromGeneration(generationByType);
+
   let status: EnergyData["status"] = "normal";
   if (currentGenerationGW !== null) {
     const utilizationRatio = currentGenerationGW / 55;
     if (utilizationRatio < 0.3) status = "critical";
     else if (utilizationRatio < 0.5) status = "stressed";
+
+    // Escalate status during active attack campaigns with confirmed generation drops
+    if (damageSignal.campaignActive && damageSignal.thermalReduction !== null) {
+      if (damageSignal.thermalReduction > 60 && status === "normal") status = "stressed";
+      if (damageSignal.thermalReduction > 75 && status !== "critical") status = "critical";
+    }
   }
 
   return {

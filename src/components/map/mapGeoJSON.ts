@@ -26,7 +26,10 @@ export function battleGeoJSON(
           : false,
         description: b.description,
         outcome: b.outcome || "",
-        dateRange: formatDateRange(b.startDate, b.endDate),
+        dateRange: formatDateRange(b.startDate, b.endDate, b.isOngoing),
+        source: b.source || "static",
+        fatalities: b.fatalities ?? 0,
+        isOngoing: b.isOngoing ?? false,
       },
     })),
   };
@@ -117,7 +120,8 @@ export function operationsGeoJSON(
           significance: op.significance,
           description: op.description,
           outcome: op.outcome || "",
-          dateRange: formatDateRange(op.startDate, op.endDate),
+          dateRange: formatDateRange(op.startDate, op.endDate, op.isOngoing),
+          isOngoing: op.isOngoing ?? false,
         },
       };
     }),
