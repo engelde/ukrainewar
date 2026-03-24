@@ -1415,11 +1415,33 @@ export default function MapView({
 
   // ── Thermal Anomaly Layer (NASA FIRMS satellite detections) ──
   const thermalPopupRef = useRef<maplibregl.Popup | null>(null);
-  const loadThermalLayer = useCallback(async (mapInstance: maplibregl.Map) => {
-    if (mapInstance.getSource("thermal-anomalies")) return;
+  const thermalDateRef = useRef<string | null>(null);
+
+  /** Fetch thermal data for a given date and update the source, or create layers on first call */
+  const loadThermalLayer = useCallback(async (mapInstance: maplibregl.Map, dateStr?: string) => {
+    const url = dateStr ? `/api/firms?date=${dateStr}` : "/api/firms";
+
+    // If source already exists, just update the data
+    const existingSource = mapInstance.getSource("thermal-anomalies") as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    if (existingSource) {
+      // Skip if we already loaded this date
+      if (thermalDateRef.current === (dateStr ?? "nrt")) return;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const geojson: GeoJSON.FeatureCollection = await res.json();
+        existingSource.setData(geojson);
+        thermalDateRef.current = dateStr ?? "nrt";
+      } catch {
+        /* keep existing data on error */
+      }
+      return;
+    }
 
     try {
-      const res = await fetch("/api/firms");
+      const res = await fetch(url);
       if (!res.ok) return;
       const geojson: GeoJSON.FeatureCollection = await res.json();
       if (!mapInstance.isStyleLoaded()) return;
@@ -1428,6 +1450,7 @@ export default function MapView({
         type: "geojson",
         data: geojson,
       });
+      thermalDateRef.current = dateStr ?? "nrt";
 
       // Outer glow — large, dim orange circle
       mapInstance.addLayer({
@@ -2635,7 +2658,7 @@ export default function MapView({
         loadInfrastructureLayers(map.current);
         loadNATOBelarusLayers(map.current);
         loadMilitaryBaseLayers(map.current);
-        loadThermalLayer(map.current);
+        loadThermalLayer(map.current, territoryDate || undefined);
         loadAttackMarkers(map.current);
         loadBuildupLayer(map.current);
         ensureAllianceLayers(map.current);
@@ -3111,6 +3134,11 @@ export default function MapView({
         });
         pipelineSrc.setData({ type: "FeatureCollection", features: pipeFeatures });
       }
+
+      // --- Thermal anomalies (FIRMS) ---
+      if (m.getSource("thermal-anomalies") && layersRef.current.thermal) {
+        loadThermalLayer(m, territoryDate || undefined);
+      }
     }, 150);
 
     return () => clearTimeout(timer);
@@ -3121,6 +3149,7 @@ export default function MapView({
     operations,
     loadAttackMarkers,
     loadBuildupLayer,
+    loadThermalLayer,
     buildInfraFeatures,
     gasPipelines,
   ]);

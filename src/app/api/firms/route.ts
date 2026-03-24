@@ -10,17 +10,16 @@ import { checkRateLimit } from "@/lib/rate-limit";
  *
  * API: https://firms.modaps.eosdis.nasa.gov/api/area/
  * Bounding box: west=22, south=44, east=41, north=53 (covers all of Ukraine)
- * Source: VIIRS_SNPP_NRT (near real-time, ~3h latency)
+ *
+ * Supports two modes:
+ * - Near-real-time (no date param): VIIRS_SNPP_NRT, last 2 days
+ * - Historical (date=YYYYMMDD):     VIIRS_SNPP_SP archive, 1-day window
  *
  * Returns GeoJSON FeatureCollection of thermal anomalies with confidence filtering.
  */
 
-const CACHE_KEY = "firms:ukraine";
-const CACHE_TTL = 3 * 60 * 60; // 3 hours (satellite passes ~every 3h)
-
 // Ukraine bounding box (generous to capture border areas)
 const BBOX = "22,44,41,53";
-const DAYS = 2; // Last 2 days of data
 
 // NASA FIRMS MAP_KEY — free, register at https://firms.modaps.eosdis.nasa.gov/api/area/
 // A real API key is REQUIRED for area queries. DEMO_KEY is heavily rate-limited
@@ -85,9 +84,30 @@ function toGeoJSON(records: FirmsRecord[]): GeoJSON.FeatureCollection {
   };
 }
 
+/** Convert YYYYMMDD → YYYY-MM-DD for FIRMS API */
+function toIsoDate(d: string): string {
+  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+}
+
+/** Days between two YYYYMMDD strings */
+function daysBetween(a: string, b: string): number {
+  const da = new Date(toIsoDate(a));
+  const db = new Date(toIsoDate(b));
+  return Math.round((db.getTime() - da.getTime()) / 86_400_000);
+}
+
+/** Today in YYYYMMDD */
+function todayYMD(): string {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export async function GET(request: Request) {
   const limited = checkRateLimit(request, "firms", 30, 60_000);
   if (limited) return limited;
+
+  const { searchParams } = new URL(request.url);
+  const dateParam = searchParams.get("date"); // YYYYMMDD
 
   try {
     // DEMO_KEY does not support area queries reliably — return empty collection
@@ -103,16 +123,38 @@ export async function GET(request: Request) {
       });
     }
 
+    // Determine source + days + cache key based on whether a date was requested
+    const today = todayYMD();
+    const isRecent = !dateParam || daysBetween(dateParam, today) <= 2;
+
+    // NRT for recent, standard-processed archive for historical
+    const source = isRecent ? "VIIRS_SNPP_NRT" : "VIIRS_SNPP_SP";
+    const days = isRecent ? 2 : 1;
+    const cacheKey = isRecent ? "firms:ukraine:nrt" : `firms:ukraine:${dateParam}`;
+
+    // Historical data is immutable — cache for 30 days; NRT refreshes every 3 hours
+    const cacheTTL = isRecent ? 3 * 60 * 60 : 30 * 24 * 60 * 60;
+
     // Check cache first
-    const cached = await cacheGet<GeoJSON.FeatureCollection>(CACHE_KEY);
+    const cached = await cacheGet<GeoJSON.FeatureCollection>(cacheKey);
     if (cached && isFresh(cached)) {
       return NextResponse.json(cached.data, {
-        headers: { "X-Cache": "HIT", "Cache-Control": "public, max-age=1800" },
+        headers: {
+          "X-Cache": "HIT",
+          "X-Firms-Source": source,
+          "Cache-Control": `public, max-age=${isRecent ? 1800 : 86400}`,
+        },
       });
     }
 
-    // Fetch from NASA FIRMS
-    const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${BBOX}/${DAYS}`;
+    // Build FIRMS API URL
+    // NRT: .../VIIRS_SNPP_NRT/{BBOX}/{DAYS}
+    // Archive: .../VIIRS_SNPP_SP/{BBOX}/{DAYS}/{DATE}
+    let url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/${source}/${BBOX}/${days}`;
+    if (!isRecent && dateParam) {
+      url += `/${toIsoDate(dateParam)}`;
+    }
+
     const res = await fetch(url, {
       headers: { Accept: "text/csv" },
       signal: AbortSignal.timeout(15000),
@@ -122,7 +164,11 @@ export async function GET(request: Request) {
       // Serve stale if available
       if (cached && isUsableStale(cached)) {
         return NextResponse.json(cached.data, {
-          headers: { "X-Cache": "STALE", "Cache-Control": "public, max-age=300" },
+          headers: {
+            "X-Cache": "STALE",
+            "X-Firms-Source": source,
+            "Cache-Control": "public, max-age=300",
+          },
         });
       }
       return NextResponse.json({ error: "NASA FIRMS API unavailable" }, { status: 502 });
@@ -133,15 +179,19 @@ export async function GET(request: Request) {
     const geojson = toGeoJSON(records);
 
     // Cache the result
-    await cacheSet(CACHE_KEY, geojson, CACHE_TTL);
+    await cacheSet(cacheKey, geojson, cacheTTL);
 
     return NextResponse.json(geojson, {
-      headers: { "X-Cache": "MISS", "Cache-Control": "public, max-age=1800" },
+      headers: {
+        "X-Cache": "MISS",
+        "X-Firms-Source": source,
+        "Cache-Control": `public, max-age=${isRecent ? 1800 : 86400}`,
+      },
     });
   } catch (err) {
     console.error("[firms] Error fetching thermal data:", err);
-    // Try stale cache
-    const cached = await cacheGet<GeoJSON.FeatureCollection>(CACHE_KEY);
+    const cacheKey = dateParam ? `firms:ukraine:${dateParam}` : "firms:ukraine:nrt";
+    const cached = await cacheGet<GeoJSON.FeatureCollection>(cacheKey);
     if (cached && isUsableStale(cached)) {
       return NextResponse.json(cached.data, {
         headers: { "X-Cache": "STALE-ERROR", "Cache-Control": "public, max-age=300" },
