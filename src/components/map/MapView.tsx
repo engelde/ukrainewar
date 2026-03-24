@@ -265,6 +265,21 @@ export default function MapView({
       },
       beforeLayer,
     );
+
+    // Apply current border visibility (the toggle useEffect may have fired before layers existed)
+    const borderVis = layersRef.current.border ? "visible" : "none";
+    for (const id of [
+      "ukraine-mask-fill",
+      "ukraine-inner-glow",
+      "ukraine-border-glow",
+      "ukraine-border-line",
+      "russia-border-glow",
+      "russia-border-line",
+    ]) {
+      if (mapInstance.getLayer(id)) {
+        mapInstance.setLayoutProperty(id, "visibility", borderVis);
+      }
+    }
   }, []);
 
   // Alliance country outlines — loaded once from API
@@ -2397,10 +2412,11 @@ export default function MapView({
       if (e?.error?.message?.includes("reading 'length'")) return;
     });
 
-    map.current.on("load", () => {
+    map.current.on("load", async () => {
       setLoaded(true);
       if (map.current) {
-        loadUkraineBorder(map.current);
+        // Border must complete first — heatmap depends on oblastsRef
+        await loadUkraineBorder(map.current);
         loadTerritoryDataRef.current(map.current);
         loadEquipmentDataRef.current(map.current);
         loadAcledData(map.current);
@@ -2649,17 +2665,17 @@ export default function MapView({
     const m = map.current;
 
     if (m.isStyleLoaded()) {
-      loadTerritoryDataRef.current(m);
+      loadTerritoryData(m);
     } else {
       const onIdle = () => {
-        if (map.current) loadTerritoryDataRef.current(map.current);
+        if (map.current) loadTerritoryData(map.current);
       };
       m.once("idle", onIdle);
       return () => {
         m.off("idle", onIdle);
       };
     }
-  }, [loaded, territoryDate]);
+  }, [loaded, territoryDate, loadTerritoryData]);
 
   // Update infrastructure status based on timeline date
   // Fetch historical equipment data when timeline moves to a new month
