@@ -20,6 +20,7 @@ import { t } from "@/i18n";
 import { MAP_CENTER, MAP_STYLE, MAP_ZOOM } from "@/lib/constants";
 import type { EquipmentMarker, MapLayers } from "@/lib/types";
 import { formatDateDisplay, formatISODate } from "@/lib/utils";
+import MapLegend from "./MapLegend";
 import {
   battleGeoJSON,
   findFirstSymbolLayer,
@@ -314,6 +315,21 @@ export default function MapView({
         "circle-blur": 0.2,
       },
     });
+
+    // VIINA frontline — dashed line matching DeepState territory-line style
+    mapInstance.addLayer({
+      id: "viina-frontline",
+      type: "line",
+      source: "viina-territory",
+      filter: ["==", ["get", "type"], "frontline"],
+      layout: hidden,
+      paint: {
+        "line-color": "#ff4444",
+        "line-width": 2.5,
+        "line-opacity": 0.85,
+        "line-dasharray": [3, 2],
+      },
+    });
   }, []);
 
   // Track the last territory date we started loading to avoid redundant fetches
@@ -381,6 +397,14 @@ export default function MapView({
                 "visibility",
                 layersRef.current.territory ? "visible" : "none",
               );
+          }
+          // VIINA frontline follows the frontline toggle
+          if (mapInstance.getLayer("viina-frontline")) {
+            mapInstance.setLayoutProperty(
+              "viina-frontline",
+              "visibility",
+              layersRef.current.frontline ? "visible" : "none",
+            );
           }
           return;
         }
@@ -2313,10 +2337,17 @@ export default function MapView({
       }
     }
 
-    // Frontline border (separate toggle)
+    // Frontline border (separate toggle — applies to both DeepState and VIINA)
     if (map.current.getLayer("territory-line")) {
       map.current.setLayoutProperty(
         "territory-line",
+        "visibility",
+        layers.frontline ? "visible" : "none",
+      );
+    }
+    if (map.current.getLayer("viina-frontline")) {
+      map.current.setLayoutProperty(
+        "viina-frontline",
         "visibility",
         layers.frontline ? "visible" : "none",
       );
@@ -2799,6 +2830,7 @@ export default function MapView({
         className="fixed inset-0 z-0"
         style={{ width: "100%", height: "100%" }}
       />
+      {loaded && <MapLegend />}
       {!loaded && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-3">

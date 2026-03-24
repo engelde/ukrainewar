@@ -519,10 +519,7 @@ export default function EventSidebar({
         </div>
 
         {/* Scrollable event list */}
-        <SidebarContent
-          ref={contentRef}
-          className="scrollbar-thin scrollbar-thumb-border/30 flex-1"
-        >
+        <SidebarContent ref={contentRef} className="scrollbar-styled flex-1">
           {years.map((year) => (
             <SidebarGroup
               key={year}

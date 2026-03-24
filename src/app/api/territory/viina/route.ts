@@ -58,6 +58,96 @@ function findClosestSnapshot(snapshots: Snapshot[], targetDate: string): Snapsho
   return snapshots[hi];
 }
 
+// Normalize an edge key so (A,B) and (B,A) produce the same string
+function edgeKey(a: number[], b: number[]): string {
+  const ax = a[0];
+  const ay = a[1];
+  const bx = b[0];
+  const by = b[1];
+  if (ax < bx || (ax === bx && ay < by)) return `${ax},${ay}|${bx},${by}`;
+  return `${bx},${by}|${ax},${ay}`;
+}
+
+// Compute frontline as boundary edges of occupied territory
+function computeFrontline(occupiedIds: number[], tess: Tessellation): GeoJSON.Feature | null {
+  const edgeCounts = new Map<string, { a: number[]; b: number[]; count: number }>();
+
+  for (const geonameid of occupiedIds) {
+    const ring = tess[geonameid];
+    if (!ring || ring.length < 3) continue;
+
+    for (let i = 0; i < ring.length - 1; i++) {
+      const key = edgeKey(ring[i], ring[i + 1]);
+      const existing = edgeCounts.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        edgeCounts.set(key, { a: ring[i], b: ring[i + 1], count: 1 });
+      }
+    }
+  }
+
+  // Boundary edges: shared by exactly 1 occupied polygon
+  const boundaryEdges: number[][][] = [];
+  for (const edge of edgeCounts.values()) {
+    if (edge.count === 1) {
+      boundaryEdges.push([edge.a, edge.b]);
+    }
+  }
+
+  if (boundaryEdges.length === 0) return null;
+
+  // Chain boundary edges into polylines for smoother rendering
+  const adjacency = new Map<string, { coord: number[]; neighbors: string[] }>();
+  for (const [a, b] of boundaryEdges) {
+    const ka = `${a[0]},${a[1]}`;
+    const kb = `${b[0]},${b[1]}`;
+    if (!adjacency.has(ka)) adjacency.set(ka, { coord: a, neighbors: [] });
+    if (!adjacency.has(kb)) adjacency.set(kb, { coord: b, neighbors: [] });
+    adjacency.get(ka)!.neighbors.push(kb);
+    adjacency.get(kb)!.neighbors.push(ka);
+  }
+
+  const visited = new Set<string>();
+  const lines: number[][][] = [];
+
+  for (const [startKey, startNode] of adjacency) {
+    if (visited.has(startKey)) continue;
+    // Start from endpoints (degree != 2) or any unvisited node
+    if (startNode.neighbors.length === 2) continue;
+  }
+
+  // Walk chains starting from endpoints first, then any remaining
+  const endpoints = [...adjacency.entries()].filter(([, n]) => n.neighbors.length !== 2);
+  const starts = endpoints.length > 0 ? endpoints : [...adjacency.entries()];
+
+  for (const [startKey] of starts) {
+    if (visited.has(startKey)) continue;
+    const chain: number[][] = [];
+    let current = startKey;
+
+    while (current && !visited.has(current)) {
+      visited.add(current);
+      const node = adjacency.get(current)!;
+      chain.push(node.coord);
+      const next = node.neighbors.find((n) => !visited.has(n));
+      current = next ?? "";
+    }
+
+    if (chain.length >= 2) {
+      lines.push(chain);
+    }
+  }
+
+  if (lines.length === 0) return null;
+
+  return {
+    type: "Feature",
+    geometry: { type: "MultiLineString", coordinates: lines },
+    properties: { type: "frontline" },
+  };
+}
+
 export async function GET(request: NextRequest) {
   const limited = checkRateLimit(request, "territory-viina", 120, 60_000);
   if (limited) return limited;
@@ -83,7 +173,6 @@ export async function GET(request: NextRequest) {
       if (!place) continue;
       const ring = tess[geonameid];
       if (ring) {
-        // Polygon feature for filled territory rendering
         features.push({
           type: "Feature",
           geometry: {
@@ -93,7 +182,6 @@ export async function GET(request: NextRequest) {
           properties: { geonameid, name: place.name, status: "RU" },
         });
       } else {
-        // Fallback to point if no tessellation
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [place.lng, place.lat] },
@@ -122,6 +210,13 @@ export async function GET(request: NextRequest) {
           properties: { geonameid, name: place.name, status: "CONTESTED" },
         });
       }
+    }
+
+    // Compute frontline from boundary edges of all occupied polygons
+    const allOccupiedIds = [...snapshot.r, ...snapshot.c];
+    const frontline = computeFrontline(allOccupiedIds, tess);
+    if (frontline) {
+      features.push(frontline);
     }
 
     const geojson: GeoJSON.FeatureCollection = {

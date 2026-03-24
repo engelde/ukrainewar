@@ -229,6 +229,25 @@
   display: none;
 }
 
+/* Custom styled scrollbar — thin dark track with muted thumb */
+.scrollbar-styled {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.45 0.02 260 / 0.5) transparent;
+}
+.scrollbar-styled::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-styled::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-styled::-webkit-scrollbar-thumb {
+  background: oklch(0.45 0.02 260 / 0.5);
+  border-radius: 3px;
+}
+.scrollbar-styled::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.03 260 / 0.7);
+}
+
 /* Map attribution — subtle and unobtrusive */
 .maplibregl-ctrl-attrib {
   background: transparent !important;

@@ -100,6 +100,21 @@ export const KEY_EVENTS: WarEvent[] = [
     description: "Western allies pledge Leopard 2 and M1 Abrams tanks to Ukraine",
   },
   {
+    date: "20230209",
+    label: "Vuhledar defense",
+    description:
+      "Ukraine repels major Russian assault on Vuhledar, destroying dozens of armored vehicles",
+    lat: 47.776,
+    lng: 37.254,
+  },
+  {
+    date: "20230322",
+    label: "ICC arrest warrant",
+    description:
+      "International Criminal Court issues arrest warrant for Putin for war crimes related to deportation of children",
+    highlight: true,
+  },
+  {
     date: "20230521",
     label: "Bakhmut falls",
     description: "Wagner forces capture Bakhmut after the war's longest and bloodiest battle",
@@ -124,13 +139,46 @@ export const KEY_EVENTS: WarEvent[] = [
     highlight: true,
   },
   {
+    date: "20230624",
+    label: "Wagner mutiny",
+    description:
+      "Prigozhin leads Wagner forces toward Moscow in brief mutiny before reaching deal with Kremlin",
+    highlight: true,
+  },
+  {
+    date: "20230724",
+    label: "Cluster munitions arrive",
+    description: "US begins delivering cluster munitions to Ukraine amid ammunition shortages",
+  },
+  {
     date: "20230823",
     label: "Prigozhin killed",
     description:
       "Wagner leader Yevgeny Prigozhin dies in plane crash two months after aborted mutiny",
     highlight: true,
   },
+  {
+    date: "20231004",
+    label: "Hroza attack",
+    description:
+      "Russian missile strikes memorial gathering in Hroza, Kharkiv Oblast, killing 59 civilians",
+    lat: 49.286,
+    lng: 37.339,
+  },
+  {
+    date: "20231117",
+    label: "Counteroffensive stalls",
+    description:
+      "Ukraine acknowledges the summer counteroffensive has not met its objectives amid dense Russian defenses",
+  },
   // 2024
+  {
+    date: "20240113",
+    label: "Largest missile barrage",
+    description:
+      "Russia launches its largest single-day missile attack of the war, hitting cities across Ukraine with 100+ missiles",
+    highlight: true,
+  },
   {
     date: "20240217",
     label: "Avdiivka falls",
@@ -138,6 +186,31 @@ export const KEY_EVENTS: WarEvent[] = [
     lat: 48.14,
     lng: 37.745,
     highlight: true,
+  },
+  {
+    date: "20240320",
+    label: "Energy grid attacks",
+    description:
+      "Russia begins systematic campaign to destroy Ukraine's energy infrastructure ahead of summer",
+  },
+  {
+    date: "20240413",
+    label: "Chasiv Yar assault",
+    description:
+      "Russia begins offensive on Chasiv Yar, a strategically important hilltop city west of Bakhmut",
+    lat: 48.605,
+    lng: 37.848,
+  },
+  {
+    date: "20240424",
+    label: "US aid package",
+    description: "Congress passes $61 billion Ukraine aid package after months of delay",
+    highlight: true,
+  },
+  {
+    date: "20240526",
+    label: "F-16s confirmed",
+    description: "Netherlands and Denmark confirm F-16 fighter jets will begin arriving in Ukraine",
   },
   {
     date: "20240708",
@@ -227,6 +300,25 @@ export const KEY_EVENTS: WarEvent[] = [
     highlight: true,
   },
   {
+    date: "20250127",
+    label: "Ukraine aid freeze",
+    description: "US freezes nearly all foreign aid including military assistance to Ukraine",
+    highlight: true,
+  },
+  {
+    date: "20250210",
+    label: "Minerals deal talks",
+    description:
+      "US and Ukraine begin negotiations on a critical minerals agreement as precondition for continued support",
+  },
+  {
+    date: "20250218",
+    label: "Zelensky-Trump meeting",
+    description:
+      "Zelenskyy meets Trump in Washington to discuss peace framework and security guarantees",
+    highlight: true,
+  },
+  {
     date: "20250224",
     label: "3rd anniversary",
     description: "Three years since Russia's full-scale invasion of Ukraine",
@@ -235,9 +327,44 @@ export const KEY_EVENTS: WarEvent[] = [
     highlight: true,
   },
   {
+    date: "20250228",
+    label: "Oval Office confrontation",
+    description:
+      "Heated Oval Office meeting between Zelenskyy, Trump, and Vance leads to collapse of minerals deal signing",
+    highlight: true,
+  },
+  {
+    date: "20250301",
+    label: "Pokrovsk pressure",
+    description:
+      "Russian forces intensify assault on Pokrovsk, a critical logistics hub in Donetsk Oblast",
+    lat: 48.284,
+    lng: 37.178,
+  },
+  {
+    date: "20250306",
+    label: "Black Sea energy strikes",
+    description:
+      "Russia launches large-scale missile strikes on Ukrainian energy infrastructure across multiple oblasts",
+  },
+  {
+    date: "20250310",
+    label: "30-day ceasefire proposal",
+    description:
+      "US proposes 30-day ceasefire framework; Ukraine agrees conditionally, Russia rejects",
+    highlight: true,
+  },
+  {
     date: "20250318",
-    label: "Ceasefire proposed",
+    label: "Energy ceasefire",
     description:
       "Trump-Putin call results in proposed limited ceasefire on energy infrastructure; quickly broken",
+  },
+  {
+    date: "20250320",
+    label: "Intelligence sharing cut",
+    description:
+      "Reports emerge that US has reduced intelligence sharing with Ukraine following diplomatic tensions",
+    highlight: true,
   },
 ];

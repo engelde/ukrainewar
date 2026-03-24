@@ -328,6 +328,18 @@ async function aggregateEvents(): Promise<WarEvent[]> {
     );
 
     const merged = mergeEvents(wikidataEvents, SEED_EVENTS, [...acledEvents, ...missileEvents]);
+
+    // Overlay highlight flags from curated KEY_EVENTS
+    const highlightMap = new Map<string, boolean>();
+    for (const e of KEY_EVENTS) {
+      if (e.highlight) highlightMap.set(e.date, true);
+    }
+    for (const event of merged) {
+      if (highlightMap.has(event.date)) {
+        event.highlight = true;
+      }
+    }
+
     console.log(`[events] Merged: ${merged.length} events (after dedup)`);
 
     // If all external sources failed, use fallback
