@@ -30,7 +30,7 @@ const MAP_KEY = process.env.NASA_FIRMS_KEY || "DEMO_KEY";
 interface FirmsRecord {
   latitude: string;
   longitude: string;
-  brightness: string;
+  bright_ti4: string; // NRT & SP both use this column name
   scan: string;
   track: string;
   acq_date: string;
@@ -73,7 +73,7 @@ function toGeoJSON(records: FirmsRecord[]): GeoJSON.FeatureCollection {
         coordinates: [Number.parseFloat(r.longitude), Number.parseFloat(r.latitude)],
       },
       properties: {
-        brightness: Number.parseFloat(r.brightness),
+        brightness: Number.parseFloat(r.bright_ti4),
         confidence: r.confidence,
         frp: Number.parseFloat(r.frp), // Fire Radiative Power (MW)
         date: r.acq_date,

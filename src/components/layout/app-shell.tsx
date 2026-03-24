@@ -163,7 +163,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   );
 
   // Layers that are OFF by default (user must opt in)
-  const DEFAULT_LAYERS_OFF = new Set<string>(["alliance", "buildup"]);
+  const DEFAULT_LAYERS_OFF = new Set<string>(["alliance", "buildup", "thermal"]);
 
   // Derive layer state from URL (default: all on except DEFAULT_LAYERS_OFF; URL stores which are off)
   const layers = useMemo<MapLayers>(() => {
