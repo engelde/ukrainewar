@@ -19,8 +19,8 @@ function formatNumber(n: number | undefined): string {
   return n.toLocaleString();
 }
 
-function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) {
-  const summary = useMemo(() => getUkraineLossSummary(), []);
+function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLossesPanelProps) {
+  const summary = useMemo(() => getUkraineLossSummary(timelineDate), [timelineDate]);
   const mz = summary.mediazonaConfirmed;
 
   if (!isOpen) {

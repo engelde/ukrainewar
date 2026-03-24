@@ -48,15 +48,17 @@ export default function DraggablePanel({
       const rect = panelRef.current.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const pad = 4;
+      const sidePad = 8;
+      const topPad = 56; // below nav bar
+      const bottomPad = 96; // above timeline area
 
       const naturalLeft = rect.left - offset.x;
       const naturalTop = rect.top - offset.y;
 
-      const minX = -naturalLeft + pad;
-      const maxX = vw - naturalLeft - rect.width - pad;
-      const minY = -naturalTop + pad;
-      const maxY = vh - naturalTop - rect.height - pad;
+      const minX = -naturalLeft + sidePad;
+      const maxX = vw - naturalLeft - rect.width - sidePad;
+      const minY = -naturalTop + topPad;
+      const maxY = vh - naturalTop - rect.height - bottomPad;
 
       return {
         x: Math.max(minX, Math.min(maxX, x)),

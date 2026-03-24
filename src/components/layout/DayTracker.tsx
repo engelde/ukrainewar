@@ -69,7 +69,7 @@ export default function DayTracker({
     : new Date();
 
   return (
-    <div className="fixed top-3 right-4 z-40 sm:top-4 sm:right-6 flex items-center gap-1.5">
+    <div className="fixed top-3 right-4 z-40 sm:top-4 sm:right-6 flex items-center gap-0.5 bg-background/70 backdrop-blur-xl rounded-lg px-3 py-1.5 border border-border/40">
       {onReset && (
         <button
           onClick={onReset}
@@ -92,17 +92,16 @@ export default function DayTracker({
         layers={layers}
         onToggleLayer={onToggleLayer}
       />
+      <div className="w-px h-4 bg-border/40" />
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger
           render={
             <button
               className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer",
-                "bg-background/70 backdrop-blur-xl",
-                "border border-ua-yellow/30",
-                "text-xs font-bold uppercase tracking-wider font-mono",
+                "flex items-center gap-1.5 rounded-md px-2 py-1 cursor-pointer",
+                "text-sm font-bold uppercase tracking-wider font-mono",
                 "text-ua-yellow",
-                "hover:border-ua-yellow/50 transition-colors",
+                "hover:text-ua-yellow/80 transition-colors",
               )}
             >
               {t("common.day")} {warDay.toLocaleString()}

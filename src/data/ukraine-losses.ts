@@ -141,17 +141,34 @@ export const CIVILIAN_CASUALTIES_OHCHR = {
 
 /**
  * Return a summary suitable for display in the UI.
+ * When a date (YYYYMMDD) is provided, returns data available at that point in time.
  */
-export function getUkraineLossSummary() {
-  const latest = UKRAINE_LOSS_ESTIMATES[UKRAINE_LOSS_ESTIMATES.length - 1];
-  const mediazona = [...UKRAINE_LOSS_ESTIMATES]
-    .reverse()
-    .find((e) => e.source.includes("Mediazona"));
+export function getUkraineLossSummary(asOfDate?: string) {
+  const estimates = asOfDate
+    ? UKRAINE_LOSS_ESTIMATES.filter((e) => e.date <= asOfDate)
+    : UKRAINE_LOSS_ESTIMATES;
+
+  if (estimates.length === 0) {
+    return {
+      latestEstimate: undefined,
+      mediazonaConfirmed: undefined,
+      civilianOHCHR:
+        asOfDate && asOfDate < CIVILIAN_CASUALTIES_OHCHR.asOf
+          ? undefined
+          : CIVILIAN_CASUALTIES_OHCHR,
+      disclaimer:
+        "Ukraine does not officially publish comprehensive military casualty figures. Estimates vary widely between sources. Mediazona counts are confirmed minimums based on named individuals.",
+    };
+  }
+
+  const latest = estimates[estimates.length - 1];
+  const mediazona = [...estimates].reverse().find((e) => e.source.includes("Mediazona"));
 
   return {
     latestEstimate: latest,
     mediazonaConfirmed: mediazona,
-    civilianOHCHR: CIVILIAN_CASUALTIES_OHCHR,
+    civilianOHCHR:
+      asOfDate && asOfDate < CIVILIAN_CASUALTIES_OHCHR.asOf ? undefined : CIVILIAN_CASUALTIES_OHCHR,
     disclaimer:
       "Ukraine does not officially publish comprehensive military casualty figures. Estimates vary widely between sources. Mediazona counts are confirmed minimums based on named individuals.",
   };
