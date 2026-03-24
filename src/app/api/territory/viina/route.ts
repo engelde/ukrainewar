@@ -20,6 +20,27 @@ let placesCache: Record<string, Place> | null = null;
 let controlCache: Snapshot[] | null = null;
 let tessCache: Tessellation | null = null;
 
+const LRU_MAX = 30;
+const resultCache = new Map<string, unknown>();
+
+function lruGet(key: string): unknown | undefined {
+  if (!resultCache.has(key)) return undefined;
+  const value = resultCache.get(key);
+  resultCache.delete(key);
+  resultCache.set(key, value);
+  return value;
+}
+
+function lruSet(key: string, value: unknown): void {
+  if (resultCache.has(key)) {
+    resultCache.delete(key);
+  } else if (resultCache.size >= LRU_MAX) {
+    const oldest = resultCache.keys().next().value!;
+    resultCache.delete(oldest);
+  }
+  resultCache.set(key, value);
+}
+
 async function loadData(origin: string) {
   if (!placesCache) {
     const res = await fetch(`${origin}/data/viina/places.json`);
@@ -171,6 +192,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "date parameter required (YYYYMMDD)" }, { status: 400 });
   }
 
+  const cached = lruGet(date);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+      },
+    });
+  }
+
   try {
     const { places, control, tess } = await loadData(new URL(request.url).origin);
     const snapshot = findClosestSnapshot(control, date);
@@ -237,22 +267,23 @@ export async function GET(request: NextRequest) {
       features,
     };
 
-    return NextResponse.json(
-      {
-        date,
-        snapshotDate: snapshot.d,
-        geojson,
-        counts: {
-          ru: snapshot.r.length,
-          contested: snapshot.c.length,
-        },
+    const result = {
+      date,
+      snapshotDate: snapshot.d,
+      geojson,
+      counts: {
+        ru: snapshot.r.length,
+        contested: snapshot.c.length,
       },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
-        },
+    };
+
+    lruSet(date, result);
+
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
       },
-    );
+    });
   } catch {
     return NextResponse.json({ error: "Failed to load VIINA territory data" }, { status: 500 });
   }

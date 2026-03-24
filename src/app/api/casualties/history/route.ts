@@ -1,89 +1,5 @@
 import { NextResponse } from "next/server";
-import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
-
-const ORC_LOSSES_URL =
-  "https://raw.githubusercontent.com/lod-db/orc-losses/main/russian-losses.json";
-const PERSISTENT_TTL = 86400; // 24 hours
-const CACHE_KEY = "casualties-history";
-
-interface OrcLossEntry {
-  date: string;
-  personnel: number | null;
-  tanks: number | null;
-  afvs: number | null;
-  artillery: number | null;
-  airDefense: number | null;
-  rocketSystems: number | null;
-  unarmoredVehicles: number | null;
-  fixedWingAircraft: number | null;
-  rotaryWingAircraft: number | null;
-  uavs: number | null;
-  ships: number | null;
-  specialEquipment: number | null;
-  missiles: number | null;
-}
-
-// In-memory cache — fast layer above persistent cache
-let cachedData: OrcLossEntry[] | null = null;
-let cacheTime = 0;
-const MEM_CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours
-
-let inflightPromise: Promise<OrcLossEntry[]> | null = null;
-
-async function fetchFromUpstream(): Promise<OrcLossEntry[]> {
-  const res = await fetch(ORC_LOSSES_URL, {
-    next: { revalidate: 14400 },
-  });
-  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-  const data: OrcLossEntry[] = await res.json();
-  return data.reverse(); // oldest-first for binary search
-}
-
-async function getHistoricalData(): Promise<OrcLossEntry[]> {
-  // Layer 1: In-memory cache
-  if (cachedData && Date.now() - cacheTime < MEM_CACHE_DURATION) {
-    return cachedData;
-  }
-
-  // Layer 2: Persistent cache
-  const persistent = await cacheGet<OrcLossEntry[]>(CACHE_KEY);
-
-  if (persistent && isFresh(persistent)) {
-    cachedData = persistent.data;
-    cacheTime = Date.now();
-    return cachedData;
-  }
-
-  if (persistent && isUsableStale(persistent)) {
-    cachedData = persistent.data;
-    cacheTime = Date.now();
-    // Background refresh
-    if (!inflightPromise) {
-      inflightPromise = fetchFromUpstream()
-        .then(async (data) => {
-          cachedData = data;
-          cacheTime = Date.now();
-          await cacheSet(CACHE_KEY, data, PERSISTENT_TTL);
-          return data;
-        })
-        .catch((err) => {
-          console.error("[casualties/history] Background refresh failed:", err);
-          return cachedData || [];
-        })
-        .finally(() => {
-          inflightPromise = null;
-        });
-    }
-    return cachedData;
-  }
-
-  // Layer 3: Cold fetch
-  const data = await fetchFromUpstream();
-  cachedData = data;
-  cacheTime = Date.now();
-  await cacheSet(CACHE_KEY, data, PERSISTENT_TTL);
-  return data;
-}
+import { getOrcLossesData, getStaleFallbackData, type OrcLossEntry } from "@/lib/orc-losses";
 
 function findByDate(data: OrcLossEntry[], targetDate: string): OrcLossEntry | null {
   // targetDate is "YYYYMMDD", data dates are "YYYY-MM-DD"
@@ -115,24 +31,8 @@ export async function GET(request: Request) {
     );
   }
 
-  // Determine X-Cache status based on where data comes from
-  let xCache = "MISS";
-
   try {
-    // Check if we'll serve from cache
-    const memFresh = cachedData && Date.now() - cacheTime < MEM_CACHE_DURATION;
-    if (memFresh) {
-      xCache = "HIT";
-    } else {
-      const persistent = await cacheGet<OrcLossEntry[]>(CACHE_KEY);
-      if (persistent && isFresh(persistent)) {
-        xCache = "HIT";
-      } else if (persistent && isUsableStale(persistent)) {
-        xCache = "STALE";
-      }
-    }
-
-    const data = await getHistoricalData();
+    const { data, cacheStatus: xCache } = await getOrcLossesData();
     const entry = findByDate(data, date);
 
     if (!entry) {
@@ -197,11 +97,12 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     // Try serving any available stale data
-    if (cachedData) {
-      const entry = findByDate(cachedData, date);
+    const staleData = await getStaleFallbackData();
+    if (staleData) {
+      const entry = findByDate(staleData, date);
       if (entry) {
-        const entryIdx = cachedData.indexOf(entry);
-        const prevEntry = entryIdx > 0 ? cachedData[entryIdx - 1] : null;
+        const entryIdx = staleData.indexOf(entry);
+        const prevEntry = entryIdx > 0 ? staleData[entryIdx - 1] : null;
         const v = (val: number | null) => val ?? 0;
         const delta = (curr: number | null, prev: number | null | undefined) =>
           prev != null && curr != null ? Math.max(0, curr - prev) : 0;

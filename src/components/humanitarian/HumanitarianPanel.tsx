@@ -166,7 +166,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
         const [refRes, fundRes, casRes] = await Promise.all([
           fetch("/api/humanitarian/refugees", { signal: controller.signal }),
           fetch("/api/humanitarian/funding", { signal: controller.signal }),
-          fetch("/api/humanitarian/civilian-casualties", { signal: controller.signal }),
+          fetch("/data/civilian-casualties.json", { signal: controller.signal }),
         ]);
         if (refRes.ok) setRefugees(await refRes.json());
         if (fundRes.ok) setFunding(await fundRes.json());

@@ -2638,29 +2638,6 @@ export default function MapView({
   }, [loaded, territoryDate]);
 
   // Update infrastructure status based on timeline date
-  useEffect(() => {
-    if (!map.current || !loaded) return;
-    const m = map.current;
-    const src = m.getSource("infrastructure") as maplibregl.GeoJSONSource | undefined;
-    if (!src) return;
-    const features = buildInfraFeatures(territoryDate);
-    src.setData({ type: "FeatureCollection", features });
-
-    // Also update gas pipeline status based on date
-    const pipelineSrc = m.getSource("gas-pipelines") as maplibregl.GeoJSONSource | undefined;
-    if (pipelineSrc && gasPipelines.length > 0) {
-      const pipeFeatures: GeoJSON.Feature[] = gasPipelines.map((p) => {
-        const status = territoryDate ? getStatusAtDate(p, territoryDate) : p.status;
-        return {
-          type: "Feature",
-          geometry: { type: "LineString", coordinates: p.waypoints.map((w) => [w.lng, w.lat]) },
-          properties: { id: p.id, name: p.name, status, description: p.description },
-        };
-      });
-      pipelineSrc.setData({ type: "FeatureCollection", features: pipeFeatures });
-    }
-  }, [loaded, territoryDate, buildInfraFeatures, gasPipelines]);
-
   // Fetch historical equipment data when timeline moves to a new month
   useEffect(() => {
     if (!loaded || !territoryDate) return;
@@ -2857,10 +2834,37 @@ export default function MapView({
 
         heatmapSource.setData(geoWithData);
       }
+
+      // --- Infrastructure & gas pipelines ---
+      const infraSrc = m.getSource("infrastructure") as maplibregl.GeoJSONSource | undefined;
+      if (infraSrc) {
+        const features = buildInfraFeatures(territoryDate);
+        infraSrc.setData({ type: "FeatureCollection", features });
+      }
+      const pipelineSrc = m.getSource("gas-pipelines") as maplibregl.GeoJSONSource | undefined;
+      if (pipelineSrc && gasPipelines.length > 0) {
+        const pipeFeatures: GeoJSON.Feature[] = gasPipelines.map((p) => {
+          const status = territoryDate ? getStatusAtDate(p, territoryDate) : p.status;
+          return {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: p.waypoints.map((w) => [w.lng, w.lat]) },
+            properties: { id: p.id, name: p.name, status, description: p.description },
+          };
+        });
+        pipelineSrc.setData({ type: "FeatureCollection", features: pipeFeatures });
+      }
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [loaded, territoryDate, battles, operations, loadAttackMarkers]);
+  }, [
+    loaded,
+    territoryDate,
+    battles,
+    operations,
+    loadAttackMarkers,
+    buildInfraFeatures,
+    gasPipelines,
+  ]);
 
   // Fly to target location
   useEffect(() => {
