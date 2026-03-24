@@ -5,13 +5,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { WarEvent } from "@/data/events";
 import { t } from "@/i18n";
+import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import OptionsPopup from "./OptionsPopup";
 
 interface PanelToggles {
   events?: () => void;
   russianLosses?: () => void;
-  layers?: () => void;
   humanitarian?: () => void;
   spending?: () => void;
   energy?: () => void;
@@ -24,7 +24,6 @@ interface PanelToggles {
 interface PanelStates {
   events?: boolean;
   russianLosses?: boolean;
-  layers?: boolean;
   humanitarian?: boolean;
   spending?: boolean;
   energy?: boolean;
@@ -41,6 +40,8 @@ interface DayTrackerProps {
   onDateChange?: (date: string) => void;
   panelToggles?: PanelToggles;
   panelStates?: PanelStates;
+  layers?: MapLayers;
+  onToggleLayer?: (layer: keyof MapLayers) => void;
 }
 
 export default function DayTracker({
@@ -49,6 +50,8 @@ export default function DayTracker({
   onDateChange,
   panelToggles,
   panelStates,
+  layers,
+  onToggleLayer,
 }: DayTrackerProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -64,7 +67,12 @@ export default function DayTracker({
 
   return (
     <div className="fixed top-3 right-4 z-40 sm:top-4 sm:right-6 flex items-center gap-1.5">
-      <OptionsPopup panelToggles={panelToggles} panelStates={panelStates} />
+      <OptionsPopup
+        panelToggles={panelToggles}
+        panelStates={panelStates}
+        layers={layers}
+        onToggleLayer={onToggleLayer}
+      />
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger
           render={

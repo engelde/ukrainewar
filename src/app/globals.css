@@ -279,3 +279,11 @@
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
   filter: invert(1) brightness(0.85);
 }
+
+/* Reduce motion — disables all transitions and animations */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+}

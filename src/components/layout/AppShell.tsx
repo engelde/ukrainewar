@@ -7,7 +7,6 @@ import DayTracker from "@/components/layout/DayTracker";
 import EventSidebar from "@/components/layout/EventSidebar";
 import Header, { Footer } from "@/components/layout/Header";
 import DetailPanel from "@/components/map/DetailPanel";
-import LayerControls from "@/components/map/LayerControls";
 import TimelineScrubber from "@/components/map/TimelineScrubber";
 
 const HumanitarianPanel = dynamic(() => import("@/components/humanitarian/HumanitarianPanel"), {
@@ -108,7 +107,19 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [ukraineLossesOpen, setUkraineLossesOpen] = useState(false);
   const [sanctionsOpen, setSanctionsOpen] = useState(false);
   const [statsCollapsed, setStatsCollapsed] = useState(false);
-  const [layersCollapsed, setLayersCollapsed] = useState(true);
+
+  // Panel visibility: controlled by Options popup (hide/show entirely)
+  const [panelVisibility, setPanelVisibility] = useState({
+    events: true,
+    russianLosses: true,
+    humanitarian: false,
+    spending: false,
+    energy: false,
+    airDefense: false,
+    support: false,
+    ukraineLosses: false,
+    sanctions: false,
+  });
   const [flyToTarget, setFlyToTarget] = useState<{
     lat: number;
     lng: number;
@@ -238,40 +249,64 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     }
   }, [territoryDate, fetchCasualties]);
 
-  const handleToggleHumanitarian = useCallback(() => {
-    setHumanitarianOpen((prev) => !prev);
-  }, []);
+  // Minimize handlers — called by panel X/close buttons (collapse to dock)
+  const handleMinimizeHumanitarian = useCallback(() => setHumanitarianOpen(false), []);
+  const handleMinimizeSpending = useCallback(() => setSpendingOpen(false), []);
+  const handleMinimizeEnergy = useCallback(() => setEnergyOpen(false), []);
+  const handleMinimizeAirDefense = useCallback(() => setAirDefenseOpen(false), []);
+  const handleMinimizeSupport = useCallback(() => setSupportOpen(false), []);
+  const handleMinimizeUkraineLosses = useCallback(() => setUkraineLossesOpen(false), []);
+  const handleMinimizeSanctions = useCallback(() => setSanctionsOpen(false), []);
+  const handleMinimizeStats = useCallback(() => setStatsCollapsed(true), []);
 
-  const handleToggleSpending = useCallback(() => {
-    setSpendingOpen((prev) => !prev);
-  }, []);
+  // Expand handlers — called by dock collapsed bars
+  const handleExpandHumanitarian = useCallback(() => setHumanitarianOpen(true), []);
+  const handleExpandSpending = useCallback(() => setSpendingOpen(true), []);
+  const handleExpandEnergy = useCallback(() => setEnergyOpen(true), []);
+  const handleExpandAirDefense = useCallback(() => setAirDefenseOpen(true), []);
+  const handleExpandSupport = useCallback(() => setSupportOpen(true), []);
+  const handleExpandUkraineLosses = useCallback(() => setUkraineLossesOpen(true), []);
+  const handleExpandSanctions = useCallback(() => setSanctionsOpen(true), []);
+  const handleExpandStats = useCallback(() => setStatsCollapsed(false), []);
 
-  const handleToggleEnergy = useCallback(() => {
-    setEnergyOpen((prev) => !prev);
-  }, []);
-
-  const handleToggleAirDefense = useCallback(() => {
-    setAirDefenseOpen((prev) => !prev);
-  }, []);
-
-  const handleToggleSupport = useCallback(() => {
-    setSupportOpen((prev) => !prev);
-  }, []);
-
-  const handleToggleUkraineLosses = useCallback(() => {
-    setUkraineLossesOpen((prev) => !prev);
-  }, []);
-
-  const handleToggleSanctions = useCallback(() => {
-    setSanctionsOpen((prev) => !prev);
-  }, []);
-
-  const handleToggleStats = useCallback(() => {
-    setStatsCollapsed((prev) => !prev);
-  }, []);
-
-  const handleToggleLayers = useCallback(() => {
-    setLayersCollapsed((prev) => !prev);
+  // Visibility toggles — called by Options popup (hide/show entirely)
+  const handleVisibilityToggle = useCallback((key: string) => {
+    setPanelVisibility((prev) => {
+      const next = { ...prev, [key]: !prev[key as keyof typeof prev] };
+      // When making visible, also expand the panel
+      if (next[key as keyof typeof next]) {
+        switch (key) {
+          case "events":
+            setSidebarOpen(true);
+            break;
+          case "russianLosses":
+            setStatsCollapsed(false);
+            break;
+          case "humanitarian":
+            setHumanitarianOpen(true);
+            break;
+          case "spending":
+            setSpendingOpen(true);
+            break;
+          case "energy":
+            setEnergyOpen(true);
+            break;
+          case "airDefense":
+            setAirDefenseOpen(true);
+            break;
+          case "support":
+            setSupportOpen(true);
+            break;
+          case "ukraineLosses":
+            setUkraineLossesOpen(true);
+            break;
+          case "sanctions":
+            setSanctionsOpen(true);
+            break;
+        }
+      }
+      return next;
+    });
   }, []);
 
   // Global Escape key handler — closes the topmost open panel
@@ -379,7 +414,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUkraineLossesOpen(false);
     setSanctionsOpen(false);
     setStatsCollapsed(false);
-    setLayersCollapsed(false);
     setTimelineKey((prev) => prev + 1);
     setSidebarOpen(false);
     setLayers({
@@ -433,7 +467,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   })();
 
   return (
-    <SidebarProvider defaultOpen={false} open={sidebarOpen} onOpenChange={setSidebarOpen}>
+    <SidebarProvider
+      defaultOpen={false}
+      open={panelVisibility.events && sidebarOpen}
+      onOpenChange={setSidebarOpen}
+    >
       <EventSidebar
         events={events}
         onEventClick={handleEventClick}
@@ -471,108 +509,99 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           territoryDate={territoryDate}
           dates={events}
           onDateChange={handleTimelineDateChange}
+          layers={layers}
+          onToggleLayer={handleToggleLayer}
           panelToggles={{
-            events: handleToggleSidebar,
-            russianLosses: handleToggleStats,
-            layers: handleToggleLayers,
-            humanitarian: handleToggleHumanitarian,
-            spending: handleToggleSpending,
-            energy: handleToggleEnergy,
-            airDefense: handleToggleAirDefense,
-            support: handleToggleSupport,
-            ukraineLosses: handleToggleUkraineLosses,
-            sanctions: handleToggleSanctions,
+            events: () => handleVisibilityToggle("events"),
+            russianLosses: () => handleVisibilityToggle("russianLosses"),
+            humanitarian: () => handleVisibilityToggle("humanitarian"),
+            spending: () => handleVisibilityToggle("spending"),
+            energy: () => handleVisibilityToggle("energy"),
+            airDefense: () => handleVisibilityToggle("airDefense"),
+            support: () => handleVisibilityToggle("support"),
+            ukraineLosses: () => handleVisibilityToggle("ukraineLosses"),
+            sanctions: () => handleVisibilityToggle("sanctions"),
           }}
           panelStates={{
-            events: sidebarOpen,
-            russianLosses: !statsCollapsed,
-            layers: !layersCollapsed,
-            humanitarian: humanitarianOpen,
-            spending: spendingOpen,
-            energy: energyOpen,
-            airDefense: airDefenseOpen,
-            support: supportOpen,
-            ukraineLosses: ukraineLossesOpen,
-            sanctions: sanctionsOpen,
+            events: panelVisibility.events,
+            russianLosses: panelVisibility.russianLosses,
+            humanitarian: panelVisibility.humanitarian,
+            spending: panelVisibility.spending,
+            energy: panelVisibility.energy,
+            airDefense: panelVisibility.airDefense,
+            support: panelVisibility.support,
+            ukraineLosses: panelVisibility.ukraineLosses,
+            sanctions: panelVisibility.sanctions,
           }}
         />
 
-        {displayData && !statsCollapsed && (
+        {/* Expanded panels — only when visible AND open */}
+        {panelVisibility.russianLosses && displayData && !statsCollapsed && (
           <DraggablePanel className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-xs">
             <StatsOverlay
               data={displayData}
               isHistorical={isViewingPast && !!historicalData}
               collapsed={false}
-              onCollapse={() => setStatsCollapsed(true)}
-            />
-          </DraggablePanel>
-        )}
-        {!layersCollapsed && (
-          <DraggablePanel className="fixed left-4 bottom-[155px] z-30 sm:left-6 sm:bottom-[240px]">
-            <LayerControls
-              layers={layers}
-              onToggle={handleToggleLayer}
-              collapsed={false}
-              onCollapse={() => setLayersCollapsed(true)}
+              onCollapse={handleMinimizeStats}
             />
           </DraggablePanel>
         )}
         {selectedMarker && <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />}
-        {humanitarianOpen && (
+        {panelVisibility.humanitarian && humanitarianOpen && (
           <DraggablePanel className="fixed left-4 top-14 z-30 sm:left-6 sm:top-16 max-w-xs">
             <HumanitarianPanel
               isOpen={true}
-              onToggle={handleToggleHumanitarian}
+              onToggle={handleMinimizeHumanitarian}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
-        {spendingOpen && (
+        {panelVisibility.spending && spendingOpen && (
           <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[303px] sm:top-16 max-w-xs">
             <SpendingPanel
               isOpen={true}
-              onToggle={handleToggleSpending}
+              onToggle={handleMinimizeSpending}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
-        {energyOpen && (
+        {panelVisibility.energy && energyOpen && (
           <DraggablePanel className="fixed left-4 top-[280px] z-30 sm:left-[600px] sm:top-16 max-w-xs">
             <EnergyPanel
               isOpen={true}
-              onToggle={handleToggleEnergy}
+              onToggle={handleMinimizeEnergy}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
-        {airDefenseOpen && (
+        {panelVisibility.airDefense && airDefenseOpen && (
           <DraggablePanel className="fixed left-4 top-[360px] z-30 sm:left-[600px] sm:top-[300px] max-w-xs">
             <AirDefensePanel
               isOpen={true}
-              onToggle={handleToggleAirDefense}
+              onToggle={handleMinimizeAirDefense}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
-        {supportOpen && (
+        {panelVisibility.support && supportOpen && (
           <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw-230px)] sm:top-16">
-            <InternationalSupportPanel isOpen={true} onToggle={handleToggleSupport} />
+            <InternationalSupportPanel isOpen={true} onToggle={handleMinimizeSupport} />
           </DraggablePanel>
         )}
-        {ukraineLossesOpen && (
+        {panelVisibility.ukraineLosses && ukraineLossesOpen && (
           <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw-180px)] sm:top-16">
             <UkraineLossesPanel
               isOpen={true}
-              onToggle={handleToggleUkraineLosses}
+              onToggle={handleMinimizeUkraineLosses}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
         )}
-        {sanctionsOpen && (
+        {panelVisibility.sanctions && sanctionsOpen && (
           <DraggablePanel className="fixed left-4 top-[200px] z-30 sm:left-[calc(50vw+120px)] sm:top-16">
             <SanctionsPanel
               isOpen={true}
-              onToggle={handleToggleSanctions}
+              onToggle={handleMinimizeSanctions}
               timelineDate={territoryDate ?? undefined}
             />
           </DraggablePanel>
@@ -584,10 +613,67 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           onDateChange={handleTimelineDateChange}
           initialDate={urlDate}
           externalDate={territoryDate}
-          eventsOpen={sidebarOpen}
+          eventsOpen={panelVisibility.events && sidebarOpen}
           onToggleEvents={handleToggleSidebar}
           onReset={handleReset}
           isHistorical={isViewingPast}
+          dockSlot={
+            <>
+              {panelVisibility.russianLosses && statsCollapsed && displayData && (
+                <StatsOverlay
+                  data={displayData}
+                  isHistorical={isViewingPast && !!historicalData}
+                  collapsed={true}
+                  onExpand={handleExpandStats}
+                />
+              )}
+              {panelVisibility.humanitarian && !humanitarianOpen && (
+                <HumanitarianPanel
+                  isOpen={false}
+                  onToggle={handleExpandHumanitarian}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelVisibility.spending && !spendingOpen && (
+                <SpendingPanel
+                  isOpen={false}
+                  onToggle={handleExpandSpending}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelVisibility.energy && !energyOpen && (
+                <EnergyPanel
+                  isOpen={false}
+                  onToggle={handleExpandEnergy}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelVisibility.airDefense && !airDefenseOpen && (
+                <AirDefensePanel
+                  isOpen={false}
+                  onToggle={handleExpandAirDefense}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelVisibility.support && !supportOpen && (
+                <InternationalSupportPanel isOpen={false} onToggle={handleExpandSupport} />
+              )}
+              {panelVisibility.ukraineLosses && !ukraineLossesOpen && (
+                <UkraineLossesPanel
+                  isOpen={false}
+                  onToggle={handleExpandUkraineLosses}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelVisibility.sanctions && !sanctionsOpen && (
+                <SanctionsPanel
+                  isOpen={false}
+                  onToggle={handleExpandSanctions}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+            </>
+          }
         />
 
         <Footer />

@@ -107,6 +107,7 @@ export default function DraggablePanel({
       className={className}
       style={{
         transform: `translate(${offset.x}px, ${offset.y}px)`,
+        opacity: "var(--panel-opacity, 0.8)",
       }}
       onMouseDown={handlePointerDown}
       onTouchStart={handlePointerDown}

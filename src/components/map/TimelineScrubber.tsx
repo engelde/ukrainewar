@@ -20,6 +20,7 @@ interface TimelineScrubberProps {
   onDateChange: (date: string) => void;
   initialDate?: string | null;
   externalDate?: string | null;
+  dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
   onReset?: () => void;
@@ -31,6 +32,7 @@ export default function TimelineScrubber({
   onDateChange,
   initialDate,
   externalDate,
+  dockSlot,
   eventsOpen,
   onToggleEvents,
   onReset,
@@ -467,6 +469,11 @@ export default function TimelineScrubber({
         "flex flex-col items-start pointer-events-none",
       )}
     >
+      {/* Minimized panels dock */}
+      {dockSlot && (
+        <div className="flex flex-wrap gap-1.5 px-4 pb-1.5 pointer-events-auto">{dockSlot}</div>
+      )}
+
       {/* Timeline panel — always expanded */}
       <div
         className={cn(
@@ -608,7 +615,7 @@ export default function TimelineScrubber({
         </div>
 
         {/* Year / month progress tracker — clickable to jump */}
-        <div className="mx-4 mb-1.5 mt-0.5 flex items-end h-4">
+        <div className="mx-4 mb-1.5 mt-0 flex items-end h-4">
           {YEAR_MARKS.map((year) => {
             const yearStartIdx = year === "2022" ? 0 : dates.indexOf(`${year}0101`);
             if (yearStartIdx < 0) return null;

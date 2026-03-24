@@ -1,29 +1,42 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { IconType } from "react-icons";
 import {
+  TbArrowsRightLeft,
   TbBolt,
+  TbBomb,
+  TbBorderAll,
+  TbBuildingBridge,
   TbCoin,
   TbFlag,
+  TbFlame,
   TbGlobe,
   TbHeartHandshake,
+  TbMap,
+  TbMapPin,
   TbMinus,
   TbPlus,
+  TbSatellite,
   TbScale,
   TbSettings,
+  TbShield,
   TbShieldCheck,
   TbSkull,
-  TbStack,
+  TbSwords,
   TbUserMinus,
   TbX,
 } from "react-icons/tb";
 import { useFontSize } from "@/hooks/useFontSize";
+import { usePanelOpacity } from "@/hooks/usePanelOpacity";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { t } from "@/i18n";
+import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface PanelToggles {
   events?: () => void;
   russianLosses?: () => void;
-  layers?: () => void;
   humanitarian?: () => void;
   spending?: () => void;
   energy?: () => void;
@@ -36,7 +49,6 @@ interface PanelToggles {
 interface PanelStates {
   events?: boolean;
   russianLosses?: boolean;
-  layers?: boolean;
   humanitarian?: boolean;
   spending?: boolean;
   energy?: boolean;
@@ -49,26 +61,63 @@ interface PanelStates {
 interface OptionsPopupProps {
   panelToggles?: PanelToggles;
   panelStates?: PanelStates;
+  layers?: MapLayers;
+  onToggleLayer?: (layer: keyof MapLayers) => void;
 }
 
-const PANEL_ITEMS = [
-  { label: "Events", icon: TbFlag, key: "events" as const },
-  { label: "Russian Losses", icon: TbSkull, key: "russianLosses" as const },
-  { label: "Layers", icon: TbStack, key: "layers" as const },
-  { label: "Humanitarian", icon: TbHeartHandshake, key: "humanitarian" as const },
-  { label: "Spending & Aid", icon: TbCoin, key: "spending" as const },
-  { label: "Energy", icon: TbBolt, key: "energy" as const },
-  { label: "Air Defense", icon: TbShieldCheck, key: "airDefense" as const },
-  { label: "Intl Support", icon: TbGlobe, key: "support" as const },
-  { label: "UA Losses", icon: TbUserMinus, key: "ukraineLosses" as const },
-  { label: "Sanctions", icon: TbScale, key: "sanctions" as const },
-] as const;
+const PANEL_ITEMS: { label: string; icon: IconType; key: keyof PanelStates }[] = [
+  { label: "Events", icon: TbFlag, key: "events" },
+  { label: "Russian Losses", icon: TbSkull, key: "russianLosses" },
+  { label: "Humanitarian", icon: TbHeartHandshake, key: "humanitarian" },
+  { label: "Spending & Aid", icon: TbCoin, key: "spending" },
+  { label: "Energy", icon: TbBolt, key: "energy" },
+  { label: "Air Defense", icon: TbShieldCheck, key: "airDefense" },
+  { label: "Intl Support", icon: TbGlobe, key: "support" },
+  { label: "UA Losses", icon: TbUserMinus, key: "ukraineLosses" },
+  { label: "Sanctions", icon: TbScale, key: "sanctions" },
+];
 
-export default function OptionsPopup({ panelToggles, panelStates }: OptionsPopupProps) {
+const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
+  { label: "Territory", icon: TbMapPin, key: "territory" },
+  { label: "Frontline", icon: TbSwords, key: "frontline" },
+  { label: "Equipment", icon: TbBomb, key: "equipment" },
+  { label: "Border", icon: TbBorderAll, key: "border" },
+  { label: "Conflicts", icon: TbFlame, key: "conflicts" },
+  { label: "Heatmap", icon: TbMap, key: "heatmap" },
+  { label: "Battles", icon: TbSwords, key: "battles" },
+  { label: "Operations", icon: TbArrowsRightLeft, key: "operations" },
+  { label: "Infrastructure", icon: TbBuildingBridge, key: "infrastructure" },
+  { label: "Military Bases", icon: TbShield, key: "nato" },
+  { label: "Thermal", icon: TbSatellite, key: "thermal" },
+];
+
+export default function OptionsPopup({
+  panelToggles,
+  panelStates,
+  layers,
+  onToggleLayer,
+}: OptionsPopupProps) {
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const { fontSize, increase, decrease, reset, canIncrease, canDecrease, isDefault } =
-    useFontSize();
+  const {
+    fontSize,
+    increase: fontInc,
+    decrease: fontDec,
+    reset: fontReset,
+    canIncrease: fontCanInc,
+    canDecrease: fontCanDec,
+    isDefault: fontIsDefault,
+  } = useFontSize();
+  const {
+    opacity,
+    increase: opacInc,
+    decrease: opacDec,
+    reset: opacReset,
+    canIncrease: opacCanInc,
+    canDecrease: opacCanDec,
+    isDefault: opacIsDefault,
+  } = usePanelOpacity();
+  const { reduceMotion, toggle: toggleMotion } = useReduceMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -109,6 +158,7 @@ export default function OptionsPopup({ panelToggles, panelStates }: OptionsPopup
             "border border-border/50",
             "shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
             "w-[280px]",
+            "max-h-[calc(100vh-5rem)] overflow-y-auto scrollbar-none",
           )}
         >
           {/* Header */}
@@ -153,23 +203,53 @@ export default function OptionsPopup({ panelToggles, panelStates }: OptionsPopup
             </div>
           </div>
 
+          {/* Layers section */}
+          <div className="px-3 py-2.5 border-t border-border/30">
+            <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2">
+              Map Layers
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {LAYER_ITEMS.map(({ label, icon: Icon, key }) => {
+                const active = layers?.[key];
+                return (
+                  <button
+                    key={key}
+                    onClick={() => onToggleLayer?.(key)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors",
+                      "text-[10px] font-semibold uppercase tracking-wider",
+                      active
+                        ? "text-ua-blue bg-ua-blue/10"
+                        : "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50",
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Style section */}
           <div className="px-3 py-2.5 border-t border-border/30">
             <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2">
               Style
             </div>
-            <div className="flex items-center justify-between">
+
+            {/* Text size */}
+            <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 Text Size
               </span>
               <div className="flex items-center gap-0.5">
                 <button
-                  onClick={decrease}
-                  disabled={!canDecrease}
+                  onClick={fontDec}
+                  disabled={!fontCanDec}
                   aria-label="Decrease font size"
                   className={cn(
                     "rounded-md p-1 transition-colors",
-                    canDecrease
+                    fontCanDec
                       ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
@@ -177,23 +257,25 @@ export default function OptionsPopup({ panelToggles, panelStates }: OptionsPopup
                   <TbMinus className="h-3 w-3" />
                 </button>
                 <button
-                  onClick={reset}
-                  disabled={isDefault}
+                  onClick={fontReset}
+                  disabled={fontIsDefault}
                   aria-label="Reset font size"
                   className={cn(
                     "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center",
-                    !isDefault ? "text-ua-blue hover:bg-ua-blue/10" : "text-muted-foreground/50",
+                    !fontIsDefault
+                      ? "text-ua-blue hover:bg-ua-blue/10"
+                      : "text-muted-foreground/50",
                   )}
                 >
                   {fontSize}px
                 </button>
                 <button
-                  onClick={increase}
-                  disabled={!canIncrease}
+                  onClick={fontInc}
+                  disabled={!fontCanInc}
                   aria-label="Increase font size"
                   className={cn(
                     "rounded-md p-1 transition-colors",
-                    canIncrease
+                    fontCanInc
                       ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
@@ -201,6 +283,76 @@ export default function OptionsPopup({ panelToggles, panelStates }: OptionsPopup
                   <TbPlus className="h-3 w-3" />
                 </button>
               </div>
+            </div>
+
+            {/* Panel opacity */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Panel Opacity
+              </span>
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={opacDec}
+                  disabled={!opacCanDec}
+                  aria-label="Decrease panel opacity"
+                  className={cn(
+                    "rounded-md p-1 transition-colors",
+                    opacCanDec
+                      ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                      : "text-muted-foreground/30 cursor-not-allowed",
+                  )}
+                >
+                  <TbMinus className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={opacReset}
+                  disabled={opacIsDefault}
+                  aria-label="Reset panel opacity"
+                  className={cn(
+                    "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center",
+                    !opacIsDefault
+                      ? "text-ua-blue hover:bg-ua-blue/10"
+                      : "text-muted-foreground/50",
+                  )}
+                >
+                  {opacity}%
+                </button>
+                <button
+                  onClick={opacInc}
+                  disabled={!opacCanInc}
+                  aria-label="Increase panel opacity"
+                  className={cn(
+                    "rounded-md p-1 transition-colors",
+                    opacCanInc
+                      ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                      : "text-muted-foreground/30 cursor-not-allowed",
+                  )}
+                >
+                  <TbPlus className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+
+            {/* Reduce motion */}
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Reduce Motion
+              </span>
+              <button
+                onClick={toggleMotion}
+                aria-label="Toggle reduce motion"
+                className={cn(
+                  "relative w-8 h-4 rounded-full transition-colors",
+                  reduceMotion ? "bg-ua-blue/40" : "bg-border/40",
+                )}
+              >
+                <div
+                  className={cn(
+                    "absolute top-0.5 h-3 w-3 rounded-full transition-all",
+                    reduceMotion ? "left-[18px] bg-ua-blue" : "left-0.5 bg-muted-foreground/50",
+                  )}
+                />
+              </button>
             </div>
           </div>
         </div>
