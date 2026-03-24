@@ -436,9 +436,9 @@ export default function TimelineScrubber({
     })
     .filter((e) => e.px >= 0);
 
-  // Closest active event (within 5 days), dismissible by user
+  // Closest active highlighted event (within 5 days), dismissible by user
   const nearestEvent = eventPositionsPx.find((event) => {
-    return Math.abs(currentIndex - event.index) <= 5;
+    return event.highlight && Math.abs(currentIndex - event.index) <= 5;
   });
   const activeEvent =
     nearestEvent && nearestEvent.date !== dismissedEventDate ? nearestEvent : null;
@@ -519,13 +519,13 @@ export default function TimelineScrubber({
         {/* Scrollable timeline */}
         <div
           ref={scrollContainerRef}
-          className="overflow-x-auto overflow-y-hidden scrollbar-none mx-4 mt-2 select-none"
+          className="overflow-x-auto overflow-y-hidden scrollbar-none mx-4 mt-1 select-none"
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
         >
           <div
             className="relative cursor-crosshair"
-            style={{ width: `${totalWidth}px`, height: "140px" }}
+            style={{ width: `${totalWidth}px`, height: "90px" }}
             onClick={handleTimelineClick}
           >
             {/* Daily losses waveform (background) */}
@@ -607,8 +607,8 @@ export default function TimelineScrubber({
           </div>
         </div>
 
-        {/* Year / month progress tracker */}
-        <div className="mx-4 mb-1.5 mt-1 flex items-end h-4">
+        {/* Year / month progress tracker — clickable to jump */}
+        <div className="mx-4 mb-1.5 mt-0.5 flex items-end h-4">
           {YEAR_MARKS.map((year) => {
             const yearStartIdx = year === "2022" ? 0 : dates.indexOf(`${year}0101`);
             if (yearStartIdx < 0) return null;
@@ -626,16 +626,28 @@ export default function TimelineScrubber({
                 ? 100
                 : 0;
 
+            const handleTrackerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickPct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              const targetIdx = Math.round(yearStartIdx + clickPct * yearDays);
+              const clampedIdx = Math.max(0, Math.min(dates.length - 1, targetIdx));
+              setCurrentIndex(clampedIdx);
+              onDateChange(dates[clampedIdx]);
+            };
+
             return (
               <div
                 key={year}
-                className="relative h-full flex flex-col justify-end"
+                className="relative h-full flex flex-col justify-end cursor-pointer group"
                 style={{ width: `${widthPct}%` }}
+                onClick={handleTrackerClick}
               >
                 <span
                   className={cn(
                     "text-[8px] font-mono tracking-wider leading-none mb-0.5 pl-0.5",
-                    isCurrentYear ? "text-ua-blue" : "text-muted-foreground/40",
+                    isCurrentYear
+                      ? "text-ua-blue"
+                      : "text-muted-foreground/40 group-hover:text-muted-foreground/60",
                   )}
                 >
                   {year}
@@ -647,8 +659,8 @@ export default function TimelineScrubber({
                 </span>
                 <div
                   className={cn(
-                    "w-full h-1 rounded-full overflow-hidden",
-                    isCurrentYear ? "bg-ua-blue/15" : "bg-border/15",
+                    "w-full h-1 rounded-full overflow-hidden transition-all",
+                    isCurrentYear ? "bg-ua-blue/15" : "bg-border/15 group-hover:bg-border/25",
                   )}
                 >
                   <div
