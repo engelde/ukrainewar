@@ -5,7 +5,7 @@ import {
   TbBuildingBank,
   TbChevronDown,
   TbChevronUp,
-  TbCurrencyEuro,
+  TbFirstAidKit,
   TbHeartHandshake,
   TbShieldCheckered,
 } from "react-icons/tb";
@@ -129,7 +129,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
         )}
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
-          <TbCurrencyEuro className="h-3.5 w-3.5 text-capture" />
+          <TbFirstAidKit className="h-3.5 w-3.5 text-capture" />
           <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-capture">
             {t("spending.title")}
           </span>
@@ -161,7 +161,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
         <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
-          <TbCurrencyEuro className="h-3.5 w-3.5 text-capture" />
+          <TbFirstAidKit className="h-3.5 w-3.5 text-capture" />
           <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-capture">
             {t("spending.title")}
           </span>

@@ -171,7 +171,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         )}
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
-          <TbShield className="h-3.5 w-3.5 text-[#005BBB]" />
+          <TbShield className="h-3.5 w-3.5 text-cyan-400" />
           <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("support.title")}
           </span>
@@ -204,8 +204,8 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
       {/* Header */}
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
-          <TbShield className="h-3.5 w-3.5 text-[#005BBB]" />
-          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-[#005BBB]">
+          <TbShield className="h-3.5 w-3.5 text-cyan-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-cyan-400">
             {t("support.title")}
           </span>
         </div>

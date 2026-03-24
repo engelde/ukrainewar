@@ -73,6 +73,7 @@ const ALL_LAYER_KEYS: (keyof MapLayers)[] = [
   "infrastructure",
   "nato",
   "thermal",
+  "alliance",
 ];
 
 // All panel visibility keys and their defaults
@@ -154,9 +155,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     parseAsStringSet.withOptions({ shallow: true }),
   );
 
-  // Derive layer state from URL (default: all on; URL stores which are off)
+  // Layers that are OFF by default (user must opt in)
+  const DEFAULT_LAYERS_OFF = new Set<string>(["alliance"]);
+
+  // Derive layer state from URL (default: all on except DEFAULT_LAYERS_OFF; URL stores which are off)
   const layers = useMemo<MapLayers>(() => {
-    const off = urlLayersOff ?? new Set<string>();
+    const off = urlLayersOff ?? DEFAULT_LAYERS_OFF;
     const result = {} as MapLayers;
     for (const key of ALL_LAYER_KEYS) {
       result[key] = !off.has(key);
@@ -166,7 +170,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
 
   const setLayers = useCallback(
     (updater: (prev: MapLayers) => MapLayers) => {
-      const off = urlLayersOff ?? new Set<string>();
+      const off = urlLayersOff ?? DEFAULT_LAYERS_OFF;
       const prev = {} as MapLayers;
       for (const key of ALL_LAYER_KEYS) prev[key] = !off.has(key);
       const next = updater(prev);
@@ -174,7 +178,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       for (const key of ALL_LAYER_KEYS) {
         if (!next[key]) newOff.add(key);
       }
-      setUrlLayersOff(newOff.size > 0 ? newOff : null);
+      const isDefault =
+        newOff.size === DEFAULT_LAYERS_OFF.size &&
+        [...DEFAULT_LAYERS_OFF].every((k) => newOff.has(k));
+      setUrlLayersOff(isDefault ? null : newOff);
     },
     [urlLayersOff, setUrlLayersOff],
   );

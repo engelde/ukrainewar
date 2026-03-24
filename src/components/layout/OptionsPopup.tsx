@@ -8,7 +8,7 @@ import {
   TbBomb,
   TbBorderAll,
   TbBuildingBridge,
-  TbCoin,
+  TbFirstAidKit,
   TbFlag,
   TbFlame,
   TbGlobe,
@@ -25,6 +25,7 @@ import {
   TbSkull,
   TbSwords,
   TbUserMinus,
+  TbUsers,
   TbX,
 } from "react-icons/tb";
 import { useFontSize } from "@/hooks/useFontSize";
@@ -68,7 +69,7 @@ const PANEL_ITEMS: { label: string; icon: IconType; key: keyof PanelStates }[] =
   { label: "Events", icon: TbFlag, key: "events" },
   { label: "Russian Losses", icon: TbSkull, key: "russianLosses" },
   { label: "Humanitarian", icon: TbHeartHandshake, key: "humanitarian" },
-  { label: "Bilateral Aid", icon: TbCoin, key: "spending" },
+  { label: "Bilateral Aid", icon: TbFirstAidKit, key: "spending" },
   { label: "Energy", icon: TbBolt, key: "energy" },
   { label: "Air Defense", icon: TbShieldCheck, key: "airDefense" },
   { label: "Intl Support", icon: TbGlobe, key: "support" },
@@ -88,6 +89,7 @@ const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Infrastructure", icon: TbBuildingBridge, key: "infrastructure" },
   { label: "Military Bases", icon: TbShield, key: "nato" },
   { label: "Thermal", icon: TbSatellite, key: "thermal" },
+  { label: "Alliance", icon: TbUsers, key: "alliance" },
 ];
 
 function Checkbox({ checked }: { checked: boolean }) {

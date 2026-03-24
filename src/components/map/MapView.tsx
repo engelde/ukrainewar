@@ -222,6 +222,89 @@ export default function MapView({
     );
   }, []);
 
+  // Alliance country outlines — loaded once from API
+  const allianceLoadedRef = useRef(false);
+  const ensureAllianceLayers = useCallback((mapInstance: maplibregl.Map) => {
+    if (allianceLoadedRef.current) return;
+    if (mapInstance.getSource("alliance-countries")) return;
+    allianceLoadedRef.current = true;
+
+    fetch("/api/alliance")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: GeoJSON.FeatureCollection | null) => {
+        if (!data || !mapInstance.getStyle()) return;
+
+        mapInstance.addSource("alliance-countries", {
+          type: "geojson",
+          data,
+        });
+
+        const hidden = { visibility: "none" as const };
+
+        // Ukraine supporters — blue outline + subtle fill
+        mapInstance.addLayer({
+          id: "alliance-ukraine-fill",
+          type: "fill",
+          source: "alliance-countries",
+          filter: ["==", ["get", "side"], "ukraine"],
+          layout: hidden,
+          paint: {
+            "fill-color": "#005BBB",
+            "fill-opacity": 0.08,
+          },
+        });
+        mapInstance.addLayer({
+          id: "alliance-ukraine-line",
+          type: "line",
+          source: "alliance-countries",
+          filter: ["==", ["get", "side"], "ukraine"],
+          layout: hidden,
+          paint: {
+            "line-color": "#4a9ad4",
+            "line-width": 1.5,
+            "line-opacity": 0.7,
+          },
+        });
+
+        // Russia supporters — red outline + subtle fill
+        mapInstance.addLayer({
+          id: "alliance-russia-fill",
+          type: "fill",
+          source: "alliance-countries",
+          filter: ["==", ["get", "side"], "russia"],
+          layout: hidden,
+          paint: {
+            "fill-color": "#C53030",
+            "fill-opacity": 0.08,
+          },
+        });
+        mapInstance.addLayer({
+          id: "alliance-russia-line",
+          type: "line",
+          source: "alliance-countries",
+          filter: ["==", ["get", "side"], "russia"],
+          layout: hidden,
+          paint: {
+            "line-color": "#e85454",
+            "line-width": 1.5,
+            "line-opacity": 0.7,
+          },
+        });
+
+        // Apply current visibility
+        const vis = layersRef.current.alliance ? "visible" : "none";
+        for (const id of [
+          "alliance-ukraine-fill",
+          "alliance-ukraine-line",
+          "alliance-russia-fill",
+          "alliance-russia-line",
+        ]) {
+          mapInstance.setLayoutProperty(id, "visibility", vis);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const ensureViinaLayers = useCallback((mapInstance: maplibregl.Map) => {
     if (mapInstance.getSource("viina-territory")) return;
 
@@ -2263,6 +2346,7 @@ export default function MapView({
         loadMilitaryBaseLayers(map.current);
         loadThermalLayer(map.current);
         loadAttackMarkers(map.current);
+        ensureAllianceLayers(map.current);
 
         // Safety net: retry territory load if source is still empty after 3s
         const m = map.current;
@@ -2456,6 +2540,19 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.thermal ? "visible" : "none");
       }
     }
+
+    // Alliance country outline layers
+    const allianceLayers = [
+      "alliance-ukraine-fill",
+      "alliance-ukraine-line",
+      "alliance-russia-fill",
+      "alliance-russia-line",
+    ];
+    for (const layer of allianceLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.alliance ? "visible" : "none");
+      }
+    }
   }, [
     loaded,
     layers.territory,
@@ -2469,6 +2566,7 @@ export default function MapView({
     layers.infrastructure,
     layers.nato,
     layers.thermal,
+    layers.alliance,
   ]);
 
   // Update territory when timeline date changes (throttled — leading + trailing edge)
