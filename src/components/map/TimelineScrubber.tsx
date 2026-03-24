@@ -579,7 +579,7 @@ export default function TimelineScrubber({
                 />
                 <TooltipContent
                   side="top"
-                  className="max-w-[280px] bg-background/95 backdrop-blur-lg border border-border/60 text-foreground px-3 py-2"
+                  className="flex-col items-start max-w-[280px] bg-background/95 backdrop-blur-lg border border-border/60 text-foreground px-3 py-2"
                 >
                   <p className="text-[0.6875rem] font-semibold text-ua-yellow mb-0.5">
                     {event.label}
