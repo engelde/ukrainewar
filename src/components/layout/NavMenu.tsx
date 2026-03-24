@@ -237,14 +237,15 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
             {active === "about" && (
               <div className="space-y-2">
                 <p className="text-[0.6875rem] text-foreground/80 leading-relaxed">
-                  An interactive tracker for the Russo-Ukrainian War, visualizing territory control,
-                  military losses, humanitarian impact, and international aid from February 2022 to
-                  the present.
+                  An independent research project visualizing the Russo-Ukrainian War through
+                  territory control, military losses, humanitarian impact, and international aid
+                  from February 2022 to the present.
                 </p>
                 <p className="text-[0.625rem] text-muted-foreground leading-relaxed">
-                  Navigate the timeline to explore the war&apos;s progression. Toggle map layers to
-                  view territory, equipment losses, battles, and conflict events. All data updates
-                  daily from official sources.
+                  This project is not affiliated with any government, military, or news
+                  organization. All data is sourced from publicly available APIs and datasets.
+                  Navigate the timeline to explore the war&apos;s progression. Toggle map layers and
+                  panels to customize your view.
                 </p>
                 <div className="mt-3 rounded-md border border-ua-blue/30 bg-ua-blue/5 px-2.5 py-2">
                   <p className="text-[0.6875rem] text-ua-blue font-medium leading-relaxed">

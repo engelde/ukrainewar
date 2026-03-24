@@ -6,7 +6,7 @@
 
 ### [ukrainewar.app](https://ukrainewar.app)
 
-**An immersive, real-time data visualization platform tracking the Russo-Ukrainian war through interactive maps, timelines, and comprehensive conflict data.**
+**An independent research project visualizing the Russo-Ukrainian war through interactive maps, timelines, and comprehensive conflict data.**
 
 [![CI](https://github.com/engelde/ukrainewar/actions/workflows/ci.yml/badge.svg)](https://github.com/engelde/ukrainewar/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
@@ -17,7 +17,7 @@
 
 ---
 
-*Built to inform, not to sensationalize. This project aims to provide accessible, data-driven insight into the human and material costs of the conflict.*
+*Built to inform, not to sensationalize. This is an independent research project — not affiliated with any government, military, or news organization. It aims to provide accessible, data-driven insight into the human and material costs of the conflict.*
 
 </div>
 
@@ -25,7 +25,9 @@
 
 ## Overview
 
-The Russo-Ukrainian War Tracker is a dark-themed, map-centric web application that consolidates data from 12+ authoritative sources into a single interactive experience. Users can explore territory control changes, equipment losses, casualty statistics, humanitarian impact, bilateral aid, energy infrastructure status, air defense performance, and strategic asset monitoring — all synchronized to a central timeline spanning the full duration of the war.
+The Russo-Ukrainian War Tracker is an independent, open-source research project that consolidates data from 15+ authoritative public sources into a single interactive experience. Users can explore territory control changes, equipment losses, casualty statistics, humanitarian impact, bilateral aid, energy infrastructure status, air defense performance, and strategic asset monitoring — all synchronized to a central timeline spanning the full duration of the war.
+
+This project is not affiliated with any government, military organization, or news outlet. All data is sourced from publicly available APIs and datasets. The application does not generate original analysis or make claims beyond what the underlying sources report.
 
 The entire interface is built around an explorable map rendered in muted dark tones, with data panels, counters, and visualizations layered on top. Every element is designed to put the data at the center of the experience.
 
@@ -194,19 +196,21 @@ The application exposes the following API endpoints. All responses are cached wi
 
 ## Data Sources
 
-This project aggregates data from the following authoritative sources. All data is accessed through publicly available APIs and datasets.
+This project aggregates data from the following authoritative sources. All data is accessed through publicly available APIs and datasets. This is an independent research effort — the project is not endorsed by or affiliated with any of these sources.
 
 | Source | Data Provided | Link |
 |--------|--------------|------|
 | **WarSpotting** | Visually confirmed Russian equipment losses with geolocation | [warspotting.net](https://warspotting.net) |
 | **Ukrainian Ministry of Defence** | Official daily personnel and equipment loss reports | [mil.gov.ua](https://www.mil.gov.ua) |
-| **Ukrainian Air Force** | Missile and drone attack reports, interception statistics | [t.me/kaborofua](https://t.me/kpszsu) |
+| **Ukrainian Air Force** | Missile and drone attack reports, interception statistics | [t.me/kpszsu](https://t.me/kpszsu) |
 | **DeepState Map** | Territory control and frontline GeoJSON data | [deepstatemap.live](https://deepstatemap.live) |
 | **ACLED** | Armed conflict event data — battles, civilian targeting, protests | [acleddata.com](https://acleddata.com) |
 | **Wikidata** | Structured data on named events, battles, and offensives (via SPARQL) | [wikidata.org](https://www.wikidata.org) |
-| **HDX / OCHA** | Humanitarian response data, civilian casualties, funding status | [data.humdata.org](https://data.humdata.org) |
+| **HDX / OCHA** | Humanitarian response data, funding status | [data.humdata.org](https://data.humdata.org) |
+| **OHCHR** | UN-verified civilian casualty statistics | [ohchr.org](https://www.ohchr.org) |
 | **UNHCR** | Refugee and internally displaced persons statistics | [data.unhcr.org](https://data.unhcr.org) |
 | **Kiel Institute** | Ukraine Support Tracker — bilateral military, financial, and humanitarian aid | [ifw-kiel.de](https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/) |
+| **Mediazona / BBC** | Confirmed-by-name Ukrainian casualty investigations | [zona.media](https://en.zona.media/article/2022/05/20/casualties_eng) |
 | **VIINA** | Territorial control derived from news coverage (Zhukov & Ayers) | [github.com/zhukovyuri/VIINA](https://github.com/zhukovyuri/VIINA) |
 | **NASA FIRMS** | Near-real-time satellite thermal anomaly detections (VIIRS) | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov) |
 | **ENTSO-E** | European electricity generation data (Transparency Platform) | [transparency.entsoe.eu](https://transparency.entsoe.eu) |
@@ -393,6 +397,8 @@ This project aggregates, cross-references, and visualizes publicly available con
 ## Attribution
 
 **Created and maintained by [David Engel](https://github.com/engelde)**
+
+This is an independent, open-source research project. It is not affiliated with, endorsed by, or funded by any government, military organization, or news outlet. The project exists to make publicly available conflict data more accessible and understandable.
 
 This project relies on publicly available data from the sources listed above. Each data source retains its own licensing terms. The ACLED dataset is used under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). Kiel Institute data is from the publicly available Ukraine Support Tracker. UNHCR and OCHA data are provided through their respective open data portals. NASA FIRMS data is freely available under NASA's open data policy. ENTSO-E and ENTSOG data are accessed through their public Transparency Platforms.
 

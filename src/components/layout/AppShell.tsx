@@ -88,7 +88,15 @@ const PANEL_KEYS = [
   "sanctions",
 ] as const;
 type PanelKey = (typeof PANEL_KEYS)[number];
-const DEFAULT_VISIBLE_PANELS: PanelKey[] = ["humanitarian", "spending", "russianLosses"];
+const DEFAULT_VISIBLE_PANELS: PanelKey[] = [...PANEL_KEYS];
+const DEFAULT_MINIMIZED_PANELS: PanelKey[] = [
+  "events",
+  "energy",
+  "airDefense",
+  "support",
+  "ukraineLosses",
+  "sanctions",
+];
 
 // Custom nuqs parser: comma-separated set of strings
 const parseAsStringSet = createParser({
@@ -181,9 +189,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     return result;
   }, [urlPanels]);
 
-  // Derive panel minimized state from URL (default: none minimized)
+  // Derive panel minimized state from URL (default: most panels minimized)
   const panelMinimized = useMemo(() => {
-    const min = urlMinimized ?? new Set<string>();
+    const min = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
     const result = {} as Record<PanelKey, boolean>;
     for (const key of PANEL_KEYS) {
       result[key] = min.has(key);
@@ -216,7 +224,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     zoom?: number;
   } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(urlEvents === true);
+  const [sidebarOpen, setSidebarOpen] = useState(urlEvents !== false);
 
   // Sync sidebar state to URL
   useEffect(() => {
@@ -229,8 +237,8 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     if (didMountDefaultsRef.current) return;
     didMountDefaultsRef.current = true;
 
-    // Open sidebar by default on XL screens if no URL preference set
-    if (urlEvents === null && typeof window !== "undefined" && window.innerWidth >= 1280) {
+    // Open sidebar by default if no URL preference set
+    if (urlEvents === null) {
       setSidebarOpen(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -341,10 +349,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   // Minimize handler — adds panel key to minimized set
   const handleMinimizePanel = useCallback(
     (key: string) => {
-      const current = urlMinimized ?? new Set<string>();
+      const current = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
       const next = new Set(current);
       next.add(key);
-      setUrlMinimized(next.size > 0 ? next : null);
+      const isDefault =
+        next.size === DEFAULT_MINIMIZED_PANELS.length &&
+        DEFAULT_MINIMIZED_PANELS.every((k) => next.has(k));
+      setUrlMinimized(isDefault ? null : next);
     },
     [urlMinimized, setUrlMinimized],
   );
@@ -384,10 +395,13 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   // Expand handler — removes panel key from minimized set
   const handleExpandPanel = useCallback(
     (key: string) => {
-      const current = urlMinimized ?? new Set<string>();
+      const current = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
       const next = new Set(current);
       next.delete(key);
-      setUrlMinimized(next.size > 0 ? next : null);
+      const isDefault =
+        next.size === DEFAULT_MINIMIZED_PANELS.length &&
+        DEFAULT_MINIMIZED_PANELS.every((k) => next.has(k));
+      setUrlMinimized(isDefault ? null : next);
     },
     [urlMinimized, setUrlMinimized],
   );
@@ -556,7 +570,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSelectedMarker(null);
     setStatsCollapsed(false);
     setTimelineKey((prev) => prev + 1);
-    setSidebarOpen(false);
+    setSidebarOpen(true);
     clearPanelPositions();
   }, [
     setUrlDate,

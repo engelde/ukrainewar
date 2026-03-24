@@ -32,6 +32,11 @@ export const DATA_SOURCES = [
     description: "Official daily casualty reports",
   },
   {
+    name: "Ukrainian Air Force",
+    url: "https://t.me/kpszsu",
+    description: "Missile and drone attack reports",
+  },
+  {
     name: "DeepState Map",
     url: "https://deepstatemap.live",
     description: "Territory control and frontline data",
@@ -39,22 +44,32 @@ export const DATA_SOURCES = [
   {
     name: "ACLED",
     url: "https://acleddata.com",
-    description: "Conflict event data",
+    description: "Armed conflict event data",
   },
   {
     name: "HDX / OCHA",
     url: "https://data.humdata.org",
-    description: "Humanitarian data",
+    description: "Humanitarian response and funding data",
+  },
+  {
+    name: "OHCHR",
+    url: "https://www.ohchr.org",
+    description: "UN civilian casualty statistics",
   },
   {
     name: "UNHCR",
     url: "https://data.unhcr.org",
-    description: "Refugee data",
+    description: "Refugee and IDP statistics",
   },
   {
     name: "Kiel Institute",
-    url: "https://www.kielinstitut.de",
-    description: "Ukraine Support Tracker",
+    url: "https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/",
+    description: "Ukraine Support Tracker — bilateral aid data",
+  },
+  {
+    name: "Mediazona / BBC",
+    url: "https://en.zona.media/article/2022/05/20/casualties_eng",
+    description: "Confirmed-by-name Ukrainian casualty investigations",
   },
   {
     name: "VIINA (Zhukov & Ayers)",
