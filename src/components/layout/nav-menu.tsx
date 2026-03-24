@@ -20,7 +20,7 @@ type NavItem = "about" | "legend" | "sources" | null;
 interface LegendItem {
   label: string;
   color: string;
-  type: "fill" | "line" | "dashed" | "circle" | "icon";
+  type: "fill" | "line" | "dashed" | "circle" | "icon" | "arrow" | "triangle";
   secondary?: string;
 }
 
@@ -30,11 +30,23 @@ const TERRITORY_ITEMS: LegendItem[] = [
   { label: "Frontline", color: "#ff4444", type: "dashed" },
 ];
 
+const BORDER_ITEMS: LegendItem[] = [
+  { label: "Ukraine border", color: "#7bbde8", type: "line" },
+  { label: "Russia border", color: "#e87b7b", type: "line" },
+];
+
 const CONFLICT_ITEMS: LegendItem[] = [
-  { label: "Battles / Explosions", color: "#ef4444", type: "circle" },
-  { label: "Armed clashes", color: "#f97316", type: "circle" },
-  { label: "Shelling / Missile strikes", color: "#a855f7", type: "circle" },
-  { label: "Air/Drone strikes", color: "#3b82f6", type: "circle" },
+  { label: "Battles", color: "#ef4444", type: "circle" },
+  { label: "Explosions / Remote violence", color: "#f97316", type: "circle" },
+  { label: "Violence against civilians", color: "#a855f7", type: "circle" },
+  { label: "Strategic developments", color: "#3b82f6", type: "circle" },
+  { label: "Missile / Drone attacks", color: "#EF4444", type: "circle", secondary: "pulse" },
+];
+
+const OPERATIONS_ITEMS: LegendItem[] = [
+  { label: "Ukraine operations", color: "#22d3ee", type: "arrow" },
+  { label: "Russia operations", color: "#fb923c", type: "arrow" },
+  { label: "Russian buildup", color: "#f59e0b", type: "triangle" },
 ];
 
 const INFRASTRUCTURE_ITEMS: LegendItem[] = [
@@ -49,7 +61,7 @@ const INFRASTRUCTURE_ITEMS: LegendItem[] = [
 
 const OVERLAY_ITEMS: LegendItem[] = [
   { label: "Conflict heatmap", color: "#ef4444", type: "fill", secondary: "gradient" },
-  { label: "Thermal anomalies", color: "#ff6b00", type: "circle" },
+  { label: "Thermal anomalies", color: "#ff8c00", type: "circle" },
   { label: "Equipment losses", color: "#a855f7", type: "circle" },
   { label: "Pro-Ukraine support", color: "#4a9ad4", type: "line" },
   { label: "Pro-Russia support", color: "#e85454", type: "line" },
@@ -92,6 +104,36 @@ function LegendSwatch({ item }: { item: LegendItem }) {
         <span
           className="h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: item.color, opacity: 0.8 }}
+        />
+      </span>
+    );
+  }
+  if (item.type === "arrow") {
+    return (
+      <span className="inline-flex h-3 w-4 items-center">
+        <span className="h-[2px] w-3 rounded-full" style={{ backgroundColor: item.color }} />
+        <span
+          className="h-0 w-0 -ml-px"
+          style={{
+            borderTop: "3px solid transparent",
+            borderBottom: "3px solid transparent",
+            borderLeft: `4px solid ${item.color}`,
+          }}
+        />
+      </span>
+    );
+  }
+  if (item.type === "triangle") {
+    return (
+      <span className="inline-flex h-3 w-4 items-center justify-center">
+        <span
+          className="h-0 w-0"
+          style={{
+            borderLeft: "5px solid transparent",
+            borderRight: "5px solid transparent",
+            borderBottom: `8px solid ${item.color}`,
+            opacity: 0.85,
+          }}
         />
       </span>
     );
@@ -275,7 +317,9 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
             {active === "legend" && (
               <div className="space-y-2.5">
                 <LegendSection title="Territory" items={TERRITORY_ITEMS} />
+                <LegendSection title="Borders" items={BORDER_ITEMS} />
                 <LegendSection title="Conflicts" items={CONFLICT_ITEMS} />
+                <LegendSection title="Operations" items={OPERATIONS_ITEMS} />
                 <LegendSection title="Infrastructure" items={INFRASTRUCTURE_ITEMS} />
                 <LegendSection title="Overlays" items={OVERLAY_ITEMS} />
               </div>
@@ -374,7 +418,9 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
           <SidebarSection title="Map Legend" icon="legend">
             <div className="space-y-2.5 px-4 pb-3">
               <LegendSection title="Territory" items={TERRITORY_ITEMS} />
+              <LegendSection title="Borders" items={BORDER_ITEMS} />
               <LegendSection title="Conflicts" items={CONFLICT_ITEMS} />
+              <LegendSection title="Operations" items={OPERATIONS_ITEMS} />
               <LegendSection title="Infrastructure" items={INFRASTRUCTURE_ITEMS} />
               <LegendSection title="Overlays" items={OVERLAY_ITEMS} />
             </div>
