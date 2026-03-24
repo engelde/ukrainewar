@@ -246,20 +246,6 @@ export default function MapView({
       },
     });
 
-    // RU-controlled territory outline (matches DeepState fill color)
-    mapInstance.addLayer({
-      id: "viina-ru-line",
-      type: "line",
-      source: "viina-territory",
-      filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Polygon"]],
-      layout: hidden,
-      paint: {
-        "line-color": "#c53030",
-        "line-width": 0.5,
-        "line-opacity": 0.3,
-      },
-    });
-
     // Contested territory fill
     mapInstance.addLayer({
       id: "viina-contested",
@@ -270,20 +256,6 @@ export default function MapView({
       paint: {
         "fill-color": "#eab308",
         "fill-opacity": 0.25,
-      },
-    });
-
-    // Contested territory outline (matches contested fill color)
-    mapInstance.addLayer({
-      id: "viina-contested-line",
-      type: "line",
-      source: "viina-territory",
-      filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Polygon"]],
-      layout: hidden,
-      paint: {
-        "line-color": "#eab308",
-        "line-width": 0.5,
-        "line-opacity": 0.25,
       },
     });
 
@@ -350,6 +322,33 @@ export default function MapView({
       territoryAbortRef.current = controller;
       lastTerritoryFetchRef.current = fetchKey;
 
+      // Helper: set visibility on VIINA layers if they exist
+      const setViinaVisibility = (vis: "visible" | "none") => {
+        for (const id of ["viina-ru", "viina-contested", "viina-ru-pts", "viina-contested-pts"]) {
+          if (mapInstance.getLayer(id)) mapInstance.setLayoutProperty(id, "visibility", vis);
+        }
+        if (mapInstance.getLayer("viina-frontline")) {
+          mapInstance.setLayoutProperty(
+            "viina-frontline",
+            "visibility",
+            vis === "visible" && layersRef.current.frontline ? "visible" : "none",
+          );
+        }
+      };
+
+      // Helper: set visibility on DeepState layers if they exist
+      const setDeepStateVisibility = (vis: "visible" | "none") => {
+        if (mapInstance.getLayer("territory-fill"))
+          mapInstance.setLayoutProperty("territory-fill", "visibility", vis);
+        if (mapInstance.getLayer("territory-line")) {
+          mapInstance.setLayoutProperty(
+            "territory-line",
+            "visibility",
+            vis === "visible" && layersRef.current.frontline ? "visible" : "none",
+          );
+        }
+      };
+
       try {
         if (useViina) {
           const res = await fetch(`/api/territory/viina?date=${territoryDate}`, {
@@ -357,7 +356,7 @@ export default function MapView({
           });
 
           if (!mapInstance.isStyleLoaded()) {
-            lastTerritoryFetchRef.current = null;
+            if (lastTerritoryFetchRef.current === fetchKey) lastTerritoryFetchRef.current = null;
             return;
           }
 
@@ -367,45 +366,23 @@ export default function MapView({
             | undefined;
 
           if (!res.ok || !viinaSource) {
-            lastTerritoryFetchRef.current = null;
+            if (lastTerritoryFetchRef.current === fetchKey) lastTerritoryFetchRef.current = null;
             return;
           }
           const { geojson } = await res.json();
           viinaSource.setData(geojson);
 
-          // Clear DeepState data only after VIINA data is ready
+          // Clear DeepState data and hide its layers
           const deepstateSource = mapInstance.getSource("territory") as
             | maplibregl.GeoJSONSource
             | undefined;
           if (deepstateSource) {
             deepstateSource.setData({ type: "FeatureCollection", features: [] });
           }
+          setDeepStateVisibility("none");
 
           // Show VIINA layers (respecting user's territory toggle)
-          const viinaLayerIds = [
-            "viina-ru",
-            "viina-ru-line",
-            "viina-contested",
-            "viina-contested-line",
-            "viina-ru-pts",
-            "viina-contested-pts",
-          ];
-          for (const id of viinaLayerIds) {
-            if (mapInstance.getLayer(id))
-              mapInstance.setLayoutProperty(
-                id,
-                "visibility",
-                layersRef.current.territory ? "visible" : "none",
-              );
-          }
-          // VIINA frontline follows the frontline toggle
-          if (mapInstance.getLayer("viina-frontline")) {
-            mapInstance.setLayoutProperty(
-              "viina-frontline",
-              "visibility",
-              layersRef.current.frontline ? "visible" : "none",
-            );
-          }
+          setViinaVisibility(layersRef.current.territory ? "visible" : "none");
           return;
         }
 
@@ -414,7 +391,7 @@ export default function MapView({
         const res = await fetch(url, { signal: controller.signal });
 
         if (!mapInstance.isStyleLoaded()) {
-          lastTerritoryFetchRef.current = null;
+          if (lastTerritoryFetchRef.current === fetchKey) lastTerritoryFetchRef.current = null;
           return;
         }
 
@@ -423,8 +400,7 @@ export default function MapView({
           | undefined;
 
         if (!res.ok) {
-          // Don't clear on failure — keep showing the last good data, allow retry
-          lastTerritoryFetchRef.current = null;
+          if (lastTerritoryFetchRef.current === fetchKey) lastTerritoryFetchRef.current = null;
           return;
         }
         const { geojson } = await res.json();
@@ -432,13 +408,17 @@ export default function MapView({
         if (existingSource) {
           existingSource.setData(geojson);
 
-          // Clear VIINA data only after DeepState data is ready
+          // Clear VIINA data and hide its layers
           const viinaSource = mapInstance.getSource("viina-territory") as
             | maplibregl.GeoJSONSource
             | undefined;
           if (viinaSource) {
             viinaSource.setData({ type: "FeatureCollection", features: [] });
           }
+          setViinaVisibility("none");
+
+          // Re-show DeepState layers (respecting user's territory toggle)
+          setDeepStateVisibility(layersRef.current.territory ? "visible" : "none");
           return;
         }
 
@@ -474,12 +454,11 @@ export default function MapView({
         });
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
-          // Clear so a retry of this date can succeed after abort
-          lastTerritoryFetchRef.current = null;
+          // Only reset if this was still the active fetch (prevents race with newer fetch)
+          if (lastTerritoryFetchRef.current === fetchKey) lastTerritoryFetchRef.current = null;
           return;
         }
-        // Reset so a retry can succeed
-        lastTerritoryFetchRef.current = null;
+        if (lastTerritoryFetchRef.current === fetchKey) lastTerritoryFetchRef.current = null;
         console.error("Failed to load territory data:", err);
       }
     },
@@ -1544,7 +1523,7 @@ export default function MapView({
         id: "gas-pipeline-lines",
         type: "line",
         source: "gas-pipelines",
-        filter: ["all", ["!=", ["get", "status"], "shutdown"], ["!=", ["get", "id"], "turkstream"]],
+        filter: ["!=", ["get", "status"], "shutdown"],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": ["case", ["==", ["get", "status"], "destroyed"], "#ef4444", "#a855f7"],
@@ -1553,12 +1532,12 @@ export default function MapView({
         },
       });
 
-      // Gas pipeline lines — shutdown + TurkStream (gray dashed)
+      // Gas pipeline lines — shutdown (gray dashed)
       mapInstance.addLayer({
         id: "gas-pipeline-lines-shutdown",
         type: "line",
         source: "gas-pipelines",
-        filter: ["any", ["==", ["get", "status"], "shutdown"], ["==", ["get", "id"], "turkstream"]],
+        filter: ["==", ["get", "status"], "shutdown"],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": "#6b7280",
@@ -2340,14 +2319,7 @@ export default function MapView({
     }
 
     // VIINA territory layers
-    const viinaLayerIds = [
-      "viina-ru",
-      "viina-ru-line",
-      "viina-contested",
-      "viina-contested-line",
-      "viina-ru-pts",
-      "viina-contested-pts",
-    ];
+    const viinaLayerIds = ["viina-ru", "viina-contested", "viina-ru-pts", "viina-contested-pts"];
     for (const id of viinaLayerIds) {
       if (map.current?.getLayer(id)) {
         map.current.setLayoutProperty(id, "visibility", layers.territory ? "visible" : "none");

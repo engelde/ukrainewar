@@ -141,7 +141,7 @@
     "short": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   },
   "energy": {
-    "title": "Energy Infrastructure",
+    "title": "Energy",
     "generation": "Electricity Generation",
     "capacity": "Generation Capacity",
     "preWar": "Pre-war",
@@ -192,7 +192,7 @@
     "source": "Mediazona / OHCHR"
   },
   "sanctions": {
-    "title": "Sanctions Overview",
+    "title": "Sanctions",
     "totalPackages": "Sanctions Packages",
     "individuals": "Individuals Sanctioned",
     "entities": "Entities Sanctioned",

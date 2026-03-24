@@ -122,6 +122,28 @@ export const GAS_STATIONS: GasStation[] = [
       "into Ukraine.",
     statusHistory: [{ date: "20250101", status: "shutdown", note: "Transit agreement expired" }],
   },
+  {
+    id: "russkaya-compressor",
+    name: "Russkaya Compressor Station",
+    lat: 44.6,
+    lng: 37.83,
+    stationType: "compressor",
+    status: "operational",
+    description:
+      "Russian-side compressor station near Anapa feeding TurkStream. " +
+      "Entry point for gas traveling through the subsea Black Sea pipeline to Turkey.",
+  },
+  {
+    id: "kiyikoy-landing",
+    name: "Kıyıköy Landing Point",
+    lat: 41.64,
+    lng: 28.1,
+    stationType: "exit",
+    status: "operational",
+    description:
+      "Turkish receiving terminal at Kıyıköy on the Black Sea coast. " +
+      "Exit point for TurkStream gas entering Turkey's pipeline network.",
+  },
 ];
 
 // ── Major Power Plants ─────────────────────────────────────────────────
