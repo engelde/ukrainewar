@@ -1,0 +1,370 @@
+export interface WarEvent {
+  date: string;
+  label: string;
+  description: string;
+  lat?: number;
+  lng?: number;
+  /** When true, this event appears as an alert card above the timeline */
+  highlight?: boolean;
+}
+
+export const KEY_EVENTS: WarEvent[] = [
+  // 2022
+  {
+    date: "20220224",
+    label: "Invasion begins",
+    description: "Russia launches full-scale invasion of Ukraine from multiple directions",
+    lat: 50.45,
+    lng: 30.52,
+    highlight: true,
+  },
+  {
+    date: "20220227",
+    label: "Sanctions & SWIFT",
+    description: "Western nations impose sweeping sanctions; select Russian banks cut from SWIFT",
+  },
+  {
+    date: "20220302",
+    label: "Kherson falls",
+    description: "Russia captures Kherson, the first major Ukrainian city to fall",
+    lat: 46.636,
+    lng: 32.617,
+    highlight: true,
+  },
+  {
+    date: "20220316",
+    label: "Mariupol siege",
+    description: "Russian forces encircle Mariupol; intense urban combat begins",
+    lat: 47.097,
+    lng: 37.543,
+  },
+  {
+    date: "20220402",
+    label: "Bucha massacre",
+    description: "Ukrainian forces recapture Bucha; evidence of mass civilian killings discovered",
+    lat: 50.543,
+    lng: 30.213,
+    highlight: true,
+  },
+  {
+    date: "20220414",
+    label: "Moskva sinks",
+    description: "Ukrainian Neptune missiles sink the Russian Black Sea flagship Moskva",
+    lat: 45.3,
+    lng: 31.0,
+    highlight: true,
+  },
+  {
+    date: "20220520",
+    label: "Azovstal surrender",
+    description: "Last Ukrainian defenders of Mariupol's Azovstal steel plant surrender",
+    lat: 47.096,
+    lng: 37.615,
+  },
+  {
+    date: "20220624",
+    label: "Lysychansk falls",
+    description: "Russia captures Lysychansk, completing control of Luhansk Oblast",
+    lat: 48.904,
+    lng: 38.431,
+  },
+  {
+    date: "20220906",
+    label: "Kharkiv offensive",
+    description:
+      "Ukraine launches rapid counteroffensive, liberating most of Kharkiv Oblast in days",
+    lat: 49.235,
+    lng: 37.58,
+    highlight: true,
+  },
+  {
+    date: "20221008",
+    label: "Crimea Bridge hit",
+    description: "Explosion damages the Kerch Strait Bridge connecting Crimea to Russia",
+    lat: 45.308,
+    lng: 36.513,
+    highlight: true,
+  },
+  {
+    date: "20221111",
+    label: "Kherson liberated",
+    description: "Russia withdraws from Kherson; Ukraine's most significant territorial gain",
+    lat: 46.636,
+    lng: 32.617,
+    highlight: true,
+  },
+  // 2023
+  {
+    date: "20230121",
+    label: "Tanks pledged",
+    description: "Western allies pledge Leopard 2 and M1 Abrams tanks to Ukraine",
+  },
+  {
+    date: "20230209",
+    label: "Vuhledar defense",
+    description:
+      "Ukraine repels major Russian assault on Vuhledar, destroying dozens of armored vehicles",
+    lat: 47.776,
+    lng: 37.254,
+  },
+  {
+    date: "20230322",
+    label: "ICC arrest warrant",
+    description:
+      "International Criminal Court issues arrest warrant for Putin for war crimes related to deportation of children",
+    highlight: true,
+  },
+  {
+    date: "20230521",
+    label: "Bakhmut falls",
+    description: "Wagner forces capture Bakhmut after the war's longest and bloodiest battle",
+    lat: 48.595,
+    lng: 38.001,
+    highlight: true,
+  },
+  {
+    date: "20230608",
+    label: "Kakhovka Dam",
+    description: "Kakhovka Dam is destroyed, causing catastrophic flooding downstream",
+    lat: 46.774,
+    lng: 33.371,
+    highlight: true,
+  },
+  {
+    date: "20230610",
+    label: "Summer offensive",
+    description: "Ukraine begins long-anticipated counteroffensive in southern Zaporizhzhia",
+    lat: 47.19,
+    lng: 35.17,
+    highlight: true,
+  },
+  {
+    date: "20230624",
+    label: "Wagner mutiny",
+    description:
+      "Prigozhin leads Wagner forces toward Moscow in brief mutiny before reaching deal with Kremlin",
+    highlight: true,
+  },
+  {
+    date: "20230724",
+    label: "Cluster munitions arrive",
+    description: "US begins delivering cluster munitions to Ukraine amid ammunition shortages",
+  },
+  {
+    date: "20230823",
+    label: "Prigozhin killed",
+    description:
+      "Wagner leader Yevgeny Prigozhin dies in plane crash two months after aborted mutiny",
+    highlight: true,
+  },
+  {
+    date: "20231004",
+    label: "Hroza attack",
+    description:
+      "Russian missile strikes memorial gathering in Hroza, Kharkiv Oblast, killing 59 civilians",
+    lat: 49.286,
+    lng: 37.339,
+  },
+  {
+    date: "20231117",
+    label: "Counteroffensive stalls",
+    description:
+      "Ukraine acknowledges the summer counteroffensive has not met its objectives amid dense Russian defenses",
+  },
+  // 2024
+  {
+    date: "20240113",
+    label: "Largest missile barrage",
+    description:
+      "Russia launches its largest single-day missile attack of the war, hitting cities across Ukraine with 100+ missiles",
+    highlight: true,
+  },
+  {
+    date: "20240217",
+    label: "Avdiivka falls",
+    description: "Russia captures Avdiivka after months of intense fighting",
+    lat: 48.14,
+    lng: 37.745,
+    highlight: true,
+  },
+  {
+    date: "20240320",
+    label: "Energy grid attacks",
+    description:
+      "Russia begins systematic campaign to destroy Ukraine's energy infrastructure ahead of summer",
+  },
+  {
+    date: "20240413",
+    label: "Chasiv Yar assault",
+    description:
+      "Russia begins offensive on Chasiv Yar, a strategically important hilltop city west of Bakhmut",
+    lat: 48.605,
+    lng: 37.848,
+  },
+  {
+    date: "20240424",
+    label: "US aid package",
+    description: "Congress passes $61 billion Ukraine aid package after months of delay",
+    highlight: true,
+  },
+  {
+    date: "20240526",
+    label: "F-16s confirmed",
+    description: "Netherlands and Denmark confirm F-16 fighter jets will begin arriving in Ukraine",
+  },
+  {
+    date: "20240708",
+    label: "DeepState tracking",
+    description:
+      "DeepState high-resolution polygon territory data begins (VIINA point-data covers earlier)",
+  },
+  {
+    date: "20240718",
+    label: "Pokrovsk offensive",
+    description:
+      "Russia launches major offensive toward Pokrovsk in Donetsk Oblast with ~40,000 troops",
+    lat: 48.287,
+    lng: 37.176,
+  },
+  {
+    date: "20240806",
+    label: "Kursk offensive",
+    description: "Ukraine launches surprise cross-border offensive into Russia's Kursk Oblast",
+    lat: 51.416,
+    lng: 34.695,
+    highlight: true,
+  },
+  {
+    date: "20240826",
+    label: "Massive energy strikes",
+    description:
+      "Russia launches one of its largest combined missile and drone attacks targeting Ukrainian energy infrastructure",
+    lat: 50.45,
+    lng: 30.52,
+  },
+  {
+    date: "20240901",
+    label: "Novohrodivka falls",
+    description: "Russian forces capture Novohrodivka in their advance toward Pokrovsk",
+    lat: 48.358,
+    lng: 37.393,
+  },
+  {
+    date: "20241005",
+    label: "Vuhledar falls",
+    description: "Russia captures Vuhledar after prolonged siege",
+    lat: 47.994,
+    lng: 37.235,
+  },
+  {
+    date: "20241016",
+    label: "Kurakhove battle begins",
+    description: "Russian forces begin assault on the city of Kurakhove in Donetsk Oblast",
+    lat: 47.96,
+    lng: 37.32,
+  },
+  {
+    date: "20241105",
+    label: "US election",
+    description:
+      "Donald Trump wins US presidential election, casting uncertainty over Ukraine support",
+    highlight: true,
+  },
+  {
+    date: "20241115",
+    label: "Selydove falls",
+    description: "Russian forces capture the city of Selydove in Donetsk Oblast",
+    lat: 48.146,
+    lng: 37.302,
+  },
+  {
+    date: "20241216",
+    label: "DPRK troops deployed",
+    description: "North Korean soldiers confirmed fighting alongside Russian forces in Kursk",
+    lat: 51.416,
+    lng: 34.695,
+    highlight: true,
+  },
+  {
+    date: "20241225",
+    label: "Kurakhove falls",
+    description: "Russia captures Kurakhove after 2-month battle, seizes power station",
+    lat: 47.96,
+    lng: 37.32,
+  },
+  // 2025
+  {
+    date: "20250120",
+    label: "Trump inaugurated",
+    description: "Trump takes office, signals prioritization of ending the war",
+    highlight: true,
+  },
+  {
+    date: "20250127",
+    label: "Ukraine aid freeze",
+    description: "US freezes nearly all foreign aid including military assistance to Ukraine",
+    highlight: true,
+  },
+  {
+    date: "20250210",
+    label: "Minerals deal talks",
+    description:
+      "US and Ukraine begin negotiations on a critical minerals agreement as precondition for continued support",
+  },
+  {
+    date: "20250218",
+    label: "Zelensky-Trump meeting",
+    description:
+      "Zelenskyy meets Trump in Washington to discuss peace framework and security guarantees",
+    highlight: true,
+  },
+  {
+    date: "20250224",
+    label: "3rd anniversary",
+    description: "Three years since Russia's full-scale invasion of Ukraine",
+    lat: 50.45,
+    lng: 30.52,
+    highlight: true,
+  },
+  {
+    date: "20250228",
+    label: "Oval Office confrontation",
+    description:
+      "Heated Oval Office meeting between Zelenskyy, Trump, and Vance leads to collapse of minerals deal signing",
+    highlight: true,
+  },
+  {
+    date: "20250301",
+    label: "Pokrovsk pressure",
+    description:
+      "Russian forces intensify assault on Pokrovsk, a critical logistics hub in Donetsk Oblast",
+    lat: 48.284,
+    lng: 37.178,
+  },
+  {
+    date: "20250306",
+    label: "Black Sea energy strikes",
+    description:
+      "Russia launches large-scale missile strikes on Ukrainian energy infrastructure across multiple oblasts",
+  },
+  {
+    date: "20250310",
+    label: "30-day ceasefire proposal",
+    description:
+      "US proposes 30-day ceasefire framework; Ukraine agrees conditionally, Russia rejects",
+    highlight: true,
+  },
+  {
+    date: "20250318",
+    label: "Energy ceasefire",
+    description:
+      "Trump-Putin call results in proposed limited ceasefire on energy infrastructure; quickly broken",
+  },
+  {
+    date: "20250320",
+    label: "Intelligence sharing cut",
+    description:
+      "Reports emerge that US has reduced intelligence sharing with Ukraine following diplomatic tensions",
+    highlight: true,
+  },
+];
