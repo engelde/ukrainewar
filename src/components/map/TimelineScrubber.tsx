@@ -532,7 +532,7 @@ export default function TimelineScrubber({
         >
           <div
             className="relative cursor-crosshair"
-            style={{ width: `${totalWidth}px`, height: "90px" }}
+            style={{ width: `${totalWidth}px`, height: "40px" }}
             onClick={handleTimelineClick}
           >
             {/* Daily losses waveform (background) */}

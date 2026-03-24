@@ -30,7 +30,6 @@ import {
 import { useFontSize } from "@/hooks/useFontSize";
 import { usePanelOpacity } from "@/hooks/usePanelOpacity";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
-import { t } from "@/i18n";
 import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +89,29 @@ const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Military Bases", icon: TbShield, key: "nato" },
   { label: "Thermal", icon: TbSatellite, key: "thermal" },
 ];
+
+function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex h-4 w-4 items-center justify-center rounded border transition-colors flex-shrink-0",
+        checked ? "bg-ua-blue/20 border-ua-blue/50" : "border-border/50 bg-transparent",
+      )}
+    >
+      {checked && (
+        <svg
+          className="h-3 w-3 text-ua-blue"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={3}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      )}
+    </div>
+  );
+}
 
 export default function OptionsPopup({
   panelToggles,
@@ -153,11 +175,11 @@ export default function OptionsPopup({
         <div
           className={cn(
             "absolute top-full right-0 mt-2 z-50",
-            "rounded-lg",
-            "bg-background/95 backdrop-blur-xl",
+            "rounded-lg overflow-hidden",
+            "bg-background/90 backdrop-blur-xl",
             "border border-border/50",
             "shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
-            "w-[280px]",
+            "w-[300px]",
             "max-h-[calc(100vh-5rem)] overflow-y-auto scrollbar-none",
           )}
         >
@@ -169,62 +191,80 @@ export default function OptionsPopup({
             <button
               onClick={() => setOpen(false)}
               aria-label="Close options"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               <TbX className="h-3.5 w-3.5" />
             </button>
           </div>
 
           {/* Panels section */}
-          <div className="px-3 py-2.5">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2">
+          <div className="pt-2 pb-1">
+            <div className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Panels
             </div>
-            <div className="grid grid-cols-2 gap-1">
-              {PANEL_ITEMS.map(({ label, icon: Icon, key }) => {
-                const active = panelStates?.[key];
+            <div className="grid grid-cols-2">
+              {PANEL_ITEMS.map(({ label, icon: Icon, key }, i) => {
+                const active = panelStates?.[key] ?? false;
                 return (
                   <button
                     key={key}
+                    type="button"
                     onClick={() => panelToggles?.[key]?.()}
                     className={cn(
-                      "flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors",
-                      "text-[10px] font-semibold uppercase tracking-wider",
-                      active
-                        ? "text-ua-blue bg-ua-blue/10"
-                        : "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50",
+                      "flex items-center gap-2 px-3 py-1.5",
+                      "border-b border-border/20",
+                      i % 2 === 0 && "border-r border-r-border/20",
+                      "hover:bg-surface-elevated/50 transition-colors",
+                      "text-left cursor-pointer",
                     )}
                   >
-                    <Icon className="h-3 w-3" />
-                    <span>{label}</span>
+                    <Checkbox checked={active} />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Icon
+                        className={cn(
+                          "h-3 w-3 flex-shrink-0",
+                          active ? "text-foreground" : "text-muted-foreground",
+                        )}
+                      />
+                      <span className="text-xs text-foreground truncate">{label}</span>
+                    </div>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Layers section */}
-          <div className="px-3 py-2.5 border-t border-border/30">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2">
+          {/* Map Layers section */}
+          <div className="pt-2 pb-1 border-t border-border/30">
+            <div className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Map Layers
             </div>
-            <div className="grid grid-cols-2 gap-1">
-              {LAYER_ITEMS.map(({ label, icon: Icon, key }) => {
-                const active = layers?.[key];
+            <div className="grid grid-cols-2">
+              {LAYER_ITEMS.map(({ label, icon: Icon, key }, i) => {
+                const active = layers?.[key] ?? false;
                 return (
                   <button
                     key={key}
+                    type="button"
                     onClick={() => onToggleLayer?.(key)}
                     className={cn(
-                      "flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors",
-                      "text-[10px] font-semibold uppercase tracking-wider",
-                      active
-                        ? "text-ua-blue bg-ua-blue/10"
-                        : "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50",
+                      "flex items-center gap-2 px-3 py-1.5",
+                      "border-b border-border/20",
+                      i % 2 === 0 && "border-r border-r-border/20",
+                      "hover:bg-surface-elevated/50 transition-colors",
+                      "text-left cursor-pointer",
                     )}
                   >
-                    <Icon className="h-3 w-3" />
-                    <span>{label}</span>
+                    <Checkbox checked={active} />
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Icon
+                        className={cn(
+                          "h-3 w-3 flex-shrink-0",
+                          active ? "text-foreground" : "text-muted-foreground",
+                        )}
+                      />
+                      <span className="text-xs text-foreground truncate">{label}</span>
+                    </div>
                   </button>
                 );
               })}
@@ -233,35 +273,35 @@ export default function OptionsPopup({
 
           {/* Style section */}
           <div className="px-3 py-2.5 border-t border-border/30">
-            <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-2">
+            <div className="mb-2 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Style
             </div>
 
             {/* Text size */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Text Size
-              </span>
+              <span className="text-xs text-foreground">Text Size</span>
               <div className="flex items-center gap-0.5">
                 <button
+                  type="button"
                   onClick={fontDec}
                   disabled={!fontCanDec}
                   aria-label="Decrease font size"
                   className={cn(
-                    "rounded-md p-1 transition-colors",
+                    "rounded-md p-1 transition-colors cursor-pointer",
                     fontCanDec
-                      ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                      ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
                 >
                   <TbMinus className="h-3 w-3" />
                 </button>
                 <button
+                  type="button"
                   onClick={fontReset}
                   disabled={fontIsDefault}
                   aria-label="Reset font size"
                   className={cn(
-                    "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center",
+                    "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center cursor-pointer",
                     !fontIsDefault
                       ? "text-ua-blue hover:bg-ua-blue/10"
                       : "text-muted-foreground/50",
@@ -270,13 +310,14 @@ export default function OptionsPopup({
                   {fontSize}px
                 </button>
                 <button
+                  type="button"
                   onClick={fontInc}
                   disabled={!fontCanInc}
                   aria-label="Increase font size"
                   className={cn(
-                    "rounded-md p-1 transition-colors",
+                    "rounded-md p-1 transition-colors cursor-pointer",
                     fontCanInc
-                      ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                      ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
                 >
@@ -287,29 +328,29 @@ export default function OptionsPopup({
 
             {/* Panel opacity */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Panel Opacity
-              </span>
+              <span className="text-xs text-foreground">Panel Opacity</span>
               <div className="flex items-center gap-0.5">
                 <button
+                  type="button"
                   onClick={opacDec}
                   disabled={!opacCanDec}
                   aria-label="Decrease panel opacity"
                   className={cn(
-                    "rounded-md p-1 transition-colors",
+                    "rounded-md p-1 transition-colors cursor-pointer",
                     opacCanDec
-                      ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                      ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
                 >
                   <TbMinus className="h-3 w-3" />
                 </button>
                 <button
+                  type="button"
                   onClick={opacReset}
                   disabled={opacIsDefault}
                   aria-label="Reset panel opacity"
                   className={cn(
-                    "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center",
+                    "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center cursor-pointer",
                     !opacIsDefault
                       ? "text-ua-blue hover:bg-ua-blue/10"
                       : "text-muted-foreground/50",
@@ -318,13 +359,14 @@ export default function OptionsPopup({
                   {opacity}%
                 </button>
                 <button
+                  type="button"
                   onClick={opacInc}
                   disabled={!opacCanInc}
                   aria-label="Increase panel opacity"
                   className={cn(
-                    "rounded-md p-1 transition-colors",
+                    "rounded-md p-1 transition-colors cursor-pointer",
                     opacCanInc
-                      ? "text-muted-foreground/70 hover:text-muted-foreground hover:bg-surface-elevated/50"
+                      ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
                 >
@@ -335,14 +377,13 @@ export default function OptionsPopup({
 
             {/* Reduce motion */}
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Reduce Motion
-              </span>
+              <span className="text-xs text-foreground">Reduce Motion</span>
               <button
+                type="button"
                 onClick={toggleMotion}
                 aria-label="Toggle reduce motion"
                 className={cn(
-                  "relative w-8 h-4 rounded-full transition-colors",
+                  "relative w-8 h-4 rounded-full transition-colors cursor-pointer",
                   reduceMotion ? "bg-ua-blue/40" : "bg-border/40",
                 )}
               >

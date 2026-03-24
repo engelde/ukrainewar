@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { parseAsBoolean, parseAsFloat, parseAsString, useQueryState } from "nuqs";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createParser, parseAsBoolean, parseAsFloat, parseAsString, useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DayTracker from "@/components/layout/DayTracker";
 import EventSidebar from "@/components/layout/EventSidebar";
 import Header, { Footer } from "@/components/layout/Header";
@@ -59,6 +59,48 @@ interface AppShellProps {
   casualtyData: CasualtyData | null;
 }
 
+// All layer keys and their defaults (all on)
+const ALL_LAYER_KEYS: (keyof MapLayers)[] = [
+  "territory",
+  "equipment",
+  "frontline",
+  "border",
+  "conflicts",
+  "heatmap",
+  "battles",
+  "operations",
+  "infrastructure",
+  "nato",
+  "thermal",
+];
+
+// All panel visibility keys and their defaults
+const PANEL_KEYS = [
+  "events",
+  "russianLosses",
+  "humanitarian",
+  "spending",
+  "energy",
+  "airDefense",
+  "support",
+  "ukraineLosses",
+  "sanctions",
+] as const;
+type PanelKey = (typeof PANEL_KEYS)[number];
+const DEFAULT_VISIBLE_PANELS: PanelKey[] = ["events", "russianLosses"];
+
+// Custom nuqs parser: comma-separated set of strings
+const parseAsStringSet = createParser({
+  parse: (value: string) => {
+    if (!value) return new Set<string>();
+    return new Set(value.split(",").filter(Boolean));
+  },
+  serialize: (value: Set<string>) => {
+    if (value.size === 0) return "";
+    return [...value].join(",");
+  },
+});
+
 export default function AppShell({ casualtyData }: AppShellProps) {
   const isMobile = useIsMobile();
   const { events } = useEvents();
@@ -82,20 +124,56 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     "events",
     parseAsBoolean.withOptions({ shallow: true }),
   );
+  // Layers persisted as comma-separated "off" keys (only store disabled ones since default=all on)
+  const [urlLayersOff, setUrlLayersOff] = useQueryState(
+    "loff",
+    parseAsStringSet.withOptions({ shallow: true }),
+  );
+  // Panel visibility as comma-separated visible panel keys
+  const [urlPanels, setUrlPanels] = useQueryState(
+    "panels",
+    parseAsStringSet.withOptions({ shallow: true }),
+  );
+  // Stats panel collapsed
+  const [urlStats, setUrlStats] = useQueryState(
+    "stats",
+    parseAsBoolean.withOptions({ shallow: true }),
+  );
 
-  const [layers, setLayers] = useState<MapLayers>({
-    territory: true,
-    equipment: true,
-    frontline: true,
-    border: true,
-    conflicts: true,
-    heatmap: true,
-    battles: true,
-    operations: true,
-    infrastructure: true,
-    nato: true,
-    thermal: true,
-  });
+  // Derive layer state from URL (default: all on; URL stores which are off)
+  const layers = useMemo<MapLayers>(() => {
+    const off = urlLayersOff ?? new Set<string>();
+    const result = {} as MapLayers;
+    for (const key of ALL_LAYER_KEYS) {
+      result[key] = !off.has(key);
+    }
+    return result;
+  }, [urlLayersOff]);
+
+  const setLayers = useCallback(
+    (updater: (prev: MapLayers) => MapLayers) => {
+      const off = urlLayersOff ?? new Set<string>();
+      const prev = {} as MapLayers;
+      for (const key of ALL_LAYER_KEYS) prev[key] = !off.has(key);
+      const next = updater(prev);
+      const newOff = new Set<string>();
+      for (const key of ALL_LAYER_KEYS) {
+        if (!next[key]) newOff.add(key);
+      }
+      setUrlLayersOff(newOff.size > 0 ? newOff : null);
+    },
+    [urlLayersOff, setUrlLayersOff],
+  );
+
+  // Derive panel visibility from URL (default: events + russianLosses)
+  const panelVisibility = useMemo(() => {
+    const visible = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
+    const result = {} as Record<PanelKey, boolean>;
+    for (const key of PANEL_KEYS) {
+      result[key] = visible.has(key);
+    }
+    return result;
+  }, [urlPanels]);
 
   const [selectedMarker, setSelectedMarker] = useState<EquipmentMarker | null>(null);
   const [territoryDate, setTerritoryDate] = useState<string | null>(urlDate);
@@ -106,20 +184,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const [supportOpen, setSupportOpen] = useState(false);
   const [ukraineLossesOpen, setUkraineLossesOpen] = useState(false);
   const [sanctionsOpen, setSanctionsOpen] = useState(false);
-  const [statsCollapsed, setStatsCollapsed] = useState(false);
-
-  // Panel visibility: controlled by Options popup (hide/show entirely)
-  const [panelVisibility, setPanelVisibility] = useState({
-    events: true,
-    russianLosses: true,
-    humanitarian: false,
-    spending: false,
-    energy: false,
-    airDefense: false,
-    support: false,
-    ukraineLosses: false,
-    sanctions: false,
-  });
+  const [statsCollapsed, setStatsCollapsed] = useState(urlStats === true);
   const [flyToTarget, setFlyToTarget] = useState<{
     lat: number;
     lng: number;
@@ -139,9 +204,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     if (didMountDefaultsRef.current) return;
     didMountDefaultsRef.current = true;
 
+    // Open panels that are visible per URL state
     if (!isMobile) {
-      setHumanitarianOpen(true);
-      setSpendingOpen(true);
+      if (panelVisibility.humanitarian) setHumanitarianOpen(true);
+      if (panelVisibility.spending) setSpendingOpen(true);
+      if (panelVisibility.energy) setEnergyOpen(true);
+      if (panelVisibility.airDefense) setAirDefenseOpen(true);
+      if (panelVisibility.support) setSupportOpen(true);
+      if (panelVisibility.ukraineLosses) setUkraineLossesOpen(true);
+      if (panelVisibility.sanctions) setSanctionsOpen(true);
     }
     // Open sidebar by default on XL screens if no URL preference set
     if (urlEvents === null && typeof window !== "undefined" && window.innerWidth >= 1280) {
@@ -167,9 +238,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const resetPendingRef = useRef(false);
   const lastFetchedDate = useRef<string | null>(null);
 
-  const handleToggleLayer = useCallback((layer: keyof MapLayers) => {
-    setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
-  }, []);
+  const handleToggleLayer = useCallback(
+    (layer: keyof MapLayers) => {
+      setLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
+    },
+    [setLayers],
+  );
 
   const handleMarkerClick = useCallback((marker: EquipmentMarker) => {
     setSelectedMarker(marker);
@@ -257,7 +331,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const handleMinimizeSupport = useCallback(() => setSupportOpen(false), []);
   const handleMinimizeUkraineLosses = useCallback(() => setUkraineLossesOpen(false), []);
   const handleMinimizeSanctions = useCallback(() => setSanctionsOpen(false), []);
-  const handleMinimizeStats = useCallback(() => setStatsCollapsed(true), []);
+  const handleMinimizeStats = useCallback(() => {
+    setStatsCollapsed(true);
+    setUrlStats(true);
+  }, [setUrlStats]);
 
   // Expand handlers — called by dock collapsed bars
   const handleExpandHumanitarian = useCallback(() => setHumanitarianOpen(true), []);
@@ -267,20 +344,29 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const handleExpandSupport = useCallback(() => setSupportOpen(true), []);
   const handleExpandUkraineLosses = useCallback(() => setUkraineLossesOpen(true), []);
   const handleExpandSanctions = useCallback(() => setSanctionsOpen(true), []);
-  const handleExpandStats = useCallback(() => setStatsCollapsed(false), []);
+  const handleExpandStats = useCallback(() => {
+    setStatsCollapsed(false);
+    setUrlStats(null);
+  }, [setUrlStats]);
 
   // Visibility toggles — called by Options popup (hide/show entirely)
-  const handleVisibilityToggle = useCallback((key: string) => {
-    setPanelVisibility((prev) => {
-      const next = { ...prev, [key]: !prev[key as keyof typeof prev] };
-      // When making visible, also expand the panel
-      if (next[key as keyof typeof next]) {
+  const handleVisibilityToggle = useCallback(
+    (key: string) => {
+      const current = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
+      const next = new Set(current);
+      const wasVisible = next.has(key);
+      if (wasVisible) {
+        next.delete(key);
+      } else {
+        next.add(key);
+        // When making visible, also expand the panel
         switch (key) {
           case "events":
             setSidebarOpen(true);
             break;
           case "russianLosses":
             setStatsCollapsed(false);
+            setUrlStats(null);
             break;
           case "humanitarian":
             setHumanitarianOpen(true);
@@ -305,9 +391,14 @@ export default function AppShell({ casualtyData }: AppShellProps) {
             break;
         }
       }
-      return next;
-    });
-  }, []);
+      // Store null if matches defaults to keep URL clean
+      const isDefault =
+        next.size === DEFAULT_VISIBLE_PANELS.length &&
+        DEFAULT_VISIBLE_PANELS.every((k) => next.has(k));
+      setUrlPanels(isDefault ? null : next);
+    },
+    [urlPanels, setUrlPanels, setUrlStats],
+  );
 
   // Global Escape key handler — closes the topmost open panel
   useEffect(() => {
@@ -404,6 +495,9 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setUrlLat(null);
     setUrlZoom(null);
     setUrlEvents(null);
+    setUrlLayersOff(null);
+    setUrlPanels(null);
+    setUrlStats(null);
     setFlyToTarget({ lat: MAP_CENTER[1], lng: MAP_CENTER[0], zoom: MAP_ZOOM });
     setSelectedMarker(null);
     setHumanitarianOpen(true);
@@ -416,20 +510,16 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setStatsCollapsed(false);
     setTimelineKey((prev) => prev + 1);
     setSidebarOpen(false);
-    setLayers({
-      territory: true,
-      equipment: true,
-      frontline: true,
-      border: true,
-      conflicts: true,
-      heatmap: true,
-      battles: true,
-      operations: true,
-      infrastructure: true,
-      nato: true,
-      thermal: true,
-    });
-  }, [setUrlDate, setUrlLng, setUrlLat, setUrlZoom, setUrlEvents]);
+  }, [
+    setUrlDate,
+    setUrlLng,
+    setUrlLat,
+    setUrlZoom,
+    setUrlEvents,
+    setUrlLayersOff,
+    setUrlPanels,
+    setUrlStats,
+  ]);
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
