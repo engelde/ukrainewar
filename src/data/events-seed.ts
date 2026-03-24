@@ -11,6 +11,134 @@ import type { WarEvent } from "./events";
  * This file fills the gap for political/diplomatic milestones.
  */
 export const SEED_EVENTS: WarEvent[] = [
+  // ──── 2021 — Pre-invasion buildup ─────────────────────────────────────
+
+  {
+    date: "20210303",
+    label: "Russia begins military buildup near Ukraine",
+    description:
+      "Russia deploys thousands of troops and heavy equipment to Crimea, Rostov, Bryansk, and Voronezh oblasts — the largest mobilization since the 2014 annexation of Crimea",
+    lat: 51.07,
+    lng: 39.18,
+    highlight: true,
+  },
+  {
+    date: "20210326",
+    label: "Russian mortar attack kills 4 Ukrainian soldiers",
+    description:
+      "Russian troops fire mortars at Ukrainian positions near the village of Shumy in Donbas, killing four servicemen and escalating tensions",
+    lat: 48.55,
+    lng: 37.8,
+  },
+  {
+    date: "20210401",
+    label: "Russia refuses Donbas ceasefire renewal",
+    description:
+      "Russia refuses to renew the ceasefire in Donbas; satellite imagery confirms 28 battalion tactical groups staged near the Ukrainian border",
+  },
+  {
+    date: "20210422",
+    label: "Partial troop withdrawal announced",
+    description:
+      "Russia announces partial withdrawal of forces from the border, but equipment and infrastructure remain in place, allowing rapid redeployment",
+  },
+  {
+    date: "20210712",
+    label: "Putin publishes essay on Russian-Ukrainian unity",
+    description:
+      "Putin publishes 'On the Historical Unity of Russians and Ukrainians,' asserting that Russians and Ukrainians are 'one people' — the essay is made compulsory reading for Russian soldiers",
+  },
+  {
+    date: "20210910",
+    label: "Zapad 2021 military exercise begins",
+    description:
+      "Russia and Belarus launch Zapad 2021 — a joint strategic exercise involving 200,000 troops, 760 armored vehicles, 290 tanks, 80+ aircraft, and 15 ships across 14 training grounds",
+    lat: 56.12,
+    lng: 43.2,
+    highlight: true,
+  },
+  {
+    date: "20210915",
+    label: "Zapad 2021 concludes",
+    description:
+      "Zapad 2021 exercises end; US intelligence later assesses them as rehearsal for the Ukraine invasion due to their unprecedented scale and composition",
+    lat: 56.12,
+    lng: 43.2,
+  },
+  {
+    date: "20211026",
+    label: "Renewed Russian military buildup begins",
+    description:
+      "Russia begins a second, larger military buildup near Ukraine, this time with deployments on new fronts including Belarus from the north",
+    highlight: true,
+  },
+  {
+    date: "20211203",
+    label: "100,000 Russian troops reported near Ukraine",
+    description:
+      "Over 100,000 Russian troops are massed around Ukraine on three sides — from Russia, Belarus, and Crimea — according to US and European intelligence estimates",
+  },
+  {
+    date: "20211207",
+    label: "Biden warns Putin against invasion",
+    description:
+      "US President Biden holds a video call with Putin warning of severe economic sanctions and diplomatic consequences if Russia invades Ukraine",
+  },
+  {
+    date: "20211217",
+    label: "Russia issues security demands to NATO",
+    description:
+      "Russia presents draft treaties demanding NATO halt eastward expansion, withdraw forces from Eastern Europe, and guarantee Ukraine will never join the alliance",
+  },
+  {
+    date: "20220110",
+    label: "Russia-NATO talks fail to reach agreement",
+    description:
+      "Diplomatic talks between Russia and NATO in Geneva and Brussels fail; NATO rejects Russia's demands while offering dialogue on arms control",
+  },
+  {
+    date: "20220117",
+    label: "Russian forces deploy to Belarus for exercises",
+    description:
+      "Russia begins deploying troops to Belarus for 'Allied Resolve 2022' joint exercises, positioning forces north of Kyiv for the first time",
+    lat: 52.05,
+    lng: 29.25,
+  },
+  {
+    date: "20220202",
+    label: "US estimates 130,000 Russian troops at border",
+    description:
+      "The Pentagon reports approximately 130,000 Russian troops are positioned around Ukraine's borders with additional forces still arriving",
+  },
+  {
+    date: "20220211",
+    label: "US warns invasion could begin within days",
+    description:
+      "US National Security Advisor Jake Sullivan warns that Russia has assembled sufficient forces for a major military operation and invasion could begin at any time",
+  },
+  {
+    date: "20220217",
+    label: "175,000+ troops in final positions",
+    description:
+      "Western intelligence estimates 175,000–190,000 Russian troops in final invasion positions across 9 force groupings from Belarus to Crimea",
+    highlight: true,
+  },
+  {
+    date: "20220221",
+    label: "Russia recognizes DPR and LPR",
+    description:
+      "Putin signs decrees recognizing the independence of the Donetsk and Luhansk People's Republics and orders Russian troops into the breakaway regions",
+    lat: 48.02,
+    lng: 37.8,
+    highlight: true,
+  },
+  {
+    date: "20220222",
+    label: "Putin declares Minsk agreements invalid",
+    description:
+      "Putin declares the Minsk agreements no longer valid; the Federation Council unanimously authorizes him to use military force outside Russia",
+  },
+
   // ──── 2022 ────────────────────────────────────────────────────────────
 
   {

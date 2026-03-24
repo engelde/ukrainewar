@@ -91,6 +91,7 @@ export interface MapLayers {
   nato: boolean;
   thermal: boolean;
   alliance: boolean;
+  buildup: boolean;
 }
 
 export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";

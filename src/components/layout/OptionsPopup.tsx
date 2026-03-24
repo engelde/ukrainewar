@@ -26,6 +26,7 @@ import {
   TbSkull,
   TbSwords,
   TbUserMinus,
+  TbUsers,
   TbX,
 } from "react-icons/tb";
 import { useFontSize } from "@/hooks/useFontSize";
@@ -92,6 +93,7 @@ const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Military Bases", icon: TbShield, key: "nato" },
   { label: "Thermal", icon: TbSatellite, key: "thermal" },
   { label: "Intl Support", icon: TbGlobe, key: "alliance" },
+  { label: "Buildup", icon: TbUsers, key: "buildup" },
 ];
 
 function Checkbox({ checked }: { checked: boolean }) {

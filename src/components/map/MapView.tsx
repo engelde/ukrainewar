@@ -9,6 +9,7 @@ import type { GasPipeline, GasStation, PowerPlant } from "@/data/energy-assets";
 import type { Bridge, Dam, Port } from "@/data/infrastructure";
 import { getStatusAtDate } from "@/data/infrastructure";
 import { getAttackLocations, MISSILE_ATTACKS } from "@/data/missile-attacks";
+import { INVASION_ROUTES, MOBILIZATION_GROUPINGS } from "@/data/mobilization";
 import type { NATOBase } from "@/data/nato-bases";
 import type { NuclearPlant } from "@/data/nuclear-plants";
 import type { MilitaryOperation } from "@/data/operations";
@@ -134,6 +135,7 @@ export default function MapView({
   const militaryBasePopupRef = useRef<maplibregl.Popup | null>(null);
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
   const attackPopupRef = useRef<maplibregl.Popup | null>(null);
+  const buildupPopupRef = useRef<maplibregl.Popup | null>(null);
   const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
   useEffect(() => {
@@ -2225,6 +2227,223 @@ export default function MapView({
     return Math.floor(Date.UTC(y, m - 1, day) / 86_400_000);
   };
 
+  // ── Buildup / Mobilization layer ──────────────────────────────────────
+  const loadBuildupLayer = useCallback(
+    (mapInstance: maplibregl.Map) => {
+      if (!mapInstance.getSource("buildup-source")) {
+        mapInstance.addSource("buildup-source", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        const vis = layersRef.current.buildup ? "visible" : "none";
+
+        // Outer glow — size scaled by troop count
+        mapInstance.addLayer({
+          id: "buildup-glow",
+          type: "circle",
+          source: "buildup-source",
+          layout: { visibility: vis },
+          paint: {
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["get", "troops"],
+              1000,
+              10,
+              5000,
+              16,
+              15000,
+              24,
+              30000,
+              32,
+              50000,
+              40,
+            ],
+            "circle-color": "#f59e0b",
+            "circle-opacity": 0.18,
+            "circle-blur": 0.7,
+          },
+        });
+
+        // Inner marker
+        mapInstance.addLayer({
+          id: "buildup-points",
+          type: "circle",
+          source: "buildup-source",
+          layout: { visibility: vis },
+          paint: {
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["get", "troops"],
+              1000,
+              5,
+              5000,
+              7,
+              15000,
+              10,
+              30000,
+              13,
+              50000,
+              16,
+            ],
+            "circle-color": "#f59e0b",
+            "circle-opacity": 0.75,
+            "circle-stroke-width": 1.5,
+            "circle-stroke-color": "#fbbf24",
+            "circle-stroke-opacity": 0.5,
+          },
+        });
+
+        // Click popup
+        mapInstance.on("click", "buildup-points", (e) => {
+          if (!e.features?.length) return;
+          const p = e.features[0].properties;
+          if (!p) return;
+          const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number];
+
+          const equipParts: string[] = [];
+          if (Number(p.tanks) > 0) equipParts.push(`Tanks: ~${p.tanks}`);
+          if (Number(p.ifvs) > 0) equipParts.push(`IFVs: ~${p.ifvs}`);
+          if (Number(p.artillery) > 0) equipParts.push(`Artillery: ~${p.artillery}`);
+          if (Number(p.mlrs) > 0) equipParts.push(`MLRS: ~${p.mlrs}`);
+          if (Number(p.aircraft) > 0) equipParts.push(`Aircraft: ~${p.aircraft}`);
+          if (Number(p.helicopters) > 0) equipParts.push(`Helicopters: ~${p.helicopters}`);
+          const equipHtml = equipParts.length
+            ? `<div style="font-size:11px;color:#d1d5db;margin-top:6px;line-height:1.5">${equipParts.join("<br>")}</div>`
+            : "";
+
+          const unitList = p.units
+            ? ((typeof p.units === "string" ? JSON.parse(p.units) : p.units) as string[])
+            : [];
+          const unitsHtml = unitList.length
+            ? `<div style="font-size:10px;color:#9ca3af;margin-top:6px">${unitList.join(", ")}</div>`
+            : "";
+
+          buildupPopupRef.current?.remove();
+          buildupPopupRef.current = new maplibregl.Popup({
+            closeOnClick: true,
+            maxWidth: "280px",
+            className: "battle-popup",
+          })
+            .setLngLat(coords)
+            .setHTML(
+              `<div style="max-width:280px">
+                <div style="font-weight:700;font-size:13px;color:#fbbf24;margin-bottom:2px">${p.name}</div>
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">${p.role}</div>
+                <div style="display:flex;gap:8px;margin-bottom:4px">
+                  <span style="font-size:11px;color:#f59e0b"><strong>~${Number(p.troops).toLocaleString()}</strong> troops</span>
+                  ${Number(p.btgs) > 0 ? `<span style="font-size:11px;color:#d97706">${p.btgs} BTGs</span>` : ""}
+                </div>
+                ${equipHtml}
+                ${unitsHtml}
+                <div style="font-size:10px;color:#6b7280;margin-top:6px">${p.locations}</div>
+              </div>`,
+            )
+            .addTo(mapInstance);
+        });
+
+        mapInstance.on("mouseenter", "buildup-points", () => {
+          mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        mapInstance.on("mouseleave", "buildup-points", () => {
+          mapInstance.getCanvas().style.cursor = "";
+        });
+
+        // Invasion route lines
+        mapInstance.addSource("invasion-routes", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+
+        mapInstance.addLayer({
+          id: "invasion-route-lines",
+          type: "line",
+          source: "invasion-routes",
+          layout: { visibility: vis, "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": "#ef4444",
+            "line-width": 2.5,
+            "line-opacity": 0.6,
+            "line-dasharray": [4, 3],
+          },
+        });
+
+        mapInstance.addLayer({
+          id: "invasion-route-glow",
+          type: "line",
+          source: "invasion-routes",
+          layout: { visibility: vis, "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": "#ef4444",
+            "line-width": 8,
+            "line-opacity": 0.12,
+            "line-blur": 4,
+          },
+        });
+      }
+
+      // Update data based on current timeline date
+      const source = mapInstance.getSource("buildup-source") as
+        | maplibregl.GeoJSONSource
+        | undefined;
+      if (!source) return;
+
+      if (!territoryDate) {
+        source.setData({ type: "FeatureCollection", features: [] });
+        const routeSrc = mapInstance.getSource("invasion-routes") as
+          | maplibregl.GeoJSONSource
+          | undefined;
+        if (routeSrc) routeSrc.setData({ type: "FeatureCollection", features: [] });
+        return;
+      }
+
+      const features: GeoJSON.Feature[] = MOBILIZATION_GROUPINGS.filter((g) => {
+        const start = Number.parseInt(g.startDate, 10);
+        const end = g.endDate ? Number.parseInt(g.endDate, 10) : 99999999;
+        const current = Number.parseInt(territoryDate, 10);
+        return current >= start && current <= end;
+      }).map((g) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [g.lng, g.lat] },
+        properties: {
+          name: g.name,
+          role: g.role,
+          troops: g.estimatedTroops,
+          btgs: g.btgs,
+          tanks: g.equipment.tanks,
+          ifvs: g.equipment.ifvs,
+          artillery: g.equipment.artillery,
+          mlrs: g.equipment.mlrs,
+          aircraft: g.equipment.aircraft,
+          helicopters: g.equipment.helicopters,
+          units: JSON.stringify(g.units),
+          locations: g.locations.join(", "),
+          phase: g.phase,
+        },
+      }));
+
+      source.setData({ type: "FeatureCollection", features });
+
+      // Invasion route lines — visible when date >= route.visibleFrom
+      const currentDate = Number.parseInt(territoryDate, 10);
+      const routeFeatures: GeoJSON.Feature[] = INVASION_ROUTES.filter(
+        (r) => currentDate >= Number.parseInt(r.visibleFrom, 10) && currentDate <= 20220224,
+      ).map((r) => ({
+        type: "Feature" as const,
+        geometry: { type: "LineString" as const, coordinates: r.coordinates },
+        properties: { name: r.name, description: r.description },
+      }));
+
+      const routeSrc = mapInstance.getSource("invasion-routes") as
+        | maplibregl.GeoJSONSource
+        | undefined;
+      if (routeSrc) routeSrc.setData({ type: "FeatureCollection", features: routeFeatures });
+    },
+    [territoryDate],
+  );
+
   const loadAttackMarkers = useCallback(
     (mapInstance: maplibregl.Map) => {
       // Add source + layers once
@@ -2432,6 +2651,7 @@ export default function MapView({
         loadMilitaryBaseLayers(map.current);
         loadThermalLayer(map.current);
         loadAttackMarkers(map.current);
+        loadBuildupLayer(map.current);
         ensureAllianceLayers(map.current);
 
         // Safety net: retry territory load if source is still empty after 3s
@@ -2642,6 +2862,19 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.alliance ? "visible" : "none");
       }
     }
+
+    // Buildup / Mobilization layers
+    const buildupLayers = [
+      "buildup-glow",
+      "buildup-points",
+      "invasion-route-lines",
+      "invasion-route-glow",
+    ];
+    for (const layer of buildupLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.buildup ? "visible" : "none");
+      }
+    }
   }, [
     loaded,
     layers.territory,
@@ -2656,6 +2889,7 @@ export default function MapView({
     layers.nato,
     layers.thermal,
     layers.alliance,
+    layers.buildup,
   ]);
 
   // Update territory when timeline date changes
@@ -2833,6 +3067,9 @@ export default function MapView({
       // --- Attack markers ---
       loadAttackMarkers(m);
 
+      // --- Buildup markers ---
+      loadBuildupLayer(m);
+
       // --- ACLED heatmap ---
       const heatmapSource = m.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
       if (heatmapSource && acledRegionalRef.current && oblastsRef.current) {
@@ -2902,6 +3139,7 @@ export default function MapView({
     battles,
     operations,
     loadAttackMarkers,
+    loadBuildupLayer,
     buildInfraFeatures,
     gasPipelines,
   ]);

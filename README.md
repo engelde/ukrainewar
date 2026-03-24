@@ -216,6 +216,8 @@ This project aggregates data from the following authoritative sources. All data 
 | **ENTSO-E** | European electricity generation data (Transparency Platform) | [transparency.entsoe.eu](https://transparency.entsoe.eu) |
 | **ENTSOG** | European gas transit flow data (Transparency Platform) | [transparency.entsog.eu](https://transparency.entsog.eu) |
 | **Sanctions data** | Curated from EU Council, US Treasury OFAC, UK Government sanctions lists | Various official sources |
+| **Wikipedia** | Pre-invasion order of battle, force groupings, and buildup timeline | [en.wikipedia.org](https://en.wikipedia.org/wiki/Order_of_battle_for_the_2022_Russian_invasion_of_Ukraine) |
+| **CSIS** | Invasion axis analysis and satellite imagery assessment | [csis.org](https://www.csis.org/analysis/russias-possible-invasion-ukraine) |
 
 ### Data Freshness
 
@@ -239,6 +241,7 @@ All API responses use a multi-layer persistent caching system (file-based in dev
 | VIINA territory | Weekly | Weekly snapshots |
 | Missile attack dataset | Static | Curated (40 major waves) |
 | Sanctions data | 7 days | Curated (static, updated with new packages) |
+| Pre-invasion mobilization | Static | Curated historical dataset (Mar 2021 – Feb 2022) |
 
 ### Methodology
 
@@ -287,6 +290,18 @@ Sanctions data is curated from official published lists including EU Council reg
 **Thermal Anomalies**
 
 Near-real-time fire and explosion detections come from NASA's Fire Information for Resource Management System (FIRMS), which provides satellite-detected thermal anomalies from the VIIRS instrument. These are displayed as map markers showing active fires and potential strike impacts.
+
+**Pre-Invasion Mobilization**
+
+The buildup layer visualizes the Russian military mobilization that preceded the full-scale invasion (March 2021 – February 2022). This data is curated from multiple open-source intelligence references since no single structured API exists for this historical period. Force grouping locations, troop estimates, battalion tactical group (BTG) counts, and equipment compositions are compiled from:
+
+- **Wikipedia Order of Battle** — Structured table of 9 force groupings with staging locations, BTG counts, and parent army units
+- **Wikipedia "Prelude to the 2022 Russian invasion"** — Timeline of troop movements and buildup milestones
+- **CSIS "Russia's Possible Invasion of Ukraine" (Jan 2022)** — Analysis of three planned invasion axes with satellite imagery locations
+- **Zapad 2021 Exercise Documentation** — 200,000-troop joint Russia-Belarus exercise across 14 training grounds
+- **IISS Military Balance 2022** — Force structure and equipment inventory reference data
+
+All troop and equipment numbers shown are consensus estimates from open-source intelligence, not verified counts. The buildup is presented in three phases: Phase 1 (March–April 2021, initial deployment), Zapad 2021 (September 2021, joint exercise), and Phase 2 (October 2021–February 2022, final invasion positioning).
 
 ---
 
