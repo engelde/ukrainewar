@@ -13,11 +13,7 @@ import type { NATOBase } from "@/data/nato-bases";
 import type { NuclearPlant } from "@/data/nuclear-plants";
 import type { MilitaryOperation } from "@/data/operations";
 import type { RussiaBase } from "@/data/russia-bases";
-import russiaBorder from "@/data/russia-border.json";
 import type { UkraineBase } from "@/data/ukraine-bases";
-import ukraineBorder from "@/data/ukraine-border.json";
-import ukraineMask from "@/data/ukraine-mask.json";
-import ukraineOblasts from "@/data/ukraine-oblasts.json";
 import { t } from "@/i18n";
 import { MAP_CENTER, MAP_STYLE, MAP_ZOOM } from "@/lib/constants";
 import type { EquipmentMarker, MapLayers } from "@/lib/types";
@@ -149,16 +145,27 @@ export default function MapView({
   }, [onDateChange]);
   const acledRegionalRef = useRef<AcledRegionalData | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const oblastsRef = useRef<GeoJSON.FeatureCollection | null>(null);
 
-  const loadUkraineBorder = useCallback((mapInstance: maplibregl.Map) => {
+  const loadUkraineBorder = useCallback(async (mapInstance: maplibregl.Map) => {
     if (mapInstance.getSource("ukraine-border")) return;
+
+    const [maskData, borderData, russiaData, oblastsData] = await Promise.all([
+      fetch("/data/geo/ukraine-mask.json").then((r) => r.json()),
+      fetch("/data/geo/ukraine-border.json").then((r) => r.json()),
+      fetch("/data/geo/russia-border.json").then((r) => r.json()),
+      fetch("/data/geo/ukraine-oblasts.json").then((r) => r.json()),
+    ]);
+    oblastsRef.current = oblastsData as GeoJSON.FeatureCollection;
+
+    if (!mapInstance.isStyleLoaded() || mapInstance.getSource("ukraine-border")) return;
 
     const beforeLayer = findFirstSymbolLayer(mapInstance);
 
     // Dim mask — darkens everything outside Ukraine
     mapInstance.addSource("ukraine-mask", {
       type: "geojson",
-      data: ukraineMask as GeoJSON.FeatureCollection,
+      data: maskData as GeoJSON.FeatureCollection,
     });
 
     mapInstance.addLayer({
@@ -174,7 +181,7 @@ export default function MapView({
     // Ukraine border source
     mapInstance.addSource("ukraine-border", {
       type: "geojson",
-      data: ukraineBorder as GeoJSON.FeatureCollection,
+      data: borderData as GeoJSON.FeatureCollection,
     });
 
     // Subtle inner fill — makes Ukraine slightly brighter than surroundings
@@ -225,7 +232,7 @@ export default function MapView({
     // Russia border source
     mapInstance.addSource("russia-border", {
       type: "geojson",
-      data: russiaBorder as GeoJSON.FeatureCollection,
+      data: russiaData as GeoJSON.FeatureCollection,
     });
 
     // Russia border glow
@@ -2058,7 +2065,9 @@ export default function MapView({
       if (map.current !== mapInstance) return;
 
       // Create oblast boundaries with event data
-      const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
+      const oblasts = oblastsRef.current;
+      if (!oblasts) return;
+      const oblastFeatures = oblasts.features;
       const geoWithData: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
         features: oblastFeatures.map((f) => {
@@ -2809,9 +2818,9 @@ export default function MapView({
 
       // --- ACLED heatmap ---
       const heatmapSource = m.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
-      if (heatmapSource && acledRegionalRef.current) {
+      if (heatmapSource && acledRegionalRef.current && oblastsRef.current) {
         const data = acledRegionalRef.current;
-        const oblastFeatures = (ukraineOblasts as GeoJSON.FeatureCollection).features;
+        const oblastFeatures = oblastsRef.current.features;
 
         const year = territoryDate ? parseInt(territoryDate.slice(0, 4), 10) : null;
         const month = territoryDate ? parseInt(territoryDate.slice(4, 6), 10) : null;

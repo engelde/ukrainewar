@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WarEvent } from "@/data/events";
 import { cn } from "@/lib/utils";
@@ -419,22 +419,34 @@ export default function TimelineScrubber({
     }
   }, [currentIndex, dates, events, dismissedEventDate]);
 
+  // O(1) date-to-index lookup map (pre-computed from dates array)
+  const dateToIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < dates.length; i++) {
+      map.set(dates[i], i);
+    }
+    return map;
+  }, [dates]);
+
+  // Event positions in pixels (memoized with O(1) lookups via dateToIndex)
+  const eventPositionsPx = useMemo(() => {
+    return events
+      .map((event) => {
+        let idx = dateToIndex.get(event.date);
+        if (idx === undefined) {
+          // Fallback: find first date >= event.date for dates between entries
+          idx = dates.findIndex((d) => d >= event.date);
+        }
+        if (idx === undefined || idx < 0) return null;
+        return { ...event, px: idx * PIXELS_PER_DAY, index: idx };
+      })
+      .filter(Boolean) as (WarEvent & { px: number; index: number })[];
+  }, [events, dates, dateToIndex]);
+
   if (dates.length === 0) return null;
 
   const currentDate = dates[currentIndex] || dates[dates.length - 1];
   const totalWidth = dates.length * PIXELS_PER_DAY;
-
-  // Event positions in pixels
-  const eventPositionsPx = events
-    .map((event) => {
-      const idx = dates.findIndex((d) => d >= event.date);
-      return {
-        ...event,
-        px: idx >= 0 ? idx * PIXELS_PER_DAY : -1,
-        index: idx,
-      };
-    })
-    .filter((e) => e.px >= 0);
 
   // Closest active highlighted event (within 5 days), dismissible by user
   const nearestEvent = eventPositionsPx.find((event) => {

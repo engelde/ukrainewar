@@ -132,6 +132,25 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <link rel="preload" href="/data/geo/ukraine-mask.json" as="fetch" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          href="/data/geo/ukraine-border.json"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/data/geo/russia-border.json"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/data/geo/ukraine-oblasts.json"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

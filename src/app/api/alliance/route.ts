@@ -17,7 +17,11 @@ const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 export async function GET() {
   try {
     if (cachedResult && Date.now() - cachedResult.ts < CACHE_TTL) {
-      return NextResponse.json(cachedResult.data);
+      return NextResponse.json(cachedResult.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+        },
+      });
     }
 
     const res = await fetch(WORLD_GEOJSON_URL, { cache: "no-store" });
@@ -60,8 +64,18 @@ export async function GET() {
     const result: GeoJSON.FeatureCollection = { type: "FeatureCollection", features };
     cachedResult = { data: result, ts: Date.now() };
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
+      },
+    });
   } catch {
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal error" },
+      {
+        status: 500,
+        headers: { "Cache-Control": "no-cache" },
+      },
+    );
   }
 }
