@@ -180,7 +180,44 @@ export default function MapView({
       },
     });
 
-    // Ukraine border source
+    // ── Russia border (rendered FIRST so Ukraine renders on top) ──────
+
+    mapInstance.addSource("russia-border", {
+      type: "geojson",
+      data: russiaData as GeoJSON.FeatureCollection,
+    });
+
+    mapInstance.addLayer(
+      {
+        id: "russia-border-glow",
+        type: "line",
+        source: "russia-border",
+        paint: {
+          "line-color": "#d44a4a",
+          "line-width": 10,
+          "line-opacity": 0.2,
+          "line-blur": 6,
+        },
+      },
+      beforeLayer,
+    );
+
+    mapInstance.addLayer(
+      {
+        id: "russia-border-line",
+        type: "line",
+        source: "russia-border",
+        paint: {
+          "line-color": "#e87b7b",
+          "line-width": 2,
+          "line-opacity": 0.8,
+        },
+      },
+      beforeLayer,
+    );
+
+    // ── Ukraine border (rendered AFTER Russia — on top at shared boundary) ──
+
     mapInstance.addSource("ukraine-border", {
       type: "geojson",
       data: borderData as GeoJSON.FeatureCollection,
@@ -225,44 +262,7 @@ export default function MapView({
         paint: {
           "line-color": "#7bbde8",
           "line-width": 2.5,
-          "line-opacity": 0.85,
-        },
-      },
-      beforeLayer,
-    );
-
-    // Russia border source
-    mapInstance.addSource("russia-border", {
-      type: "geojson",
-      data: russiaData as GeoJSON.FeatureCollection,
-    });
-
-    // Russia border glow
-    mapInstance.addLayer(
-      {
-        id: "russia-border-glow",
-        type: "line",
-        source: "russia-border",
-        paint: {
-          "line-color": "#d44a4a",
-          "line-width": 12,
-          "line-opacity": 0.25,
-          "line-blur": 8,
-        },
-      },
-      beforeLayer,
-    );
-
-    // Russia main border line
-    mapInstance.addLayer(
-      {
-        id: "russia-border-line",
-        type: "line",
-        source: "russia-border",
-        paint: {
-          "line-color": "#e87b7b",
-          "line-width": 2.5,
-          "line-opacity": 0.85,
+          "line-opacity": 0.9,
         },
       },
       beforeLayer,
