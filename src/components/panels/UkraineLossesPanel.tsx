@@ -1,8 +1,8 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { TbAlertTriangle, TbChevronDown, TbShield, TbUserMinus, TbX } from "react-icons/tb";
-import { CIVILIAN_CASUALTIES_OHCHR, getUkraineLossSummary } from "@/data/ukraine-losses";
+import { TbAlertTriangle, TbChevronDown, TbInfoCircle, TbUserMinus, TbX } from "react-icons/tb";
+import { getUkraineLossSummary } from "@/data/ukraine-losses";
 import { t } from "@/i18n";
 import { cn, formatDateDisplay } from "@/lib/utils";
 
@@ -15,34 +15,13 @@ interface UkraineLossesPanelProps {
 function formatNumber(n: number | undefined): string {
   if (n == null) return "—";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  if (n >= 1_000) return n.toLocaleString();
   return n.toLocaleString();
 }
 
-function KeyFigure({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  accent: string;
-}) {
-  return (
-    <div className="flex-1 min-w-0 text-center">
-      <div className="text-[8px] text-muted-foreground uppercase tracking-wider mb-0.5">
-        {label}
-      </div>
-      <div className={cn("text-sm font-bold font-mono tabular-nums", accent)}>{value}</div>
-      <div className="text-[8px] text-muted-foreground/60 truncate">{sub}</div>
-    </div>
-  );
-}
-
-function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLossesPanelProps) {
+function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) {
   const summary = useMemo(() => getUkraineLossSummary(), []);
+  const mz = summary.mediazonaConfirmed;
 
   if (!isOpen) {
     return (
@@ -75,7 +54,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
   return (
     <div
       className={cn(
-        "w-[calc(100vw-1.5rem)] sm:w-[420px]",
+        "w-[calc(100vw-1.5rem)] sm:w-[340px]",
         "max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-12rem)]",
         "overflow-y-auto",
         "rounded-lg",
@@ -104,62 +83,51 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
       </div>
 
       <div className="p-2.5 space-y-2.5">
-        {/* Key figures */}
-        <div className="flex gap-2 pb-2 border-b border-border/20">
-          <KeyFigure
-            label={t("ukraineLosses.latestEstimate")}
-            value={formatNumber(
-              summary.latestEstimate.militaryKilled ?? summary.latestEstimate.militaryTotal,
-            )}
-            sub={summary.latestEstimate.source}
-            accent="text-[#E53E3E]"
-          />
-          <div className="w-px bg-border/30 shrink-0" />
-          <KeyFigure
-            label={t("ukraineLosses.mediazonaConfirmed")}
-            value={formatNumber(summary.mediazonaConfirmed?.militaryKilled)}
-            sub="Named deaths"
-            accent="text-[#FFD500]"
-          />
-          <div className="w-px bg-border/30 shrink-0" />
-          <KeyFigure
-            label={t("ukraineLosses.civilianCasualties")}
-            value={formatNumber(summary.civilianOHCHR.killed)}
-            sub={`+ ${formatNumber(summary.civilianOHCHR.injured)} ${t("ukraineLosses.wounded")}`}
-            accent="text-[#805AD5]"
-          />
+        {/* Confirmed by name — Mediazona */}
+        <div className="text-center pb-2.5 border-b border-border/20">
+          <div className="text-[8px] text-muted-foreground uppercase tracking-wider mb-1">
+            Confirmed killed by name
+          </div>
+          <div className="text-2xl font-bold font-mono tabular-nums text-[#FFD500]">
+            {formatNumber(mz?.militaryKilled)}
+          </div>
+          <div className="text-[9px] text-muted-foreground/60 mt-0.5">
+            Verified by Mediazona &amp; BBC News Russian
+          </div>
+          {mz && (
+            <div className="text-[8px] text-muted-foreground/40 mt-0.5">
+              as of {formatDateDisplay(mz.date)}
+            </div>
+          )}
         </div>
 
-        {/* Civilian OHCHR detail */}
-        <div className="px-2 py-1.5 rounded-md bg-[#805AD5]/10 border border-[#805AD5]/20">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <TbShield className="h-3 w-3 text-[#805AD5]" />
-            <span className="text-[9px] font-semibold text-[#805AD5] uppercase tracking-wider">
-              UN OHCHR {t("ukraineLosses.civilianCasualties")}
-            </span>
+        {/* Methodology note */}
+        <div className="px-2 py-1.5 rounded-md bg-[#005BBB]/10 border border-[#005BBB]/20">
+          <div className="flex items-start gap-1.5">
+            <TbInfoCircle className="h-3 w-3 text-[#005BBB] shrink-0 mt-0.5" />
+            <div className="text-[8px] text-muted-foreground/70 leading-relaxed space-y-1">
+              <p>
+                This panel shows only deaths confirmed by name through open-source investigation by
+                Mediazona and BBC News Russian. Each casualty is individually verified through
+                obituaries, social media posts, official records, and media reports.
+              </p>
+              <p>
+                The actual toll is believed to be significantly higher. Confirmed-by-name figures
+                represent a verified minimum, not a comprehensive count.
+              </p>
+            </div>
           </div>
-          <div className="flex gap-3 text-[9px] font-mono tabular-nums">
-            <span className="text-[#E53E3E]">
-              {CIVILIAN_CASUALTIES_OHCHR.killed.toLocaleString()} {t("ukraineLosses.killed")}
-            </span>
-            <span className="text-[#DD6B20]">
-              {CIVILIAN_CASUALTIES_OHCHR.injured.toLocaleString()} {t("ukraineLosses.wounded")}
-            </span>
-            <span className="text-muted-foreground/50">
-              as of {formatDateDisplay(CIVILIAN_CASUALTIES_OHCHR.asOf)}
-            </span>
-          </div>
-          <p className="text-[8px] text-muted-foreground/60 leading-relaxed mt-0.5">
-            {CIVILIAN_CASUALTIES_OHCHR.notes}
-          </p>
         </div>
 
-        {/* Disclaimer */}
+        {/* Why only confirmed data */}
         <div className="px-2 py-1.5 rounded-md bg-[#DD6B20]/10 border border-[#DD6B20]/20">
           <div className="flex items-start gap-1.5">
             <TbAlertTriangle className="h-3 w-3 text-[#DD6B20] shrink-0 mt-0.5" />
             <p className="text-[8px] text-muted-foreground/70 leading-relaxed">
-              {t("ukraineLosses.disclaimer")}
+              Estimates from governments and intelligence agencies vary widely and cannot be
+              independently verified. This tracker displays only data that meets the standard of
+              individual name-level confirmation. Civilian casualty data is tracked separately in
+              the Humanitarian panel using UN OHCHR verified figures.
             </p>
           </div>
         </div>
@@ -168,26 +136,15 @@ function UkraineLossesPanelInner({ isOpen, onToggle, timelineDate }: UkraineLoss
       {/* Source footer */}
       <div className="px-3 py-1.5 border-t border-border/30">
         <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
-          <span>Sources:</span>
+          <span>Source:</span>
           <a
             href="https://en.zona.media/article/2022/05/20/casualties_eng"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#005BBB] transition-colors"
           >
-            Mediazona
+            Mediazona / BBC News Russian
           </a>
-          <span>/</span>
-          <a
-            href="https://www.ohchr.org/en/news/press-releases"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[#005BBB] transition-colors"
-          >
-            OHCHR
-          </a>
-          <span className="mx-0.5">&middot;</span>
-          <span>Multi-source</span>
         </div>
       </div>
     </div>

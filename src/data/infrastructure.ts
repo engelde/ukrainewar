@@ -1,3 +1,10 @@
+/** Status change entry for timeline-aware infrastructure */
+export interface StatusChange {
+  date: string; // YYYYMMDD
+  status: string;
+  note?: string;
+}
+
 export interface Dam {
   id: string;
   name: string;
@@ -6,6 +13,7 @@ export interface Dam {
   status: "operational" | "damaged" | "destroyed";
   capacityMW?: number;
   warContext: string;
+  statusHistory?: StatusChange[];
 }
 
 export interface Bridge {
@@ -16,6 +24,7 @@ export interface Bridge {
   status: "operational" | "damaged" | "destroyed";
   strategicValue: string;
   warContext: string;
+  statusHistory?: StatusChange[];
 }
 
 export interface Port {
@@ -26,6 +35,29 @@ export interface Port {
   status: "operational" | "limited" | "occupied" | "destroyed";
   portType: "sea" | "river";
   warContext: string;
+  statusHistory?: StatusChange[];
+}
+
+/**
+ * Compute the effective status of an infrastructure item at a given date.
+ * Walks the statusHistory array (sorted chronologically) and returns
+ * the last status whose date is <= the target date.
+ * Falls back to "operational" if no history entry applies.
+ */
+export function getStatusAtDate(
+  item: { status: string; statusHistory?: StatusChange[] },
+  date: string,
+): string {
+  if (!item.statusHistory || item.statusHistory.length === 0) return item.status;
+  let effective = "operational";
+  for (const entry of item.statusHistory) {
+    if (entry.date <= date) {
+      effective = entry.status;
+    } else {
+      break;
+    }
+  }
+  return effective;
 }
 
 export type InfrastructureItem =
@@ -48,6 +80,10 @@ export const DAMS: Dam[] = [
       "the lower Dnipro. The breach drained the Kakhovka reservoir, " +
       "displaced tens of thousands of people, devastated agriculture, " +
       "and threatened cooling water supply to the Zaporizhzhia NPP.",
+    statusHistory: [
+      { date: "20220301", status: "occupied", note: "Occupied by Russian forces" },
+      { date: "20230606", status: "destroyed", note: "Dam blown up causing catastrophic flooding" },
+    ],
   },
   {
     id: "dniprohes-dam",
@@ -61,6 +97,9 @@ export const DAMS: Dam[] = [
       "serves as a critical crossing point over the Dnipro at " +
       "Zaporizhzhia city. Damage to the hydroelectric station has " +
       "reduced power generation capacity.",
+    statusHistory: [
+      { date: "20220228", status: "damaged", note: "Initial strikes during early fighting" },
+    ],
   },
   {
     id: "kremenchuk-dam",
@@ -122,6 +161,13 @@ export const BRIDGES: Bridge[] = [
       "causing significant damage to both road and rail spans. Repairs " +
       "have partially restored traffic, but the bridge remains a high-" +
       "value strategic target.",
+    statusHistory: [
+      {
+        date: "20221008",
+        status: "damaged",
+        note: "Truck bomb attack damages road and rail spans",
+      },
+    ],
   },
   {
     id: "antonivskyi-bridge",
@@ -138,6 +184,14 @@ export const BRIDGES: Bridge[] = [
       "Ukrainian strikes on the bridge cut Russian supply lines to " +
       "the western bank, contributing to Russia's withdrawal from " +
       "Kherson city.",
+    statusHistory: [
+      { date: "20220720", status: "damaged", note: "Ukrainian HIMARS strikes damage bridge" },
+      {
+        date: "20221109",
+        status: "destroyed",
+        note: "Blown up during Russian withdrawal from Kherson",
+      },
+    ],
   },
   {
     id: "dniprohes-bridge",
@@ -152,6 +206,13 @@ export const BRIDGES: Bridge[] = [
       "Damaged by repeated strikes alongside the DniproHES dam. " +
       "Remains a critical but vulnerable crossing point in the " +
       "Zaporizhzhia sector.",
+    statusHistory: [
+      {
+        date: "20220228",
+        status: "damaged",
+        note: "Damaged during early combat around Zaporizhzhia",
+      },
+    ],
   },
   {
     id: "zatoka-bridge",
@@ -166,6 +227,7 @@ export const BRIDGES: Bridge[] = [
       "Repeatedly targeted by Russian missile strikes and subsequently " +
       "repaired. The bridge is a key link for western Black Sea access " +
       "and alternative grain export routes via the Danube.",
+    statusHistory: [{ date: "20220226", status: "damaged", note: "First Russian missile strike" }],
   },
 ];
 
@@ -218,6 +280,13 @@ export const PORTS: Port[] = [
       "Operations severely limited due to proximity to the front lines " +
       "and ongoing Russian shelling of Mykolaiv city. The port's river " +
       "access to the Black Sea is constrained by the security situation.",
+    statusHistory: [
+      {
+        date: "20220301",
+        status: "limited",
+        note: "Operations restricted due to proximity to front",
+      },
+    ],
   },
   {
     id: "mariupol-port",
@@ -230,6 +299,10 @@ export const PORTS: Port[] = [
       "Occupied by Russia after the siege of Mariupol in spring 2022. " +
       "Port infrastructure was heavily damaged during the battle. The " +
       "city and port remain under Russian occupation.",
+    statusHistory: [
+      { date: "20220301", status: "limited", note: "Under siege, operations ceasing" },
+      { date: "20220520", status: "occupied", note: "Mariupol falls to Russian forces" },
+    ],
   },
   {
     id: "berdyansk-port",
@@ -242,6 +315,7 @@ export const PORTS: Port[] = [
       "Occupied by Russian forces since the early days of the invasion. " +
       "Used by Russia for limited military and logistics purposes in " +
       "the Sea of Azov.",
+    statusHistory: [{ date: "20220226", status: "occupied", note: "Occupied by Russian forces" }],
   },
   {
     id: "sevastopol-port",

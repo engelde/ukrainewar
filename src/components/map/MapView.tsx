@@ -7,6 +7,7 @@ import type { Battle } from "@/data/battles";
 import type { BelarusBase } from "@/data/belarus-bases";
 import type { GasPipeline, GasStation, PowerPlant } from "@/data/energy-assets";
 import type { Bridge, Dam, Port } from "@/data/infrastructure";
+import { getStatusAtDate } from "@/data/infrastructure";
 import { getAttackLocations, MISSILE_ATTACKS } from "@/data/missile-attacks";
 import type { NATOBase } from "@/data/nato-bases";
 import type { NuclearPlant } from "@/data/nuclear-plants";
@@ -246,7 +247,7 @@ export default function MapView({
       },
     });
 
-    // RU-controlled territory outline
+    // RU-controlled territory outline (matches DeepState fill color)
     mapInstance.addLayer({
       id: "viina-ru-line",
       type: "line",
@@ -255,8 +256,8 @@ export default function MapView({
       layout: hidden,
       paint: {
         "line-color": "#c53030",
-        "line-width": 0.3,
-        "line-opacity": 0.15,
+        "line-width": 0.5,
+        "line-opacity": 0.3,
       },
     });
 
@@ -273,7 +274,7 @@ export default function MapView({
       },
     });
 
-    // Contested territory outline
+    // Contested territory outline (matches contested fill color)
     mapInstance.addLayer({
       id: "viina-contested-line",
       type: "line",
@@ -282,8 +283,8 @@ export default function MapView({
       layout: hidden,
       paint: {
         "line-color": "#eab308",
-        "line-width": 0.3,
-        "line-opacity": 0.15,
+        "line-width": 0.5,
+        "line-opacity": 0.25,
       },
     });
 
@@ -1335,14 +1336,15 @@ export default function MapView({
   }, []);
 
   // ── Infrastructure Layer (nuclear, dams, bridges, ports, power plants, gas stations) ──
-  const loadInfrastructureLayers = useCallback(
-    (mapInstance: maplibregl.Map) => {
-      if (mapInstance.getSource("infrastructure")) return;
 
-      // Build GeoJSON from all infrastructure data
+  /** Build infrastructure GeoJSON features with date-aware status */
+  const buildInfraFeatures = useCallback(
+    (dateStr?: string | null): GeoJSON.Feature[] => {
       const features: GeoJSON.Feature[] = [];
+      const d = dateStr ?? undefined;
 
       for (const npp of nuclearPlants) {
+        const status = d ? getStatusAtDate(npp, d) : npp.status;
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [npp.lng, npp.lat] },
@@ -1350,7 +1352,7 @@ export default function MapView({
             id: npp.id,
             name: npp.name,
             category: "nuclear",
-            status: npp.status,
+            status,
             detail: `${npp.reactors}x ${npp.reactorType} — ${npp.capacityMW} MW`,
             description: npp.description,
             warContext: npp.warContext,
@@ -1359,6 +1361,7 @@ export default function MapView({
       }
 
       for (const dam of dams) {
+        const status = d ? getStatusAtDate(dam, d) : dam.status;
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [dam.lng, dam.lat] },
@@ -1366,7 +1369,7 @@ export default function MapView({
             id: dam.id,
             name: dam.name,
             category: "dam",
-            status: dam.status,
+            status,
             detail: dam.capacityMW ? `${dam.capacityMW} MW hydroelectric` : "Reservoir dam",
             description: dam.warContext,
             warContext: dam.warContext,
@@ -1375,6 +1378,7 @@ export default function MapView({
       }
 
       for (const bridge of bridges) {
+        const status = d ? getStatusAtDate(bridge, d) : bridge.status;
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [bridge.lng, bridge.lat] },
@@ -1382,7 +1386,7 @@ export default function MapView({
             id: bridge.id,
             name: bridge.name,
             category: "bridge",
-            status: bridge.status,
+            status,
             detail: bridge.strategicValue,
             description: bridge.warContext,
             warContext: bridge.warContext,
@@ -1391,6 +1395,7 @@ export default function MapView({
       }
 
       for (const port of ports) {
+        const status = d ? getStatusAtDate(port, d) : port.status;
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [port.lng, port.lat] },
@@ -1398,7 +1403,7 @@ export default function MapView({
             id: port.id,
             name: port.name,
             category: "port",
-            status: port.status,
+            status,
             detail: `${port.portType === "river" ? "River" : "Sea"} port`,
             description: port.warContext,
             warContext: port.warContext,
@@ -1407,6 +1412,7 @@ export default function MapView({
       }
 
       for (const plant of powerPlants) {
+        const status = d ? getStatusAtDate(plant, d) : plant.status;
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [plant.lng, plant.lat] },
@@ -1414,7 +1420,7 @@ export default function MapView({
             id: plant.id,
             name: plant.name,
             category: "power-plant",
-            status: plant.status,
+            status,
             detail: plant.capacityMW
               ? `${plant.capacityMW} MW ${plant.plantType}`
               : plant.plantType,
@@ -1425,6 +1431,7 @@ export default function MapView({
       }
 
       for (const station of gasStations) {
+        const status = d ? getStatusAtDate(station, d) : station.status;
         features.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [station.lng, station.lat] },
@@ -1432,13 +1439,24 @@ export default function MapView({
             id: station.id,
             name: station.name,
             category: "gas-station",
-            status: station.status,
+            status,
             detail: `Gas ${station.stationType} point`,
             description: station.description,
             warContext: station.description,
           },
         });
       }
+
+      return features;
+    },
+    [nuclearPlants, dams, bridges, ports, powerPlants, gasStations],
+  );
+
+  const loadInfrastructureLayers = useCallback(
+    (mapInstance: maplibregl.Map) => {
+      if (mapInstance.getSource("infrastructure")) return;
+
+      const features = buildInfraFeatures(territoryDate);
 
       mapInstance.addSource("infrastructure", {
         type: "geojson",
@@ -1625,7 +1643,7 @@ export default function MapView({
         mapInstance.getCanvas().style.cursor = "";
       });
     },
-    [nuclearPlants, dams, bridges, ports, powerPlants, gasStations, gasPipelines],
+    [buildInfraFeatures, territoryDate, gasPipelines],
   );
 
   // ── NATO & Belarus Layer ──
@@ -2509,6 +2527,30 @@ export default function MapView({
       territoryPendingRef.current = true;
     }
   }, [loaded, territoryDate]);
+
+  // Update infrastructure status based on timeline date
+  useEffect(() => {
+    if (!map.current || !loaded) return;
+    const m = map.current;
+    const src = m.getSource("infrastructure") as maplibregl.GeoJSONSource | undefined;
+    if (!src) return;
+    const features = buildInfraFeatures(territoryDate);
+    src.setData({ type: "FeatureCollection", features });
+
+    // Also update gas pipeline status based on date
+    const pipelineSrc = m.getSource("gas-pipelines") as maplibregl.GeoJSONSource | undefined;
+    if (pipelineSrc && gasPipelines.length > 0) {
+      const pipeFeatures: GeoJSON.Feature[] = gasPipelines.map((p) => {
+        const status = territoryDate ? getStatusAtDate(p, territoryDate) : p.status;
+        return {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: p.waypoints.map((w) => [w.lng, w.lat]) },
+          properties: { id: p.id, name: p.name, status, description: p.description },
+        };
+      });
+      pipelineSrc.setData({ type: "FeatureCollection", features: pipeFeatures });
+    }
+  }, [loaded, territoryDate, buildInfraFeatures, gasPipelines]);
 
   // Fetch historical equipment data when timeline moves to a new month
   useEffect(() => {

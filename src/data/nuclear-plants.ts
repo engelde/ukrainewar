@@ -12,6 +12,7 @@ export interface NuclearPlant {
   iaeaPresence: boolean;
   warContext: string;
   description: string;
+  statusHistory?: import("./infrastructure").StatusChange[];
 }
 
 /**
@@ -40,6 +41,13 @@ export const NUCLEAR_PLANTS: NuclearPlant[] = [
     description:
       "Europe's largest nuclear power plant by capacity. Located on the " +
       "southern bank of the Kakhovka reservoir on the Dnipro River.",
+    statusHistory: [
+      {
+        date: "20220304",
+        status: "occupied",
+        note: "Occupied by Russian forces after battle at plant",
+      },
+    ],
   },
 
   // ── Operational plants ─────────────────────────────────────────────
@@ -129,5 +137,17 @@ export const NUCLEAR_PLANTS: NuclearPlant[] = [
       "decommissioned since 2000. The New Safe Confinement structure " +
       "covers reactor 4. The surrounding exclusion zone remains in " +
       "place.",
+    statusHistory: [
+      {
+        date: "20220224",
+        status: "occupied",
+        note: "Seized by Russian forces on day one of invasion",
+      },
+      {
+        date: "20220401",
+        status: "decommissioned",
+        note: "Returned to Ukrainian control after northern withdrawal",
+      },
+    ],
   },
 ];

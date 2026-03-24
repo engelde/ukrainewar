@@ -410,7 +410,7 @@ function getCuratedFallback(): EnergyData {
   const renewableShare = Math.round((renewableOperational / operationalCapacity) * 100);
 
   const status: EnergyData["status"] =
-    operationalCapacity < 20 ? "critical" : operationalCapacity < 35 ? "stressed" : "normal";
+    operationalCapacity < 20 ? "critical" : operationalCapacity < 40 ? "stressed" : "normal";
 
   return {
     totalCapacity: 55,
@@ -426,6 +426,138 @@ function getCuratedFallback(): EnergyData {
 }
 
 // ---------------------------------------------------------------------------
+// Historical energy snapshots for timeline playback
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a curated energy snapshot reflecting the state of Ukraine's power
+ * grid at the given date. Based on publicly documented strike campaigns and
+ * infrastructure damage timelines.
+ *
+ * Key periods:
+ * - Pre-war (before 20220224): Full capacity, all operational
+ * - Early war (20220224–20221009): Zaporizhzhia occupied, minor thermal damage
+ * - First energy campaign (20221010–20230605): Massive Oct-Mar strikes on thermal/hydro
+ * - Post-Kakhovka (20230606–20240321): Kakhovka dam destroyed, some recovery
+ * - Second energy campaign (20240322–present): Spring 2024 strikes destroy more capacity
+ */
+function getHistoricalEnergyData(dateStr: string): EnergyData {
+  const plants = getCuratedPlants();
+
+  if (dateStr < "20220224") {
+    // Pre-war: everything operational
+    for (const p of plants) {
+      p.status = "operational";
+      p.operational = true;
+    }
+  } else if (dateStr < "20221010") {
+    // Early war: ZNPP occupied, Slovianska destroyed, minor damage
+    for (const p of plants) {
+      if (p.name === "Zaporizhzhia NPP") {
+        p.status = "occupied";
+        p.operational = false;
+      } else if (p.name === "Slovianska TPS") {
+        p.status = dateStr >= "20220601" ? "destroyed" : "damaged";
+        p.operational = false;
+      } else if (p.name === "Zmiyivska TPS" && dateStr >= "20220312") {
+        p.status = "damaged";
+        p.operational = false;
+      } else {
+        p.status = "operational";
+        p.operational = true;
+      }
+    }
+  } else if (dateStr < "20230606") {
+    // First energy campaign: Oct 2022 massive strikes on thermal infrastructure
+    for (const p of plants) {
+      if (p.name === "Zaporizhzhia NPP") {
+        p.status = "occupied";
+        p.operational = false;
+      } else if (p.name === "Slovianska TPS") {
+        p.status = "destroyed";
+        p.operational = false;
+      } else if (p.name === "Zmiyivska TPS") {
+        p.status = "damaged";
+        p.operational = false;
+      } else if (p.name === "Ladyzhyn TPS") {
+        p.status = "damaged";
+        p.operational = false;
+      } else if (p.name === "Kryvorizka TPS") {
+        p.status = "damaged";
+        p.operational = false;
+      } else if (p.name === "Dnipro HPP") {
+        p.status = "damaged";
+        p.operational = false;
+      } else if (p.name === "Vuhlehirska TPS") {
+        p.status = "damaged";
+        p.operational = false;
+      } else {
+        p.status = p.status === "reduced" ? "reduced" : "operational";
+        p.operational = true;
+      }
+    }
+  } else if (dateStr < "20240322") {
+    // Post-Kakhovka: dam destroyed, some partial recovery of thermal
+    for (const p of plants) {
+      if (p.name === "Zaporizhzhia NPP") {
+        p.status = "occupied";
+        p.operational = false;
+      } else if (p.name === "Kakhovka HPP") {
+        p.status = "destroyed";
+        p.operational = false;
+      } else if (p.name === "Slovianska TPS") {
+        p.status = "destroyed";
+        p.operational = false;
+      } else if (
+        ["Zmiyivska TPS", "Ladyzhyn TPS", "Vuhlehirska TPS", "Kryvorizka TPS"].includes(p.name)
+      ) {
+        p.status = "damaged";
+        p.operational = false;
+      } else if (p.name === "Dnipro HPP") {
+        p.status = "damaged";
+        p.operational = false;
+      } else {
+        p.status = p.status === "reduced" ? "reduced" : "operational";
+        p.operational = true;
+      }
+    }
+  }
+  // else: use current curated status (default)
+
+  const operationalCapacity = plants
+    .filter((p) => p.operational)
+    .reduce((s, p) => s + p.capacity, 0);
+  const damagedCapacity = plants.filter((p) => !p.operational).reduce((s, p) => s + p.capacity, 0);
+
+  const nuclearOp = plants
+    .filter((p) => p.type === "nuclear" && p.operational)
+    .reduce((s, p) => s + p.capacity, 0);
+  const renewableOp = plants
+    .filter((p) => (p.type === "solar" || p.type === "wind" || p.type === "hydro") && p.operational)
+    .reduce((s, p) => s + p.capacity, 0);
+
+  const nuclearShare =
+    operationalCapacity > 0 ? Math.round((nuclearOp / operationalCapacity) * 100) : 0;
+  const renewableShare =
+    operationalCapacity > 0 ? Math.round((renewableOp / operationalCapacity) * 100) : 0;
+
+  const status: EnergyData["status"] =
+    operationalCapacity < 20 ? "critical" : operationalCapacity < 40 ? "stressed" : "normal";
+
+  return {
+    totalCapacity: 55,
+    currentGeneration: null,
+    nuclearShare,
+    renewableShare,
+    status,
+    plants,
+    damagedCapacity: Math.round(damagedCapacity * 10) / 10,
+    source: "curated",
+    lastUpdated: dateStr,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Route handler
 // ---------------------------------------------------------------------------
 
@@ -433,8 +565,18 @@ export async function GET(request: Request) {
   const limited = checkRateLimit(request, "energy", 30, 60_000);
   if (limited) return limited;
 
+  // Check for historical date parameter (timeline playback)
+  const url = new URL(request.url);
+  const dateParam = url.searchParams.get("date");
+  if (dateParam && /^\d{8}$/.test(dateParam)) {
+    const data = getHistoricalEnergyData(dateParam);
+    return NextResponse.json(data, {
+      headers: { "X-Cache": "HISTORICAL", "Cache-Control": "public, max-age=86400" },
+    });
+  }
+
   try {
-    // 1. Serve from fresh cache
+    // 1. Serve from fresh cache (current/live data only)
     const cached = await cacheGet<EnergyData>(CACHE_KEY);
     if (cached && isFresh(cached)) {
       return NextResponse.json(cached.data, {

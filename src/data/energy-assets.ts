@@ -4,6 +4,7 @@ export interface GasPipeline {
   waypoints: { lat: number; lng: number }[];
   status: "operational" | "shutdown" | "destroyed";
   description: string;
+  statusHistory?: import("./infrastructure").StatusChange[];
 }
 
 export interface PowerPlant {
@@ -15,6 +16,7 @@ export interface PowerPlant {
   capacityMW?: number;
   status: "operational" | "damaged" | "destroyed" | "occupied";
   warContext: string;
+  statusHistory?: import("./infrastructure").StatusChange[];
 }
 
 export interface GasStation {
@@ -25,6 +27,7 @@ export interface GasStation {
   stationType: "entry" | "exit" | "compressor";
   status: "operational" | "shutdown";
   description: string;
+  statusHistory?: import("./infrastructure").StatusChange[];
 }
 
 // ── Gas Pipelines ──────────────────────────────────────────────────────
@@ -50,6 +53,13 @@ export const GAS_PIPELINES: GasPipeline[] = [
       "Europe via Ukraine. Shut down on 1 January 2025 when Ukraine " +
       "declined to renew the transit agreement, ending decades of gas " +
       "flow through this corridor.",
+    statusHistory: [
+      {
+        date: "20250101",
+        status: "shutdown",
+        note: "Transit agreement expired; Ukraine declined renewal",
+      },
+    ],
   },
   {
     id: "turkstream",
@@ -84,6 +94,7 @@ export const GAS_STATIONS: GasStation[] = [
       "Russian-side metering station where gas entered the Ukrainian " +
       "transit system. Shut down since January 2025; located in " +
       "Kursk oblast near the Ukrainian incursion zone.",
+    statusHistory: [{ date: "20250101", status: "shutdown", note: "Transit agreement expired" }],
   },
   {
     id: "velke-kapusany",
@@ -96,6 +107,7 @@ export const GAS_STATIONS: GasStation[] = [
       "Exit point on the Ukraine-Slovakia border, historically the " +
       "largest volume metering station in the European transit system. " +
       "Shut down with the end of the transit agreement.",
+    statusHistory: [{ date: "20250101", status: "shutdown", note: "Transit agreement expired" }],
   },
   {
     id: "orlivka",
@@ -108,6 +120,7 @@ export const GAS_STATIONS: GasStation[] = [
       "Southern exit point on the Ukraine-Romania border. Capable of " +
       "reverse flow; potential future route for non-Russian gas supply " +
       "into Ukraine.",
+    statusHistory: [{ date: "20250101", status: "shutdown", note: "Transit agreement expired" }],
   },
 ];
 
@@ -128,6 +141,9 @@ export const POWER_PLANTS: PowerPlant[] = [
       "Destroyed in a Russian missile strike in April 2024. Was a " +
       "major electricity supplier to the Kyiv region; its loss " +
       "significantly worsened power shortages.",
+    statusHistory: [
+      { date: "20240411", status: "destroyed", note: "Destroyed by Russian missile strike" },
+    ],
   },
   {
     id: "burshtyn-tpp",
@@ -141,6 +157,13 @@ export const POWER_PLANTS: PowerPlant[] = [
       "Major thermal power plant in western Ukraine, repeatedly " +
       "targeted by Russian missile and drone strikes. Critical for " +
       "electricity exports to the EU via the Burshtyn energy island.",
+    statusHistory: [
+      {
+        date: "20240322",
+        status: "damaged",
+        note: "Damaged in spring 2024 energy strikes campaign",
+      },
+    ],
   },
   {
     id: "ladyzhyn-tpp",
@@ -154,6 +177,13 @@ export const POWER_PLANTS: PowerPlant[] = [
       "Repeatedly targeted in Russia's campaign against Ukrainian " +
       "energy infrastructure, suffering significant damage across " +
       "multiple strike waves.",
+    statusHistory: [
+      {
+        date: "20221010",
+        status: "damaged",
+        note: "Damaged in Oct 2022 energy infrastructure campaign",
+      },
+    ],
   },
   {
     id: "zmiiv-tpp",
@@ -167,6 +197,9 @@ export const POWER_PLANTS: PowerPlant[] = [
       "Located near Kharkiv, heavily damaged by repeated Russian " +
       "strikes. Key target in the systematic campaign to degrade " +
       "Ukraine's thermal generation capacity.",
+    statusHistory: [
+      { date: "20220312", status: "damaged", note: "Damaged during early fighting near Kharkiv" },
+    ],
   },
   {
     id: "slovianska-tpp",
@@ -178,6 +211,9 @@ export const POWER_PLANTS: PowerPlant[] = [
     warContext:
       "Destroyed early in the war during fighting in the Donetsk " +
       "region. Located near Sloviansk, which saw heavy combat in 2022.",
+    statusHistory: [
+      { date: "20220601", status: "destroyed", note: "Destroyed during fighting around Sloviansk" },
+    ],
   },
 ];
 
