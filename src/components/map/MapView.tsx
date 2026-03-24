@@ -229,30 +229,79 @@ export default function MapView({
       data: { type: "FeatureCollection", features: [] },
     });
 
-    // RU-controlled circles
+    // RU-controlled territory fill (matching DeepState style)
     mapInstance.addLayer({
       id: "viina-ru",
+      type: "fill",
+      source: "viina-territory",
+      filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Polygon"]],
+      paint: {
+        "fill-color": "#c53030",
+        "fill-opacity": 0.3,
+      },
+    });
+
+    // RU-controlled territory outline
+    mapInstance.addLayer({
+      id: "viina-ru-line",
+      type: "line",
+      source: "viina-territory",
+      filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Polygon"]],
+      paint: {
+        "line-color": "#c53030",
+        "line-width": 0.3,
+        "line-opacity": 0.15,
+      },
+    });
+
+    // Contested territory fill
+    mapInstance.addLayer({
+      id: "viina-contested",
+      type: "fill",
+      source: "viina-territory",
+      filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Polygon"]],
+      paint: {
+        "fill-color": "#eab308",
+        "fill-opacity": 0.25,
+      },
+    });
+
+    // Contested territory outline
+    mapInstance.addLayer({
+      id: "viina-contested-line",
+      type: "line",
+      source: "viina-territory",
+      filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Polygon"]],
+      paint: {
+        "line-color": "#eab308",
+        "line-width": 0.3,
+        "line-opacity": 0.15,
+      },
+    });
+
+    // Fallback circles for any points without tessellation
+    mapInstance.addLayer({
+      id: "viina-ru-pts",
       type: "circle",
       source: "viina-territory",
-      filter: ["==", ["get", "status"], "RU"],
+      filter: ["all", ["==", ["get", "status"], "RU"], ["==", ["geometry-type"], "Point"]],
       paint: {
         "circle-color": "#c53030",
         "circle-opacity": 0.45,
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 1.5, 6, 3, 8, 6, 10, 12, 12, 24],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 6, 4, 8, 8, 10, 14],
         "circle-blur": 0.3,
       },
     });
 
-    // Contested circles
     mapInstance.addLayer({
-      id: "viina-contested",
+      id: "viina-contested-pts",
       type: "circle",
       source: "viina-territory",
-      filter: ["==", ["get", "status"], "CONTESTED"],
+      filter: ["all", ["==", ["get", "status"], "CONTESTED"], ["==", ["geometry-type"], "Point"]],
       paint: {
         "circle-color": "#eab308",
         "circle-opacity": 0.5,
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 6, 4, 8, 8, 10, 14, 12, 28],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 6, 4, 8, 8, 10, 14],
         "circle-blur": 0.2,
       },
     });
@@ -308,14 +357,22 @@ export default function MapView({
           }
 
           // Show VIINA layers (respecting user's territory toggle)
-          ["viina-ru", "viina-contested"].forEach((id) => {
+          const viinaLayerIds = [
+            "viina-ru",
+            "viina-ru-line",
+            "viina-contested",
+            "viina-contested-line",
+            "viina-ru-pts",
+            "viina-contested-pts",
+          ];
+          for (const id of viinaLayerIds) {
             if (mapInstance.getLayer(id))
               mapInstance.setLayoutProperty(
                 id,
                 "visibility",
                 layersRef.current.territory ? "visible" : "none",
               );
-          });
+          }
           return;
         }
 
@@ -2233,11 +2290,19 @@ export default function MapView({
     }
 
     // VIINA territory layers
-    ["viina-ru", "viina-contested"].forEach((id) => {
+    const viinaLayerIds = [
+      "viina-ru",
+      "viina-ru-line",
+      "viina-contested",
+      "viina-contested-line",
+      "viina-ru-pts",
+      "viina-contested-pts",
+    ];
+    for (const id of viinaLayerIds) {
       if (map.current?.getLayer(id)) {
         map.current.setLayoutProperty(id, "visibility", layers.territory ? "visible" : "none");
       }
-    });
+    }
 
     // Frontline border (separate toggle)
     if (map.current.getLayer("territory-line")) {

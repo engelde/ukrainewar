@@ -49,14 +49,16 @@ export default function TimelineScrubber({
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [speedIndex, setSpeedIndex] = useState(2); // default 1× (400ms)
-  const [showPlayHint, setShowPlayHint] = useState(() => {
-    if (typeof window !== "undefined") {
-      return !new URLSearchParams(window.location.search).has("played");
-    }
-    return true;
-  });
+  const [showPlayHint, setShowPlayHint] = useState(true);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dismissedEventDate, setDismissedEventDate] = useState<string | null>(null);
+
+  // Check if play hint should be hidden (after hydration)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("played")) {
+      setShowPlayHint(false);
+    }
+  }, []);
 
   // Daily losses waveform data
   const [dailyLosses, setDailyLosses] = useState<Map<string, number>>(new Map());

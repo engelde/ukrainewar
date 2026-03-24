@@ -13,8 +13,12 @@ interface Snapshot {
   c: number[]; // CONTESTED geonameids
 }
 
+// Tessellation: geonameid → outer ring coordinate array [[lng,lat], ...]
+type Tessellation = Record<string, number[][]>;
+
 let placesCache: Record<string, Place> | null = null;
 let controlCache: Snapshot[] | null = null;
+let tessCache: Tessellation | null = null;
 
 async function loadData(origin: string) {
   if (!placesCache) {
@@ -27,7 +31,12 @@ async function loadData(origin: string) {
     if (!res.ok) throw new Error(`Failed to load control: ${res.status}`);
     controlCache = await res.json();
   }
-  return { places: placesCache!, control: controlCache! };
+  if (!tessCache) {
+    const res = await fetch(`${origin}/data/viina/tessellation.json`);
+    if (!res.ok) throw new Error(`Failed to load tessellation: ${res.status}`);
+    tessCache = await res.json();
+  }
+  return { places: placesCache!, control: controlCache!, tess: tessCache! };
 }
 
 function findClosestSnapshot(snapshots: Snapshot[], targetDate: string): Snapshot | null {
@@ -60,7 +69,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { places, control } = await loadData(new URL(request.url).origin);
+    const { places, control, tess } = await loadData(new URL(request.url).origin);
     const snapshot = findClosestSnapshot(control, date);
 
     if (!snapshot) {
@@ -72,35 +81,47 @@ export async function GET(request: NextRequest) {
     for (const geonameid of snapshot.r) {
       const place = places[geonameid];
       if (!place) continue;
-      features.push({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [place.lng, place.lat],
-        },
-        properties: {
-          geonameid,
-          name: place.name,
-          status: "RU",
-        },
-      });
+      const ring = tess[geonameid];
+      if (ring) {
+        // Polygon feature for filled territory rendering
+        features.push({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [ring],
+          },
+          properties: { geonameid, name: place.name, status: "RU" },
+        });
+      } else {
+        // Fallback to point if no tessellation
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [place.lng, place.lat] },
+          properties: { geonameid, name: place.name, status: "RU" },
+        });
+      }
     }
 
     for (const geonameid of snapshot.c) {
       const place = places[geonameid];
       if (!place) continue;
-      features.push({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [place.lng, place.lat],
-        },
-        properties: {
-          geonameid,
-          name: place.name,
-          status: "CONTESTED",
-        },
-      });
+      const ring = tess[geonameid];
+      if (ring) {
+        features.push({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [ring],
+          },
+          properties: { geonameid, name: place.name, status: "CONTESTED" },
+        });
+      } else {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [place.lng, place.lat] },
+          properties: { geonameid, name: place.name, status: "CONTESTED" },
+        });
+      }
     }
 
     const geojson: GeoJSON.FeatureCollection = {

@@ -46,9 +46,10 @@ async function downloadFile(url, dest) {
 }
 
 /**
- * Extract lat/lng/name from tessellation GeoJSON (only properties, skip geometries)
+ * Extract lat/lng/name AND polygon geometries from tessellation GeoJSON.
+ * Returns { places, geometries } where geometries maps geonameid to coordinate ring.
  */
-async function extractPlaceCoordinates() {
+async function extractPlaceData() {
   const tessPath = path.join(CACHE_DIR, "gn_UA_tess.geojson");
   await downloadFile(TESSELLATION_URL, tessPath);
 
@@ -57,6 +58,7 @@ async function extractPlaceCoordinates() {
   const geojson = JSON.parse(raw);
 
   const places = {};
+  const geometries = {};
   for (const feature of geojson.features) {
     const props = feature.properties;
     const geonameid = Math.round(props.geonameid);
@@ -65,9 +67,20 @@ async function extractPlaceCoordinates() {
       lng: parseFloat(props.longitude),
       name: props.asciiname || props.name || "",
     };
+    // Store polygon outer ring, rounded to 4 decimal places (~11m precision)
+    // Tessellation uses MultiPolygon — take the first polygon's outer ring
+    const geom = feature.geometry;
+    if (geom?.coordinates?.[0]?.[0]) {
+      geometries[geonameid] = geom.coordinates[0][0].map((c) => [
+        Math.round(c[0] * 10000) / 10000,
+        Math.round(c[1] * 10000) / 10000,
+      ]);
+    }
   }
-  console.log(`  Extracted ${Object.keys(places).length} place coordinates`);
-  return places;
+  console.log(
+    `  Extracted ${Object.keys(places).length} places, ${Object.keys(geometries).length} polygons`,
+  );
+  return { places, geometries };
 }
 
 /**
@@ -140,9 +153,9 @@ async function main() {
   ensureDir(OUTPUT_DIR);
   ensureDir(CACHE_DIR);
 
-  // Step 1: Extract place coordinates from tessellation
-  console.log("\n[1/3] Extracting place coordinates...");
-  const allPlaces = await extractPlaceCoordinates();
+  // Step 1: Extract place coordinates and polygon geometries from tessellation
+  console.log("\n[1/3] Extracting place data...");
+  const { places: allPlaces, geometries: allGeometries } = await extractPlaceData();
 
   // Step 2: Process all year CSVs
   console.log("\n[2/3] Processing control CSVs...");
@@ -168,12 +181,17 @@ async function main() {
 
   // Places: only include places that are ever non-UA
   const conflictPlaces = {};
+  const conflictGeometries = {};
   for (const id of allNonUAIds) {
     if (allPlaces[id]) {
       conflictPlaces[id] = allPlaces[id];
     }
+    if (allGeometries[id]) {
+      conflictGeometries[id] = allGeometries[id];
+    }
   }
   console.log(`  Conflict zone places: ${Object.keys(conflictPlaces).length}`);
+  console.log(`  Conflict zone polygons: ${Object.keys(conflictGeometries).length}`);
 
   // Control snapshots: sample every SAMPLE_INTERVAL days
   const sortedDates = [...allDateEntries.keys()].sort();
@@ -221,6 +239,12 @@ async function main() {
   fs.writeFileSync(controlPath, JSON.stringify(snapshots));
   const controlSize = (fs.statSync(controlPath).size / 1024).toFixed(0);
   console.log(`  control.json: ${controlSize} KB`);
+
+  // Write tessellation.json (polygon geometries for conflict-zone places)
+  const tessPath = path.join(OUTPUT_DIR, "tessellation.json");
+  fs.writeFileSync(tessPath, JSON.stringify(conflictGeometries));
+  const tessSize = (fs.statSync(tessPath).size / 1024).toFixed(0);
+  console.log(`  tessellation.json: ${tessSize} KB`);
 
   console.log("\n=== Done! ===\n");
 }

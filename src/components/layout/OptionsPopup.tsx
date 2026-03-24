@@ -28,7 +28,7 @@ import {
   TbX,
 } from "react-icons/tb";
 import { useFontSize } from "@/hooks/useFontSize";
-import { usePanelOpacity } from "@/hooks/usePanelOpacity";
+
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -130,15 +130,6 @@ export default function OptionsPopup({
     canDecrease: fontCanDec,
     isDefault: fontIsDefault,
   } = useFontSize();
-  const {
-    opacity,
-    increase: opacInc,
-    decrease: opacDec,
-    reset: opacReset,
-    canIncrease: opacCanInc,
-    canDecrease: opacCanDec,
-    isDefault: opacIsDefault,
-  } = usePanelOpacity();
   const { reduceMotion, toggle: toggleMotion } = useReduceMotion();
 
   useEffect(() => {
@@ -317,55 +308,6 @@ export default function OptionsPopup({
                   className={cn(
                     "rounded-md p-1 transition-colors cursor-pointer",
                     fontCanInc
-                      ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
-                      : "text-muted-foreground/30 cursor-not-allowed",
-                  )}
-                >
-                  <TbPlus className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-
-            {/* Panel opacity */}
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-foreground">Panel Opacity</span>
-              <div className="flex items-center gap-0.5">
-                <button
-                  type="button"
-                  onClick={opacDec}
-                  disabled={!opacCanDec}
-                  aria-label="Decrease panel opacity"
-                  className={cn(
-                    "rounded-md p-1 transition-colors cursor-pointer",
-                    opacCanDec
-                      ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
-                      : "text-muted-foreground/30 cursor-not-allowed",
-                  )}
-                >
-                  <TbMinus className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={opacReset}
-                  disabled={opacIsDefault}
-                  aria-label="Reset panel opacity"
-                  className={cn(
-                    "text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded transition-colors min-w-[32px] text-center cursor-pointer",
-                    !opacIsDefault
-                      ? "text-ua-blue hover:bg-ua-blue/10"
-                      : "text-muted-foreground/50",
-                  )}
-                >
-                  {opacity}%
-                </button>
-                <button
-                  type="button"
-                  onClick={opacInc}
-                  disabled={!opacCanInc}
-                  aria-label="Increase panel opacity"
-                  className={cn(
-                    "rounded-md p-1 transition-colors cursor-pointer",
-                    opacCanInc
                       ? "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/50"
                       : "text-muted-foreground/30 cursor-not-allowed",
                   )}
