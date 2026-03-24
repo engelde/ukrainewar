@@ -142,16 +142,29 @@ function InfrastructurePanelInner({ isOpen, onToggle, timelineDate }: Infrastruc
 
   if (!isOpen) {
     return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex items-center gap-1.5 rounded-md border border-border/30 bg-background/80 px-2.5 py-1 backdrop-blur-sm transition-colors hover:bg-background/90"
+      <div
+        className={cn(
+          "flex items-center rounded-lg",
+          "bg-background/80 backdrop-blur-xl",
+          "border border-border/50",
+          "overflow-hidden",
+        )}
       >
-        <TbBuildingBridge className="h-3 w-3 text-indigo-400" />
-        <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-indigo-400">
-          Infrastructure
-        </span>
-      </button>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
+          <TbBuildingBridge className="h-3.5 w-3.5 text-indigo-400" />
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-indigo-400">
+            Infrastructure
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Expand infrastructure panel"
+          className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <TbChevronDown className="h-3 w-3 rotate-180" />
+        </button>
+      </div>
     );
   }
 

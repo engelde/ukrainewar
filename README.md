@@ -240,6 +240,54 @@ All API responses use a multi-layer persistent caching system (file-based in dev
 | Missile attack dataset | Static | Curated (40 major waves) |
 | Sanctions data | 7 days | Curated (static, updated with new packages) |
 
+### Methodology
+
+This project does not generate original analysis. Instead, it consolidates, cross-references, and visualizes data from the sources listed above. Below is how each major data domain is constructed.
+
+**Territory Control & Frontline**
+
+Territory control is shown in two phases. From February 2022 through mid-2023, the VIINA dataset (Zhukov & Ayers, University of Michigan) provides weekly territorial control estimates derived from systematic monitoring of news reports from multiple Ukrainian and Russian outlets. The application converts VIINA's point-level observations into filled polygons using convex hull computation and Delaunay triangulation to approximate areas of control, and derives frontline geometry by walking the boundary between Russian-controlled and Ukrainian-controlled clusters. From mid-2023 onward, the DeepState Map provides higher-resolution daily GeoJSON polygons for both occupied territory and the frontline. The transition between sources is handled automatically based on the selected timeline date.
+
+**Russian Equipment Losses**
+
+Daily aggregate loss figures (personnel, tanks, armored vehicles, artillery, etc.) come from the Ukrainian Ministry of Defence's official reports. These are displayed as animated counters with sparkline trend charts. Individual geolocated equipment losses are sourced from WarSpotting, which catalogs visually confirmed losses from open-source imagery. Each loss is categorized by type, status (destroyed, damaged, captured, abandoned), and mapped to its confirmed location.
+
+**Ukrainian Losses**
+
+Ukrainian military casualties are sourced exclusively from the Mediazona/BBC News Russian Service investigation, which identifies fallen soldiers by name through obituaries, social media, and official records. Only confirmed-by-name figures are shown. The application does not display estimates or extrapolations. A disclaimer explains this methodology and notes that actual losses are likely significantly higher than the confirmed count.
+
+**Civilian Casualties & Humanitarian Data**
+
+Civilian casualty figures come from the UN Office of the High Commissioner for Human Rights (OHCHR), which publishes verified monthly reports. Refugee and internally displaced persons statistics come from UNHCR. Humanitarian funding data — including the UN Flash Appeal and Refugee Response Plan — comes from OCHA's Humanitarian Data Exchange (HDX). All figures are presented as reported by these organizations without modification.
+
+**Bilateral Aid**
+
+Military, financial, and humanitarian aid commitments to Ukraine are sourced from the Kiel Institute for the World Economy's Ukraine Support Tracker, which publishes structured datasets tracking bilateral aid by country, type, and amount. The International Support panel aggregates this data by donor country and support category.
+
+**Conflict Events**
+
+Battle locations, civilian targeting events, and protests are sourced from the Armed Conflict Location & Event Data Project (ACLED), which provides georeferenced event data updated daily. These are displayed as clustered points and heatmap overlays. Major named events shown in the timeline and event sidebar are sourced from Wikidata SPARQL queries filtered to the Russo-Ukrainian War, supplemented by curated editorial additions for events not yet reflected in Wikidata.
+
+**Energy Infrastructure**
+
+The Energy panel combines data from the ENTSO-E Transparency Platform (European electricity generation data) with a curated dataset of Ukrainian power plants and their wartime damage status. Historical energy snapshots are computed by tracking known strike dates against each facility. Gas pipeline status is derived from ENTSOG flow data and curated records of the Russia-Ukraine transit shutdown (January 2025) and TurkStream operations.
+
+**Infrastructure Status**
+
+Critical infrastructure — including dams, bridges, ports, nuclear plants, and thermal power plants — is tracked using a curated dataset with timestamped status changes. Each item's status (operational, damaged, destroyed, occupied) is computed relative to the selected timeline date using documented events. Nuclear plant data is cross-referenced with IAEA monitoring reports.
+
+**Air Defense Performance**
+
+Missile and drone attack data is curated from Ukrainian Air Force command reports, tracking interception rates by weapon type (cruise missiles, ballistic missiles, Shahed drones, guided bombs). Each major attack wave is logged with totals launched, intercepted, and the resulting interception percentage.
+
+**Sanctions**
+
+Sanctions data is curated from official published lists including EU Council regulations, US Treasury OFAC designations, and UK Government sanctions. The timeline tracks when each major sanctions package was adopted and what categories of restrictions it imposed.
+
+**Thermal Anomalies**
+
+Near-real-time fire and explosion detections come from NASA's Fire Information for Resource Management System (FIRMS), which provides satellite-detected thermal anomalies from the VIIRS instrument. These are displayed as map markers showing active fires and potential strike impacts.
+
 ---
 
 ## Getting Started

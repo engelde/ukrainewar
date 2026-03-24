@@ -13,6 +13,7 @@ import {
   TbFlame,
   TbGlobe,
   TbHeartHandshake,
+  TbLineDashed,
   TbMap,
   TbMapPin,
   TbMinus,
@@ -25,12 +26,10 @@ import {
   TbSkull,
   TbSwords,
   TbUserMinus,
-  TbUsers,
   TbX,
 } from "react-icons/tb";
 import { useFontSize } from "@/hooks/useFontSize";
 
-import { useReduceMotion } from "@/hooks/useReduceMotion";
 import type { MapLayers } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -82,7 +81,7 @@ const PANEL_ITEMS: { label: string; icon: IconType; key: keyof PanelStates }[] =
 
 const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Territory", icon: TbMapPin, key: "territory" },
-  { label: "Frontline", icon: TbSwords, key: "frontline" },
+  { label: "Frontline", icon: TbLineDashed, key: "frontline" },
   { label: "Equipment", icon: TbBomb, key: "equipment" },
   { label: "Border", icon: TbBorderAll, key: "border" },
   { label: "Conflicts", icon: TbFlame, key: "conflicts" },
@@ -92,7 +91,7 @@ const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Infrastructure", icon: TbBuildingBridge, key: "infrastructure" },
   { label: "Military Bases", icon: TbShield, key: "nato" },
   { label: "Thermal", icon: TbSatellite, key: "thermal" },
-  { label: "Support", icon: TbUsers, key: "alliance" },
+  { label: "Intl Support", icon: TbGlobe, key: "alliance" },
 ];
 
 function Checkbox({ checked }: { checked: boolean }) {
@@ -135,7 +134,6 @@ export default function OptionsPopup({
     canDecrease: fontCanDec,
     isDefault: fontIsDefault,
   } = useFontSize();
-  const { reduceMotion, toggle: toggleMotion } = useReduceMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -316,27 +314,6 @@ export default function OptionsPopup({
                   <TbPlus className="h-3 w-3" />
                 </button>
               </div>
-            </div>
-
-            {/* Reduce motion */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground">Reduce Motion</span>
-              <button
-                type="button"
-                onClick={toggleMotion}
-                aria-label="Toggle reduce motion"
-                className={cn(
-                  "relative w-8 h-4 rounded-full transition-colors cursor-pointer",
-                  reduceMotion ? "bg-ua-blue/40" : "bg-border/40",
-                )}
-              >
-                <div
-                  className={cn(
-                    "absolute top-0.5 h-3 w-3 rounded-full transition-all",
-                    reduceMotion ? "left-[18px] bg-ua-blue" : "left-0.5 bg-muted-foreground/50",
-                  )}
-                />
-              </button>
             </div>
           </div>
         </div>

@@ -97,6 +97,7 @@ const DEFAULT_VISIBLE_PANELS: PanelKey[] = [...PANEL_KEYS];
 const DEFAULT_MINIMIZED_PANELS: PanelKey[] = [
   "events",
   "energy",
+  "airDefense",
   "support",
   "ukraineLosses",
   "sanctions",
@@ -655,6 +656,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       "humanitarian",
       "spending",
       "energy",
+      "airDefense",
       "support",
       "ukraineLosses",
       "sanctions",
@@ -793,11 +795,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           </DraggablePanel>
         )}
         {panelOpen.airDefense && (
-          <DraggablePanel
-            panelKey="airDefense"
-            className="fixed right-[calc(1rem+20rem+0.75rem)] top-14 z-30 sm:right-[calc(1.5rem+20rem+0.75rem)] sm:top-16 max-w-xs"
-          >
-            {" "}
+          <DraggablePanel panelKey="airDefense" defaultPosition={panelPositions.airDefense}>
             <AirDefensePanel
               isOpen={true}
               onToggle={handleMinimizeAirDefense}
