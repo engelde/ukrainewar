@@ -1,20 +1,24 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { NextResponse } from "next/server";
+#!/usr/bin/env npx tsx
+/**
+ * Downloads and processes Kiel Institute Ukraine Support Tracker XLSX
+ * into a compact JSON file for the frontend.
+ *
+ * Output: public/data/kiel-spending.json
+ *
+ * Run: npx tsx scripts/prebuild-spending.ts
+ */
+
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import * as XLSX from "xlsx";
-import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const OUTPUT_DIR = join(__dirname, "..", "public", "data");
+const OUTPUT = join(OUTPUT_DIR, "kiel-spending.json");
 
 const KIEL_XLSX_URL =
   "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/62a94ad1-2d28-401e-afd0-8a8089b48f2a-Ukraine_Support_Tracker_Release_27.xlsx";
-
-const PREBUILD_PATH = join(process.cwd(), "public", "data", "kiel-spending.json");
-
-const CACHE_KEY = "spending-kiel";
-const TTL = 604800; // 7 days in seconds
-const MEM_TTL = TTL * 1000; // 7 days in ms
-
-let cachedData: Record<string, unknown> | null = null;
-let cachedAt = 0;
 
 function round(n: number): number {
   return Math.round((n || 0) * 1000) / 1000;
@@ -28,10 +32,13 @@ function excelDateToISO(serial: number): string {
   return `${y}-${m}`;
 }
 
-async function processKielXLSX(): Promise<Record<string, unknown>> {
+async function main() {
+  console.log("Downloading Kiel Institute XLSX...");
   const res = await fetch(KIEL_XLSX_URL);
-  if (!res.ok) throw new Error(`Kiel XLSX download failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
+
+  console.log("Parsing XLSX...");
   const wb = XLSX.read(buf, { type: "array" });
 
   // Main data
@@ -127,9 +134,9 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
   }
 
   // Totals
-  let totalMilitary = 0,
-    totalFinancial = 0,
-    totalHumanitarian = 0;
+  let totalMilitary = 0;
+  let totalFinancial = 0;
+  let totalHumanitarian = 0;
   for (const r of mainData) {
     const val = (r.tot_sub_activity_value_EUR as number) || 0;
     const type = ((r.aid_type_general as string) || "").trim();
@@ -157,9 +164,9 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
 
   // Cumulative
   const cumulative: Record<string, unknown>[] = [];
-  let cumMil = 0,
-    cumFin = 0,
-    cumHum = 0;
+  let cumMil = 0;
+  let cumFin = 0;
+  let cumHum = 0;
   for (const m of byMonth) {
     cumMil += m.military as number;
     cumFin += m.financial as number;
@@ -173,7 +180,7 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
     });
   }
 
-  return {
+  const output = {
     lastUpdated: new Date().toISOString().split("T")[0],
     release: 27,
     currency: "EUR",
@@ -195,144 +202,19 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
       release: "Release 27 (Dec 2025)",
     },
   };
-}
 
-function loadPrebuildData(): Record<string, unknown> | null {
-  try {
-    if (!existsSync(PREBUILD_PATH)) return null;
-    const raw = readFileSync(PREBUILD_PATH, "utf-8");
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return null;
+  if (!existsSync(OUTPUT_DIR)) {
+    mkdirSync(OUTPUT_DIR, { recursive: true });
   }
+  writeFileSync(OUTPUT, JSON.stringify(output));
+  const sizeKB = (JSON.stringify(output).length / 1024).toFixed(1);
+  console.log(`Written ${OUTPUT} (${sizeKB} KB)`);
+  console.log(
+    `  ${byCountry.length} donors, ${byMonth.length} months, €${output.totals.total}B total`,
+  );
 }
 
-// Dedup concurrent fetches
-let inflightPromise: Promise<Record<string, unknown>> | null = null;
-
-async function fetchAndCache(): Promise<Record<string, unknown>> {
-  if (inflightPromise) return inflightPromise;
-  inflightPromise = (async () => {
-    const data = await processKielXLSX();
-    cachedData = data;
-    cachedAt = Date.now();
-    await cacheSet(CACHE_KEY, data, TTL);
-    return data;
-  })();
-  try {
-    return await inflightPromise;
-  } finally {
-    inflightPromise = null;
-  }
-}
-
-function refreshInBackground() {
-  if (inflightPromise) return;
-  fetchAndCache().catch((err) => {
-    console.error("[spending] Background refresh failed:", err);
-  });
-}
-
-export async function GET() {
-  try {
-    // Fast in-memory layer
-    const now = Date.now();
-    if (cachedData && now - cachedAt < MEM_TTL) {
-      return NextResponse.json(cachedData, {
-        headers: {
-          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
-          "X-Cache": "HIT",
-          "X-Data-Source": "cache",
-        },
-      });
-    }
-
-    // Persistent cache layer
-    const cached = await cacheGet<Record<string, unknown>>(CACHE_KEY);
-
-    if (cached && isFresh(cached)) {
-      cachedData = cached.data;
-      cachedAt = cached.timestamp;
-      return NextResponse.json(cached.data, {
-        headers: {
-          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
-          "X-Cache": "HIT",
-          "X-Data-Source": "cache",
-        },
-      });
-    }
-
-    if (cached && isUsableStale(cached)) {
-      refreshInBackground();
-      return NextResponse.json(cached.data, {
-        headers: {
-          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=604800",
-          "X-Cache": "STALE",
-          "X-Data-Source": "stale-cache",
-        },
-      });
-    }
-
-    // Try pre-processed JSON before expensive XLSX download
-    const prebuild = loadPrebuildData();
-    if (prebuild) {
-      cachedData = prebuild;
-      cachedAt = Date.now();
-      await cacheSet(CACHE_KEY, prebuild, TTL);
-      return NextResponse.json(prebuild, {
-        headers: {
-          "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
-          "X-Cache": "MISS",
-          "X-Data-Source": "prebuild",
-        },
-      });
-    }
-
-    // Cold start fallback — download and parse XLSX
-    const data = await fetchAndCache();
-
-    return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
-        "X-Cache": "MISS",
-        "X-Data-Source": "fresh",
-      },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch spending data";
-    console.error("Kiel spending error:", message);
-
-    // Serve any stale persistent data on error
-    const stale = await cacheGet<Record<string, unknown>>(CACHE_KEY);
-    if (stale) {
-      return NextResponse.json(stale.data, {
-        headers: {
-          "Cache-Control": "public, s-maxage=3600",
-          "X-Cache": "ERROR-STALE",
-          "X-Data-Source": "stale-cache",
-          "X-Error": message,
-        },
-      });
-    }
-
-    // Fall back to in-memory cached data even if stale
-    if (cachedData) {
-      return NextResponse.json(cachedData, {
-        headers: {
-          "Cache-Control": "public, s-maxage=3600",
-          "X-Cache": "ERROR-STALE",
-          "X-Data-Source": "stale-cache",
-          "X-Error": message,
-        },
-      });
-    }
-
-    return NextResponse.json(
-      {
-        error: "Failed to fetch spending data",
-        details: message,
-      },
-      { status: 502 },
-    );
-  }
-}
+main().catch((err) => {
+  console.error("Error:", err.message);
+  process.exit(1);
+});
