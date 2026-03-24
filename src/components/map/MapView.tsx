@@ -1472,7 +1472,7 @@ export default function MapView({
         source: "infrastructure",
         layout: {
           "icon-image": ["concat", "infra-", ["get", "category"], "-", ["get", "status"]],
-          "icon-size": 1,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 6, 0.75, 10, 1],
           "icon-allow-overlap": true,
         },
       });
@@ -1679,7 +1679,7 @@ export default function MapView({
         filter: ["==", ["get", "side"], "nato"],
         layout: {
           "icon-image": "nato-base",
-          "icon-size": 1,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 6, 0.75, 10, 1],
           "icon-allow-overlap": true,
         },
       });
@@ -1692,7 +1692,7 @@ export default function MapView({
         filter: ["==", ["get", "side"], "belarus"],
         layout: {
           "icon-image": "belarus-base",
-          "icon-size": 1,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 3, 0.5, 6, 0.75, 10, 1],
           "icon-allow-overlap": true,
         },
       });
@@ -2025,8 +2025,8 @@ export default function MapView({
             .setLngLat(e.lngLat)
             .setHTML(
               `<div style="font-family: system-ui; color: #e8e8ed; padding: 4px;">
-                  <div style="font-weight: 600; font-size: 12px; color: #fca5a5; margin-bottom: 4px;">${props.name}</div>
-                  <div style="font-size: 10px; color: #b0b0c0;">
+                  <div style="font-weight: 600; font-size: 0.75rem; color: #fca5a5; margin-bottom: 4px;">${props.name}</div>
+                  <div style="font-size: 0.625rem; color: #b0b0c0;">
                     <div>${t("map.fatalities")}: <span style="color: #ef4444; font-weight: 600;">${Number(props.fatalities).toLocaleString()}</span></div>
                     <div>${t("map.events")}: <span style="color: #f97316; font-weight: 600;">${Number(props.events).toLocaleString()}</span></div>
                   </div>
@@ -2799,21 +2799,17 @@ export default function MapView({
       className: "event-marker-popup",
     }).setHTML(`
       <div style="
-        background: oklch(0.15 0 0 / 0.95);
-        backdrop-filter: blur(12px);
-        border: 1px solid oklch(0.3 0 0);
-        border-radius: 8px;
         padding: 8px 12px;
         max-width: 240px;
       ">
         <div style="
-          font-size: 12px;
+          font-size: 0.75rem;
           font-weight: 600;
           color: oklch(0.85 0.18 85);
           margin-bottom: 2px;
         ">${activeEvent.label}</div>
         <div style="
-          font-size: 10px;
+          font-size: 0.625rem;
           color: oklch(0.65 0 0);
           line-height: 1.4;
         ">${activeEvent.description}</div>

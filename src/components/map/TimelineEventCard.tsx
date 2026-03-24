@@ -14,12 +14,12 @@ export function TimelineEventCard({ label, date, description, onDismiss }: Timel
       <TbInfoCircle className="h-4 w-4 text-ua-blue mt-0.5 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-[13px] font-semibold text-ua-blue">{label}</span>
-          <span className="text-[11px] text-muted-foreground font-mono">
+          <span className="text-[0.8125rem] font-semibold text-ua-blue">{label}</span>
+          <span className="text-[0.6875rem] text-muted-foreground font-mono">
             {formatDateShort(date)}
           </span>
         </div>
-        <p className="text-[12px] text-foreground/80 mt-1 leading-relaxed">{description}</p>
+        <p className="text-[0.75rem] text-foreground/80 mt-1 leading-relaxed">{description}</p>
       </div>
       <button
         onClick={onDismiss}

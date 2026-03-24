@@ -74,7 +74,7 @@ export function TimelineControls({
             <button className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px] rounded-md hover:bg-surface-elevated/50 transition-colors px-1.5 py-1 -mx-1.5 -my-1 cursor-pointer">
               <div className="flex items-center gap-2">
                 <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-ua-blue">
+                <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-ua-blue">
                   {t("timeline.title")}
                 </span>
               </div>
@@ -83,7 +83,9 @@ export function TimelineControls({
                   {formatDateDisplay(currentDate)}
                 </span>
                 {currentIndex === datesLength - 1 && (
-                  <span className="text-[9px] text-capture font-mono">{t("common.today")}</span>
+                  <span className="text-[0.5625rem] text-capture font-mono">
+                    {t("common.today")}
+                  </span>
                 )}
               </div>
             </button>
@@ -200,7 +202,7 @@ export function TimelineControls({
             onClick={() => onJumpToYear(y)}
             className={cn(
               "flex h-6 items-center justify-center rounded px-1.5 transition-colors",
-              "text-[9px] font-mono",
+              "text-[0.5625rem] font-mono",
               currentYear === y
                 ? "bg-ua-blue/15 text-ua-blue font-semibold"
                 : "text-muted-foreground/60 hover:text-muted-foreground hover:bg-surface-elevated/50",
@@ -222,7 +224,7 @@ export function TimelineControls({
           aria-label="Toggle events sidebar"
           className={cn(
             "flex h-7 items-center gap-1 rounded-md px-2.5 transition-colors",
-            "text-[10px] font-semibold uppercase tracking-wider",
+            "text-[0.625rem] font-semibold uppercase tracking-wider",
             eventsOpen
               ? "bg-ua-yellow/15 text-ua-yellow"
               : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated",

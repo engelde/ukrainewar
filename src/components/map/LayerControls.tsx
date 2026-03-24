@@ -86,7 +86,7 @@ export default function LayerControls({
       >
         <div className="flex items-center gap-2 px-3 py-2 flex-1">
           <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("layers.title")}
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function LayerControls({
       <div className="flex items-center border-b border-border/30">
         <div className="drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1">
           <TbStack2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("layers.title")}
           </span>
         </div>

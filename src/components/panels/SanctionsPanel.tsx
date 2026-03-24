@@ -76,7 +76,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbScale className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-amber-400">
             {t("sanctions.title")}
           </span>
         </div>
@@ -112,7 +112,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbScale className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-amber-400">
             {t("sanctions.title")}
           </span>
         </div>
@@ -148,7 +148,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
 
         {/* By Imposer */}
         <div className="space-y-1.5 pt-1 border-t border-border/20">
-          <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
+          <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
             {t("sanctions.byImposer")}
           </div>
           <div className="space-y-1">
@@ -160,14 +160,14 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
 
         {/* Key Bans */}
         <div className="space-y-1 pt-1 border-t border-border/20">
-          <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
+          <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
             {t("sanctions.keyBans")}
           </div>
           <ul className="space-y-1 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-border/30">
             {summary.keyBans.map((ban) => (
               <li
                 key={ban}
-                className="flex items-start gap-1.5 rounded-lg bg-white/5 p-1.5 text-[9px] text-foreground/70 leading-tight"
+                className="flex items-start gap-1.5 rounded-lg bg-white/5 p-1.5 text-[0.5625rem] text-foreground/70 leading-tight"
               >
                 <TbGavel className="mt-0.5 h-2.5 w-2.5 shrink-0 text-amber-400/60" />
                 <span>{ban}</span>
@@ -179,7 +179,7 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
 
       {/* Source footer */}
       <div className="px-3 py-1.5 border-t border-border/30">
-        <div className="text-[8px] text-muted-foreground/50">
+        <div className="text-[0.5rem] text-muted-foreground/50">
           {t("common.source")}: {t("sanctions.source")}
         </div>
       </div>
@@ -197,7 +197,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
     <div className="rounded-lg bg-white/5 p-2">
       <div className="flex items-center gap-1 mb-1">
         {icon}
-        <span className="text-[9px] text-muted-foreground truncate">{label}</span>
+        <span className="text-[0.5625rem] text-muted-foreground truncate">{label}</span>
       </div>
       <div className="text-sm font-bold font-mono tabular-nums text-foreground">{value}</div>
     </div>
@@ -210,14 +210,16 @@ function ImposerBar({ name, count, max }: { name: string; count: number; max: nu
 
   return (
     <div className="flex items-center gap-2">
-      <span className="w-20 text-[9px] text-muted-foreground truncate text-right">{name}</span>
+      <span className="w-20 text-[0.5625rem] text-muted-foreground truncate text-right">
+        {name}
+      </span>
       <div className="flex-1 h-2 rounded-full overflow-hidden bg-white/5">
         <div
           className={cn("h-full rounded-full transition-all duration-700", color)}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-4 text-[9px] font-mono tabular-nums text-foreground/70 text-right">
+      <span className="w-4 text-[0.5625rem] font-mono tabular-nums text-foreground/70 text-right">
         {count}
       </span>
     </div>

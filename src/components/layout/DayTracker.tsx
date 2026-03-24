@@ -77,7 +77,7 @@ export default function DayTracker({
           title={t("timeline.resetTooltip")}
           className={cn(
             "flex items-center gap-1 rounded-md px-2 py-1 cursor-pointer",
-            "text-[10px] font-semibold uppercase tracking-wider",
+            "text-[0.625rem] font-semibold uppercase tracking-wider",
             "transition-colors group",
             "text-muted-foreground/70 hover:text-muted-foreground",
           )}

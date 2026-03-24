@@ -466,13 +466,13 @@ export function createMapIcon(
       drawFlameSymbol(ctx, cx, cy, symbolR);
       break;
     case "nato-base":
-      drawNATOStar(ctx, cx, cy, symbolR);
+      drawMilitaryStar(ctx, cx, cy, symbolR);
       break;
     case "belarus-base":
       drawMilitaryStar(ctx, cx, cy, symbolR);
       break;
     case "ukraine-base":
-      drawShieldSymbol(ctx, cx, cy, symbolR);
+      drawMilitaryStar(ctx, cx, cy, symbolR);
       break;
     case "russia-base":
       drawMilitaryStar(ctx, cx, cy, symbolR);

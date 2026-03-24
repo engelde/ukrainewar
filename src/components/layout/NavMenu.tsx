@@ -41,7 +41,10 @@ const INFRASTRUCTURE_ITEMS: LegendItem[] = [
   { label: "Nuclear plants", color: "#facc15", type: "icon", secondary: "☢" },
   { label: "Dams", color: "#38bdf8", type: "icon", secondary: "⌇" },
   { label: "Gas pipelines", color: "#94a3b8", type: "line" },
-  { label: "Military bases", color: "#6366f1", type: "circle" },
+  { label: "Bases (Ukraine)", color: "#005BBB", type: "circle" },
+  { label: "Bases (Russia)", color: "#C53030", type: "circle" },
+  { label: "Bases (NATO)", color: "#1b69a1", type: "circle" },
+  { label: "Bases (Belarus)", color: "#8b1a1a", type: "circle" },
 ];
 
 const OVERLAY_ITEMS: LegendItem[] = [
@@ -94,7 +97,7 @@ function LegendSwatch({ item }: { item: LegendItem }) {
   if (item.type === "icon") {
     return (
       <span
-        className="inline-flex h-3 w-4 items-center justify-center text-[10px]"
+        className="inline-flex h-3 w-4 items-center justify-center text-[0.625rem]"
         style={{ color: item.color }}
       >
         {item.secondary}
@@ -107,14 +110,14 @@ function LegendSwatch({ item }: { item: LegendItem }) {
 function LegendSection({ title, items }: { title: string; items: LegendItem[] }) {
   return (
     <div className="space-y-1">
-      <h4 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/70">
+      <h4 className="text-[0.5625rem] font-bold uppercase tracking-widest text-muted-foreground/70">
         {title}
       </h4>
       <div className="space-y-0.5">
         {items.map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
             <LegendSwatch item={item} />
-            <span className="text-[10px] text-foreground/70">{item.label}</span>
+            <span className="text-[0.625rem] text-foreground/70">{item.label}</span>
           </div>
         ))}
       </div>
@@ -149,7 +152,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
         onClick={() => setActive(active === "about" ? null : "about")}
         className={cn(
           "flex items-center gap-1 rounded-md px-2 py-1",
-          "text-[10px] font-semibold uppercase tracking-wider",
+          "text-[0.625rem] font-semibold uppercase tracking-wider",
           "transition-colors",
           active === "about"
             ? "text-ua-blue"
@@ -163,7 +166,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
         onClick={() => setActive(active === "legend" ? null : "legend")}
         className={cn(
           "flex items-center gap-1 rounded-md px-2 py-1",
-          "text-[10px] font-semibold uppercase tracking-wider",
+          "text-[0.625rem] font-semibold uppercase tracking-wider",
           "transition-colors",
           active === "legend"
             ? "text-ua-blue"
@@ -177,7 +180,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
         onClick={() => setActive(active === "sources" ? null : "sources")}
         className={cn(
           "flex items-center gap-1 rounded-md px-2 py-1",
-          "text-[10px] font-semibold uppercase tracking-wider",
+          "text-[0.625rem] font-semibold uppercase tracking-wider",
           "transition-colors",
           active === "sources"
             ? "text-ua-blue"
@@ -193,7 +196,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
         rel="noopener noreferrer"
         className={cn(
           "flex items-center gap-1 rounded-md px-2 py-1",
-          "text-[10px] font-semibold uppercase tracking-wider",
+          "text-[0.625rem] font-semibold uppercase tracking-wider",
           "transition-colors",
           "text-muted-foreground/70 hover:text-muted-foreground",
         )}
@@ -215,7 +218,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
           )}
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-blue">
+            <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-ua-blue">
               {active === "about" ? "About" : active === "legend" ? "Map Legend" : "Data Sources"}
             </span>
             <button
@@ -233,21 +236,21 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
           <div className="px-3 py-2.5">
             {active === "about" && (
               <div className="space-y-2">
-                <p className="text-[11px] text-foreground/80 leading-relaxed">
+                <p className="text-[0.6875rem] text-foreground/80 leading-relaxed">
                   An interactive tracker for the Russo-Ukrainian War, visualizing territory control,
                   military losses, humanitarian impact, and international aid from February 2022 to
                   the present.
                 </p>
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                <p className="text-[0.625rem] text-muted-foreground leading-relaxed">
                   Navigate the timeline to explore the war&apos;s progression. Toggle map layers to
                   view territory, equipment losses, battles, and conflict events. All data updates
                   daily from official sources.
                 </p>
                 <div className="mt-3 rounded-md border border-ua-blue/30 bg-ua-blue/5 px-2.5 py-2">
-                  <p className="text-[11px] text-ua-blue font-medium leading-relaxed">
+                  <p className="text-[0.6875rem] text-ua-blue font-medium leading-relaxed">
                     Stand with Ukraine
                   </p>
-                  <p className="text-[10px] text-foreground/70 leading-relaxed mt-1">
+                  <p className="text-[0.625rem] text-foreground/70 leading-relaxed mt-1">
                     The people of Ukraine continue to defend their homeland, their freedom, and
                     their future. Support their resilience and recovery.
                   </p>
@@ -255,7 +258,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
                     href="https://u24.gov.ua"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1.5 inline-flex items-center gap-1 rounded bg-ua-blue/15 px-2 py-0.5 text-[10px] font-medium text-ua-blue hover:bg-ua-blue/25 transition-colors"
+                    className="mt-1.5 inline-flex items-center gap-1 rounded bg-ua-blue/15 px-2 py-0.5 text-[0.625rem] font-medium text-ua-blue hover:bg-ua-blue/25 transition-colors"
                   >
                     Donate via UNITED24
                     <TbExternalLink className="h-3 w-3" />
@@ -284,10 +287,10 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
                     className="flex items-center justify-between gap-2 rounded px-1.5 py-1 -mx-1.5 hover:bg-surface-elevated/50 transition-colors group"
                   >
                     <div>
-                      <div className="text-[10px] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
+                      <div className="text-[0.625rem] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
                         {source.name}
                       </div>
-                      <div className="text-[9px] text-muted-foreground/60">
+                      <div className="text-[0.5625rem] text-muted-foreground/60">
                         {source.description}
                       </div>
                     </div>
@@ -354,21 +357,21 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col py-2">
           <SidebarSection title="About">
             <div className="space-y-2 px-4 pb-3">
-              <p className="text-[11px] text-foreground/80 leading-relaxed">
+              <p className="text-[0.6875rem] text-foreground/80 leading-relaxed">
                 An interactive tracker for the Russo-Ukrainian War, visualizing territory control,
                 military losses, humanitarian impact, and international aid from February 2022 to
                 the present.
               </p>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
+              <p className="text-[0.625rem] text-muted-foreground leading-relaxed">
                 Navigate the timeline to explore the war&apos;s progression. Toggle map layers to
                 view territory, equipment losses, battles, and conflict events. All data updates
                 daily from official sources.
               </p>
               <div className="mt-2 rounded-md border border-ua-blue/30 bg-ua-blue/5 px-2.5 py-2">
-                <p className="text-[11px] text-ua-blue font-medium leading-relaxed">
+                <p className="text-[0.6875rem] text-ua-blue font-medium leading-relaxed">
                   Stand with Ukraine
                 </p>
-                <p className="text-[10px] text-foreground/70 leading-relaxed mt-1">
+                <p className="text-[0.625rem] text-foreground/70 leading-relaxed mt-1">
                   The people of Ukraine continue to defend their homeland, their freedom, and their
                   future. Support their resilience and recovery.
                 </p>
@@ -376,7 +379,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
                   href="https://u24.gov.ua"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1.5 inline-flex items-center gap-1 rounded bg-ua-blue/15 px-2 py-0.5 text-[10px] font-medium text-ua-blue hover:bg-ua-blue/25 transition-colors"
+                  className="mt-1.5 inline-flex items-center gap-1 rounded bg-ua-blue/15 px-2 py-0.5 text-[0.625rem] font-medium text-ua-blue hover:bg-ua-blue/25 transition-colors"
                 >
                   Donate via UNITED24
                   <TbExternalLink className="h-3 w-3" />
@@ -405,10 +408,12 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
                   className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-surface-elevated/50 transition-colors group"
                 >
                   <div>
-                    <div className="text-[10px] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
+                    <div className="text-[0.625rem] font-medium text-foreground/80 group-hover:text-ua-blue transition-colors">
                       {source.name}
                     </div>
-                    <div className="text-[9px] text-muted-foreground/60">{source.description}</div>
+                    <div className="text-[0.5625rem] text-muted-foreground/60">
+                      {source.description}
+                    </div>
                   </div>
                   <TbExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-ua-blue transition-colors flex-shrink-0" />
                 </a>

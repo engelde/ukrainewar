@@ -35,7 +35,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbUserMinus className="h-3.5 w-3.5 text-[#005BBB]" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("ukraineLosses.title")}
           </span>
         </div>
@@ -68,7 +68,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbUserMinus className="h-3.5 w-3.5 text-[#005BBB]" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#005BBB]">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-[#005BBB]">
             {t("ukraineLosses.title")}
           </span>
         </div>
@@ -85,17 +85,17 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
       <div className="p-2.5 space-y-2.5">
         {/* Confirmed by name — Mediazona */}
         <div className="text-center pb-2.5 border-b border-border/20">
-          <div className="text-[8px] text-muted-foreground uppercase tracking-wider mb-1">
+          <div className="text-[0.5rem] text-muted-foreground uppercase tracking-wider mb-1">
             Confirmed killed by name
           </div>
           <div className="text-2xl font-bold font-mono tabular-nums text-[#FFD500]">
             {formatNumber(mz?.militaryKilled)}
           </div>
-          <div className="text-[9px] text-muted-foreground/60 mt-0.5">
+          <div className="text-[0.5625rem] text-muted-foreground/60 mt-0.5">
             Verified by Mediazona &amp; BBC News Russian
           </div>
           {mz && (
-            <div className="text-[8px] text-muted-foreground/40 mt-0.5">
+            <div className="text-[0.5rem] text-muted-foreground/40 mt-0.5">
               as of {formatDateDisplay(mz.date)}
             </div>
           )}
@@ -105,7 +105,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
         <div className="px-2 py-1.5 rounded-md bg-[#005BBB]/10 border border-[#005BBB]/20">
           <div className="flex items-start gap-1.5">
             <TbInfoCircle className="h-3 w-3 text-[#005BBB] shrink-0 mt-0.5" />
-            <div className="text-[8px] text-muted-foreground/70 leading-relaxed space-y-1">
+            <div className="text-[0.5rem] text-muted-foreground/70 leading-relaxed space-y-1">
               <p>
                 This panel shows only deaths confirmed by name through open-source investigation by
                 Mediazona and BBC News Russian. Each casualty is individually verified through
@@ -123,7 +123,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
         <div className="px-2 py-1.5 rounded-md bg-[#DD6B20]/10 border border-[#DD6B20]/20">
           <div className="flex items-start gap-1.5">
             <TbAlertTriangle className="h-3 w-3 text-[#DD6B20] shrink-0 mt-0.5" />
-            <p className="text-[8px] text-muted-foreground/70 leading-relaxed">
+            <p className="text-[0.5rem] text-muted-foreground/70 leading-relaxed">
               Estimates from governments and intelligence agencies vary widely and cannot be
               independently verified. This tracker displays only data that meets the standard of
               individual name-level confirmation. Civilian casualty data is tracked separately in
@@ -135,7 +135,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
 
       {/* Source footer */}
       <div className="px-3 py-1.5 border-t border-border/30">
-        <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+        <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
           <span>Source:</span>
           <a
             href="https://en.zona.media/article/2022/05/20/casualties_eng"

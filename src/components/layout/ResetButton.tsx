@@ -33,7 +33,7 @@ export default function ResetButton({ onReset, warDay, isHistorical }: ResetButt
             "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5",
             "bg-background/70 backdrop-blur-xl",
             "border border-border/40",
-            "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
+            "text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground",
             "hover:text-foreground hover:border-border/60 transition-colors",
             "group",
           )}

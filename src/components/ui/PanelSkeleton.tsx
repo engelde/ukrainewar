@@ -21,7 +21,7 @@ export function PanelSkeleton({ rows = 4, className }: { rows?: number; classNam
 export function PanelError({ message = "Data unavailable" }: { message?: string }) {
   return (
     <div className="p-3 text-center">
-      <p className="text-[10px] text-muted-foreground/60">{message}</p>
+      <p className="text-[0.625rem] text-muted-foreground/60">{message}</p>
     </div>
   );
 }

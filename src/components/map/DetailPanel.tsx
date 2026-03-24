@@ -86,7 +86,7 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
             <h3 className="text-sm font-bold text-foreground leading-tight truncate">
               {marker.model}
             </h3>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+            <span className="text-[0.625rem] text-muted-foreground uppercase tracking-wider">
               {marker.type}
             </span>
           </div>
@@ -103,7 +103,7 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
       {/* Details grid */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-3 py-2.5">
         <div>
-          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
             {t("detail.status")}
           </span>
           <div className={cn("text-xs font-semibold capitalize", statusStyle.color)}>
@@ -111,24 +111,24 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
           </div>
         </div>
         <div>
-          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
             {t("detail.date")}
           </span>
           <div className="text-xs text-foreground">{marker.date}</div>
         </div>
         {marker.location && (
           <div className="col-span-2">
-            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+            <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
               {t("detail.location")}
             </span>
             <div className="text-xs text-foreground">{marker.location}</div>
           </div>
         )}
         <div className="col-span-2">
-          <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
             {t("detail.coordinates")}
           </span>
-          <div className="text-[11px] font-mono text-muted-foreground">
+          <div className="text-[0.6875rem] font-mono text-muted-foreground">
             {marker.lat.toFixed(4)}, {marker.lng.toFixed(4)}
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function DetailPanel({ marker, onClose }: DetailPanelProps) {
           href={`https://ukr.warspotting.net/search/?q=${marker.id}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[10px] text-ua-blue hover:text-ua-blue-light transition-colors"
+          className="inline-flex items-center gap-1 text-[0.625rem] text-ua-blue hover:text-ua-blue-light transition-colors"
         >
           {t("detail.viewOnWarSpotting")}
           <TbExternalLink className="h-3 w-3" />

@@ -56,7 +56,7 @@ function SupportBadge({ type }: { type: SupportType }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-medium",
+        "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[0.5rem] font-medium",
         config.bg,
         config.text,
       )}
@@ -77,12 +77,14 @@ function CountryRow({ country }: { country: CountrySupport }) {
         onClick={() => setExpanded((prev) => !prev)}
         className="w-full flex items-center gap-2 px-1.5 py-1 text-left"
       >
-        <span className="text-[10px] text-foreground/80 flex-1 truncate">{country.country}</span>
-        <span className="text-[8px] font-mono uppercase tracking-wider bg-surface-elevated/50 px-1 py-0.5 rounded text-muted-foreground shrink-0">
+        <span className="text-[0.625rem] text-foreground/80 flex-1 truncate">
+          {country.country}
+        </span>
+        <span className="text-[0.5rem] font-mono uppercase tracking-wider bg-surface-elevated/50 px-1 py-0.5 rounded text-muted-foreground shrink-0">
           {country.countryCode}
         </span>
         {country.totalAidBillionUSD != null && country.totalAidBillionUSD > 0 && (
-          <span className="text-[9px] font-mono text-foreground/70 tabular-nums shrink-0">
+          <span className="text-[0.5625rem] font-mono text-foreground/70 tabular-nums shrink-0">
             {formatAid(country.totalAidBillionUSD)}
           </span>
         )}
@@ -100,9 +102,11 @@ function CountryRow({ country }: { country: CountrySupport }) {
               <SupportBadge key={type} type={type} />
             ))}
           </div>
-          <p className="text-[9px] text-muted-foreground leading-relaxed">{country.description}</p>
+          <p className="text-[0.5625rem] text-muted-foreground leading-relaxed">
+            {country.description}
+          </p>
           {country.notable && (
-            <p className="text-[8px] text-muted-foreground/70 italic">{country.notable}</p>
+            <p className="text-[0.5rem] text-muted-foreground/70 italic">{country.notable}</p>
           )}
         </div>
       )}
@@ -124,17 +128,17 @@ function SideSection({
   return (
     <div className="flex-1 min-w-0">
       <div className="flex items-center justify-between px-1.5 mb-1.5">
-        <span className={cn("text-[10px] font-semibold uppercase tracking-wider", accentColor)}>
+        <span className={cn("text-[0.625rem] font-semibold uppercase tracking-wider", accentColor)}>
           {title}
         </span>
-        <span className="text-[9px] font-mono text-muted-foreground tabular-nums">
+        <span className="text-[0.5625rem] font-mono text-muted-foreground tabular-nums">
           {countries.length} {t("support.countries")}
         </span>
       </div>
       {totalAid != null && totalAid > 0 && (
         <div className="px-1.5 mb-1.5">
-          <span className="text-[9px] text-muted-foreground">Total aid: </span>
-          <span className={cn("text-[10px] font-mono font-semibold tabular-nums", accentColor)}>
+          <span className="text-[0.5625rem] text-muted-foreground">Total aid: </span>
+          <span className={cn("text-[0.625rem] font-mono font-semibold tabular-nums", accentColor)}>
             {formatAid(totalAid)}
           </span>
         </div>
@@ -179,7 +183,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbShield className="h-3.5 w-3.5 text-[#005BBB]" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("support.title")}
           </span>
         </div>
@@ -212,7 +216,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbShield className="h-3.5 w-3.5 text-[#005BBB]" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#005BBB]">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-[#005BBB]">
             {t("support.title")}
           </span>
         </div>
@@ -230,10 +234,10 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
         {/* Summary proportion bar */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-baseline px-1">
-            <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+            <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
               {t("support.globalAlignment")}
             </span>
-            <span className="text-[9px] font-mono text-muted-foreground tabular-nums">
+            <span className="text-[0.5625rem] font-mono text-muted-foreground tabular-nums">
               {total} {t("support.countries")}
             </span>
           </div>
@@ -245,7 +249,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
               title={`Ukraine: ${uaCount} countries`}
             >
               {uaPct > 20 && (
-                <span className="text-[7px] font-semibold text-white/90">{uaCount}</span>
+                <span className="text-[0.4375rem] font-semibold text-white/90">{uaCount}</span>
               )}
             </div>
             <div
@@ -254,12 +258,12 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
               title={`Russia: ${ruCount} countries`}
             >
               {100 - uaPct > 15 && (
-                <span className="text-[7px] font-semibold text-white/90">{ruCount}</span>
+                <span className="text-[0.4375rem] font-semibold text-white/90">{ruCount}</span>
               )}
             </div>
           </div>
 
-          <div className="flex justify-between text-[9px] px-1">
+          <div className="flex justify-between text-[0.5625rem] px-1">
             <span className="text-[#005BBB]/80 font-mono tabular-nums">
               {uaCount} {t("support.proUkraine")}
             </span>
@@ -271,7 +275,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
 
         {/* Aid total */}
         <div className="text-center pb-1.5 border-t border-b border-border/20 pt-1.5">
-          <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
+          <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider mb-0.5">
             {t("support.totalAid")}
           </div>
           <div className="text-lg font-bold text-[#005BBB] font-mono tabular-nums">
@@ -299,7 +303,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
 
       {/* Source footer */}
       <div className="px-3 py-1.5 border-t border-border/30">
-        <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+        <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
           <span>Sources:</span>
           <a
             href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/"

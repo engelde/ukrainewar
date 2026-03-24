@@ -130,7 +130,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbCurrencyEuro className="h-3.5 w-3.5 text-capture" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-capture">
             {t("spending.title")}
           </span>
         </div>
@@ -162,7 +162,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
         <div className="drag-handle flex items-center gap-1.5 cursor-grab active:cursor-grabbing flex-1">
           <TbCurrencyEuro className="h-3.5 w-3.5 text-capture" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-capture">
             {t("spending.title")}
           </span>
         </div>
@@ -181,7 +181,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
         <div className="p-2.5 space-y-2.5">
           {/* Total Aid */}
           <div className="text-center pb-1.5 border-b border-border/20">
-            <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
+            <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider mb-0.5">
               {timelineTotals ? t("spending.cumulativeAid") : t("spending.totalBilateralAid")}
             </div>
             <div className="text-xl font-bold text-ua-yellow font-mono tabular-nums">
@@ -193,7 +193,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
               />
               B
             </div>
-            <div className="text-[8px] text-muted-foreground mt-0.5">
+            <div className="text-[0.5rem] text-muted-foreground mt-0.5">
               {t("spending.donorCountries", { count: data.donors })} · {data.source.release}
             </div>
           </div>
@@ -234,7 +234,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
               ) : (
                 <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
               )}
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
                 {t("spending.topDonors")}
               </span>
             </button>
@@ -242,7 +242,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
               <div className="mt-1.5 space-y-1">
                 {data.byCountry.slice(0, 10).map((c) => (
                   <div key={c.country} className="flex items-center gap-2">
-                    <span className="text-[9px] text-muted-foreground w-20 truncate text-right">
+                    <span className="text-[0.5625rem] text-muted-foreground w-20 truncate text-right">
                       {c.country}
                     </span>
                     <div className="flex-1 h-2 bg-surface-elevated/50 rounded-sm overflow-hidden">
@@ -253,7 +253,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
                         }}
                       />
                     </div>
-                    <span className="text-[9px] text-foreground/70 w-12 text-right font-mono">
+                    <span className="text-[0.5625rem] text-foreground/70 w-12 text-right font-mono">
                       {formatEUR(c.total)}
                     </span>
                   </div>
@@ -274,7 +274,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
                 ) : (
                   <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
                 )}
-                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+                <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
                   {t("spending.monthlyTrend")}
                 </span>
               </button>
@@ -291,7 +291,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
       {/* Source footer */}
       {data && (
         <div className="px-3 py-1.5 border-t border-border/30">
-          <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+          <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
             <span>{t("common.source")}:</span>
             <a
               href="https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/"
@@ -330,8 +330,8 @@ function AidTypeRow({
       {icon}
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-baseline mb-0.5">
-          <span className="text-[9px] text-muted-foreground">{label}</span>
-          <span className="text-[10px] font-mono text-foreground/80 tabular-nums">
+          <span className="text-[0.5625rem] text-muted-foreground">{label}</span>
+          <span className="text-[0.625rem] font-mono text-foreground/80 tabular-nums">
             {formatEUR(value)}
           </span>
         </div>

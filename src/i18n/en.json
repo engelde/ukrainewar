@@ -100,7 +100,7 @@
     "abandoned": "Abandoned"
   },
   "events": {
-    "title": "Key Events",
+    "title": "Events",
     "filterByType": "Filter by type",
     "closeSidebar": "Close sidebar",
     "searchPlaceholder": "Search events...",

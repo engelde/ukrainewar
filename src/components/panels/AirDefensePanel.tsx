@@ -98,7 +98,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbShieldChevron className="h-3.5 w-3.5 text-capture" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-capture">
             {t("airDefense.title")}
           </span>
         </div>
@@ -131,7 +131,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
       <div className="drag-handle sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbShieldChevron className="h-3.5 w-3.5 text-capture" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-capture">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-capture">
             {t("airDefense.title")}
           </span>
         </div>
@@ -176,7 +176,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
 
         {/* Interception rate bars */}
         <div className="space-y-1.5 pt-1 border-t border-border/20">
-          <div className="text-[9px] text-muted-foreground uppercase tracking-wider">
+          <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
             {t("airDefense.interceptionRate")}
           </div>
           <InterceptionBar
@@ -194,7 +194,7 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
 
       {/* Source footer */}
       <div className="px-3 py-1.5 border-t border-border/30">
-        <div className="text-[8px] text-muted-foreground/50">
+        <div className="text-[0.5rem] text-muted-foreground/50">
           {t("common.source")}: {t("airDefense.source")}
         </div>
       </div>
@@ -222,10 +222,10 @@ function StatCard({
     <div className="rounded-lg bg-white/5 p-2">
       <div className="flex items-center gap-1 mb-1">
         {icon}
-        <span className="text-[9px] text-muted-foreground truncate">{label}</span>
+        <span className="text-[0.5625rem] text-muted-foreground truncate">{label}</span>
       </div>
       <div className="text-sm font-bold font-mono tabular-nums text-foreground">{value}</div>
-      <div className="text-[8px] text-muted-foreground/70 truncate">{sub}</div>
+      <div className="text-[0.5rem] text-muted-foreground/70 truncate">{sub}</div>
     </div>
   );
 }
@@ -244,8 +244,8 @@ function InterceptionBar({
   return (
     <div>
       <div className="flex justify-between items-baseline mb-0.5">
-        <span className="text-[9px] text-muted-foreground">{label}</span>
-        <span className="text-[9px] font-mono tabular-nums text-foreground/70">
+        <span className="text-[0.5625rem] text-muted-foreground">{label}</span>
+        <span className="text-[0.5625rem] font-mono tabular-nums text-foreground/70">
           {intercepted}/{launched}
         </span>
       </div>
@@ -266,10 +266,10 @@ function InterceptionBar({
         />
       </div>
       <div className="flex justify-between mt-0.5">
-        <span className="text-[8px] font-mono" style={{ color: "#48BB78" }}>
+        <span className="text-[0.5rem] font-mono" style={{ color: "#48BB78" }}>
           {rate.toFixed(1)}% intercepted
         </span>
-        <span className="text-[8px] font-mono" style={{ color: "#E53E3E" }}>
+        <span className="text-[0.5rem] font-mono" style={{ color: "#E53E3E" }}>
           {(100 - rate).toFixed(1)}% hit
         </span>
       </div>

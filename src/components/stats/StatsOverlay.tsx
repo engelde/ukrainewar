@@ -205,7 +205,7 @@ export default function StatsOverlay({
         >
           <div className="flex items-center gap-2 px-3 py-2 flex-1">
             <TbSkull className="h-3.5 w-3.5 text-destruction" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-destruction">
+            <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-destruction">
               {t("stats.title")}
             </span>
           </div>
@@ -284,7 +284,7 @@ export default function StatsOverlay({
                     </span>
                     <span className="ml-auto flex items-center gap-1.5">
                       {stat.daily > 0 && (
-                        <span className="text-[10px] font-medium text-destruction">
+                        <span className="text-[0.625rem] font-medium text-destruction">
                           +{stat.daily.toLocaleString()}
                         </span>
                       )}
@@ -304,11 +304,11 @@ export default function StatsOverlay({
                       {hasTrend ? (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-[0.625rem] text-muted-foreground">
                               {t("stats.confirmedLosses", { count: dates.length })}
                             </span>
                             <span
-                              className="text-[10px] font-medium"
+                              className="text-[0.625rem] font-medium"
                               style={{ color: TREND_COLORS[stat.trendKey] || "#3d8fd6" }}
                             >
                               {trendValues.reduce((a, b) => a + b, 0)} {t("common.total")}
@@ -321,13 +321,13 @@ export default function StatsOverlay({
                             color={TREND_COLORS[stat.trendKey] || "#3d8fd6"}
                             className="w-full"
                           />
-                          <div className="flex justify-between text-[9px] text-muted-foreground/60">
+                          <div className="flex justify-between text-[0.5625rem] text-muted-foreground/60">
                             <span>{dates[0]?.slice(5)}</span>
                             <span>{dates[dates.length - 1]?.slice(5)}</span>
                           </div>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[0.625rem] text-muted-foreground">
                           {t("stats.noTrendData")}
                         </span>
                       )}
@@ -341,7 +341,7 @@ export default function StatsOverlay({
                 href="https://www.mil.gov.ua"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[8px] text-muted-foreground/50 hover:text-ua-blue transition-colors"
+                className="text-[0.5rem] text-muted-foreground/50 hover:text-ua-blue transition-colors"
               >
                 {t("stats.sourceMOD")}
               </a>

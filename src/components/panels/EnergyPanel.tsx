@@ -151,7 +151,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbBolt className="h-3.5 w-3.5 text-ua-yellow" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("energy.title")}
           </span>
         </div>
@@ -186,7 +186,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       <div className="drag-handle sticky top-0 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbBolt className="h-3.5 w-3.5 text-ua-yellow" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-yellow">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-ua-yellow">
             {t("energy.title")}
           </span>
         </div>
@@ -211,7 +211,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
               <span className={cn("inline-block h-2 w-2 rounded-full", statusConfig.dotColor)} />
               <span
                 className={cn(
-                  "text-[10px] font-semibold uppercase tracking-wider",
+                  "text-[0.625rem] font-semibold uppercase tracking-wider",
                   statusConfig.textColor,
                 )}
               >
@@ -223,10 +223,10 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
           {/* Capacity overview */}
           <div className="space-y-1.5 pb-2 border-b border-border/20">
             <div className="flex justify-between items-baseline px-1">
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
                 {t("energy.capacity")}
               </span>
-              <span className="text-[10px] font-mono text-foreground/80 tabular-nums">
+              <span className="text-[0.625rem] font-mono text-foreground/80 tabular-nums">
                 {formatGW(data.totalCapacity)}
               </span>
             </div>
@@ -247,7 +247,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
               </div>
             </div>
 
-            <div className="flex justify-between text-[9px] px-1">
+            <div className="flex justify-between text-[0.5625rem] px-1">
               <span className="text-[#48BB78]/80 font-mono tabular-nums">
                 {formatGW(operationalCapacity)} operational
               </span>
@@ -260,7 +260,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
           {/* Generation mix */}
           {mixSegments.length > 0 && (
             <div className="space-y-1.5 pb-2 border-b border-border/20">
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider px-1">
+              <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider px-1">
                 Generation mix
               </div>
               <div className="h-2 flex rounded-full overflow-hidden">
@@ -277,7 +277,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
                 {mixSegments.map((seg) => (
                   <div key={seg.label} className="flex items-center gap-1">
                     <span className={cn("inline-block h-1.5 w-1.5 rounded-sm", seg.color)} />
-                    <span className="text-[9px] text-muted-foreground">
+                    <span className="text-[0.5625rem] text-muted-foreground">
                       {seg.label} {seg.share}%
                     </span>
                   </div>
@@ -298,7 +298,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
               ) : (
                 <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
               )}
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wider">
+              <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
                 Power plants ({data.plants.length})
               </span>
             </button>
@@ -308,7 +308,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
                   <div key={type}>
                     <div className="flex items-center gap-1 mb-1 px-0.5">
                       {TYPE_ICON[type] ?? <TbBolt className="h-2.5 w-2.5 text-muted-foreground" />}
-                      <span className="text-[9px] text-muted-foreground capitalize font-medium">
+                      <span className="text-[0.5625rem] text-muted-foreground capitalize font-medium">
                         {type}
                       </span>
                     </div>
@@ -325,10 +325,10 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
                             )}
                             title={plant.status}
                           />
-                          <span className="text-[10px] text-foreground/80 truncate flex-1">
+                          <span className="text-[0.625rem] text-foreground/80 truncate flex-1">
                             {plant.name}
                           </span>
-                          <span className="text-[9px] font-mono text-muted-foreground tabular-nums shrink-0">
+                          <span className="text-[0.5625rem] font-mono text-muted-foreground tabular-nums shrink-0">
                             {formatGW(plant.capacity)}
                           </span>
                         </div>
@@ -348,7 +348,7 @@ function EnergyPanelInner({ isOpen, onToggle, timelineDate }: EnergyPanelProps) 
       {/* Source footer */}
       {data && (
         <div className="px-3 py-1.5 border-t border-border/30">
-          <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+          <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
             <span>Source:</span>
             <a
               href="https://transparency.entsoe.eu/"

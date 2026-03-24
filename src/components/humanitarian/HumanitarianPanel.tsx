@@ -69,7 +69,7 @@ function BarChart({
     <div className="space-y-1">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-2">
-          <span className="text-[9px] text-muted-foreground w-16 truncate text-right">
+          <span className="text-[0.5625rem] text-muted-foreground w-16 truncate text-right">
             {item.label}
           </span>
           <div className="flex-1 h-2.5 bg-surface-elevated/50 rounded-sm overflow-hidden">
@@ -78,7 +78,7 @@ function BarChart({
               style={{ width: `${(item.value / maxValue) * 100}%` }}
             />
           </div>
-          <span className="text-[9px] text-foreground/70 w-10 text-right font-mono">
+          <span className="text-[0.5625rem] text-foreground/70 w-10 text-right font-mono">
             {formatNumber(item.value)}
           </span>
         </div>
@@ -101,8 +101,8 @@ function FundingBar({
   return (
     <div className="space-y-0.5">
       <div className="flex justify-between items-baseline">
-        <span className="text-[9px] text-muted-foreground">{label}</span>
-        <span className="text-[9px] font-mono text-foreground/70">
+        <span className="text-[0.5625rem] text-muted-foreground">{label}</span>
+        <span className="text-[0.5625rem] font-mono text-foreground/70">
           {formatUSD(funded)} / {formatUSD(required)}
         </span>
       </div>
@@ -116,7 +116,7 @@ function FundingBar({
         />
       </div>
       <div className="text-right">
-        <span className="text-[9px] font-mono text-muted-foreground">{pct}% funded</span>
+        <span className="text-[0.5625rem] font-mono text-muted-foreground">{pct}% funded</span>
       </div>
     </div>
   );
@@ -240,7 +240,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
       >
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 flex-1">
           <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
             {t("humanitarian.title")}
           </span>
         </div>
@@ -272,7 +272,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
       <div className="drag-handle sticky top-0 bg-background/90 backdrop-blur-sm px-3 py-2 border-b border-border/30 flex items-center justify-between cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5">
           <TbHeartHandshake className="h-3.5 w-3.5 text-ua-yellow" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-ua-yellow">
+          <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-ua-yellow">
             {t("humanitarian.title")}
           </span>
         </div>
@@ -316,7 +316,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
         </button>
         {expandedSection === "refugees" && refugees && (
           <div className="px-3 pb-2.5 space-y-1.5">
-            <div className="text-[9px] text-muted-foreground mb-1">
+            <div className="text-[0.5625rem] text-muted-foreground mb-1">
               {t("humanitarian.topHostCountries", { year: refugees.summary.latest_year })}
             </div>
             <BarChart
@@ -329,7 +329,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
               }))}
               maxValue={refugees.countries[0]?.refugees || 1}
             />
-            <div className="text-[9px] text-muted-foreground mt-1">
+            <div className="text-[0.5625rem] text-muted-foreground mt-1">
               {t("humanitarian.acrossCountries", { count: refugees.summary.total_countries })}
             </div>
           </div>
@@ -372,12 +372,12 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
                 )
                 .map((y: { year: number; idps: number; returned_idps: number }) => (
                   <div key={y.year} className="bg-surface-elevated/30 rounded px-2 py-1.5">
-                    <div className="text-[9px] text-muted-foreground">{y.year}</div>
-                    <div className="text-[11px] font-mono text-foreground">
+                    <div className="text-[0.5625rem] text-muted-foreground">{y.year}</div>
+                    <div className="text-[0.6875rem] font-mono text-foreground">
                       {formatNumber(y.idps)}
                     </div>
                     {y.returned_idps > 0 && (
-                      <div className="text-[9px] text-capture">
+                      <div className="text-[0.5625rem] text-capture">
                         ↩ {formatNumber(y.returned_idps)} {t("common.returned")}
                       </div>
                     )}
@@ -404,16 +404,20 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
                 <span className="text-sm font-semibold text-foreground font-mono">
                   {currentCasualties.killed.toLocaleString()}+
                 </span>
-                <span className="text-[9px] text-muted-foreground ml-1">{t("common.killed")}</span>
+                <span className="text-[0.5625rem] text-muted-foreground ml-1">
+                  {t("common.killed")}
+                </span>
               </div>
               <div>
                 <span className="text-sm font-semibold text-foreground font-mono">
                   {currentCasualties.injured.toLocaleString()}+
                 </span>
-                <span className="text-[9px] text-muted-foreground ml-1">{t("common.injured")}</span>
+                <span className="text-[0.5625rem] text-muted-foreground ml-1">
+                  {t("common.injured")}
+                </span>
               </div>
             </div>
-            <div className="text-[9px] text-muted-foreground/60 mt-0.5">
+            <div className="text-[0.5625rem] text-muted-foreground/60 mt-0.5">
               {t("common.source")}: OHCHR
               {casualties ? ` (as of ${casualties.cumulativeAsOfDate.slice(0, 7)})` : ""}
             </div>
@@ -436,12 +440,12 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
                   <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-ua-yellow align-middle" />
                 )}
               </div>
-              <div className="text-[9px] text-muted-foreground">
+              <div className="text-[0.5625rem] text-muted-foreground">
                 {currentFunding
                   ? `${formatUSD(currentFunding.total_funded_usd)} of ${formatUSD(currentFunding.total_required_usd)}`
                   : `${t("common.loading")}`}
               </div>
-              <div className="text-[8px] text-muted-foreground/60">
+              <div className="text-[0.5rem] text-muted-foreground/60">
                 {t("humanitarian.unOchaAppeals")}
               </div>
             </div>
@@ -471,7 +475,7 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
 
       {/* Sources */}
       <div className={cn("px-3 py-1.5 border-t border-border/30", loading && "hidden")}>
-        <div className="flex items-center gap-1.5 text-[8px] text-muted-foreground/50">
+        <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
           <span>{t("common.sources")}:</span>
           <a
             href="https://data.unhcr.org"

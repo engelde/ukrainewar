@@ -100,7 +100,7 @@
     "abandoned": "Покинуто"
   },
   "events": {
-    "title": "Ключові події",
+    "title": "Події",
     "filterByType": "Фільтр за типом",
     "closeSidebar": "Закрити панель",
     "searchPlaceholder": "Пошук подій...",

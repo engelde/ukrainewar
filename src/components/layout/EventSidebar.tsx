@@ -410,7 +410,7 @@ export default function EventSidebar({
                   key={cat.id}
                   onClick={() => toggleFilter(cat.id)}
                   className={cn(
-                    "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                    "flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider transition-colors",
                     isActive
                       ? `bg-sidebar-accent ${cat.color} ring-1 ring-current/30`
                       : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent",
@@ -424,7 +424,7 @@ export default function EventSidebar({
             {activeFilters.size > 0 && (
               <button
                 onClick={() => setActiveFilters(new Set())}
-                className="text-[10px] text-muted-foreground hover:text-sidebar-foreground px-1.5 py-0.5 underline"
+                className="text-[0.625rem] text-muted-foreground hover:text-sidebar-foreground px-1.5 py-0.5 underline"
               >
                 {t("common.clear")}
               </button>
@@ -472,9 +472,9 @@ export default function EventSidebar({
                 <button
                   onClick={() => scrollToYear(year)}
                   className={cn(
-                    "px-1 py-1 rounded text-[10px] font-bold tracking-wider transition-colors writing-mode-vertical",
+                    "px-1 py-1 rounded text-[0.625rem] font-bold tracking-wider transition-colors writing-mode-vertical",
                     isActiveYear
-                      ? "text-ua-yellow bg-ua-yellow/10"
+                      ? "text-ua-blue bg-ua-blue/10"
                       : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-sidebar-accent/50",
                   )}
                   style={{ writingMode: "vertical-lr", textOrientation: "mixed" }}
@@ -498,7 +498,7 @@ export default function EventSidebar({
                             }
                           }}
                           className={cn(
-                            "px-0.5 py-0.5 rounded text-[8px] font-mono transition-colors",
+                            "px-0.5 py-0.5 rounded text-[0.5rem] font-mono transition-colors",
                             hasActive
                               ? "text-ua-blue bg-ua-blue/10"
                               : "text-muted-foreground/40 hover:text-muted-foreground/70",
@@ -567,7 +567,7 @@ export default function EventSidebar({
                                 >
                                   {formatEventDate(event.date)}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground/60 font-mono">
+                                <span className="text-[0.625rem] text-muted-foreground/60 font-mono">
                                   D{getWarDay(event.date)}
                                 </span>
                               </div>
@@ -598,7 +598,7 @@ export default function EventSidebar({
       </div>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <p className="text-[10px] text-muted-foreground text-center py-1">
+        <p className="text-[0.625rem] text-muted-foreground text-center py-1">
           {t("events.footerHint")}
         </p>
       </SidebarFooter>

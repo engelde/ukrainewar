@@ -551,7 +551,7 @@ export default function TimelineScrubber({
             {yearTicksPx.map((tick) => (
               <div key={tick.year} className="absolute top-0" style={{ left: `${tick.px}px` }}>
                 <div className="w-px h-6 bg-border/40" />
-                <span className="absolute top-7 -translate-x-1/2 text-[9px] text-muted-foreground/50 whitespace-nowrap">
+                <span className="absolute top-7 -translate-x-1/2 text-[0.5625rem] text-muted-foreground/50 whitespace-nowrap">
                   {tick.year}
                 </span>
               </div>
@@ -581,11 +581,13 @@ export default function TimelineScrubber({
                   side="top"
                   className="max-w-[280px] bg-background/95 backdrop-blur-lg border border-border/60 text-foreground px-3 py-2"
                 >
-                  <p className="text-[11px] font-semibold text-ua-yellow mb-0.5">{event.label}</p>
-                  <p className="text-[10px] text-muted-foreground leading-snug">
+                  <p className="text-[0.6875rem] font-semibold text-ua-yellow mb-0.5">
+                    {event.label}
+                  </p>
+                  <p className="text-[0.625rem] text-muted-foreground leading-snug">
                     {event.description}
                   </p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-1">
+                  <p className="text-[0.5625rem] text-muted-foreground/60 mt-1">
                     {formatDateShort(event.date)}
                   </p>
                 </TooltipContent>
@@ -649,7 +651,7 @@ export default function TimelineScrubber({
               >
                 <span
                   className={cn(
-                    "text-[8px] font-mono tracking-wider leading-none mb-0.5 pl-0.5",
+                    "text-[0.5rem] font-mono tracking-wider leading-none mb-0.5 pl-0.5",
                     isCurrentYear
                       ? "text-ua-blue"
                       : "text-muted-foreground/40 group-hover:text-muted-foreground/60",
