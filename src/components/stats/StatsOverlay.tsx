@@ -336,7 +336,7 @@ export default function StatsOverlay({
                 </div>
               );
             })}
-            <div className="px-3 py-1.5 border-t border-border/30">
+            <div className="drag-handle px-3 py-1.5 border-t border-border/30 cursor-grab active:cursor-grabbing">
               <a
                 href="https://www.mil.gov.ua"
                 target="_blank"

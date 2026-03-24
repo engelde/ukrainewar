@@ -297,7 +297,7 @@ function InfrastructurePanelInner({ isOpen, onToggle, timelineDate }: Infrastruc
       </div>
 
       {/* Source */}
-      <div className="px-3 py-1.5 border-t border-border/20">
+      <div className="drag-handle px-3 py-1.5 border-t border-border/20 cursor-grab active:cursor-grabbing">
         <p className="text-[0.5rem] text-muted-foreground/60 text-center">
           Sources: IAEA, Energoatom, OCHA, open-source intelligence
         </p>

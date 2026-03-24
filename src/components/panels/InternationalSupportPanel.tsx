@@ -280,7 +280,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
       </div>
 
       {/* Source footer */}
-      <div className="px-3 py-1.5 border-t border-border/30">
+      <div className="drag-handle px-3 py-1.5 border-t border-border/30 cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
           <span>Sources:</span>
           <a

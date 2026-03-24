@@ -2609,31 +2609,22 @@ export default function MapView({
     layers.alliance,
   ]);
 
-  // Update territory when timeline date changes (throttled — leading + trailing edge)
-  // Fires immediately on first change, then at most once per interval while changes keep coming
-  const territoryThrottleRef = useRef<NodeJS.Timeout | null>(null);
-  const territoryPendingRef = useRef(false);
+  // Update territory when timeline date changes
+  // loadTerritoryData handles deduplication (lastTerritoryFetchRef) and abort (territoryAbortRef)
   useEffect(() => {
     if (!map.current || !loaded) return;
+    const m = map.current;
 
-    const fire = () => {
-      territoryPendingRef.current = false;
-      if (map.current?.isStyleLoaded()) {
-        loadTerritoryDataRef.current(map.current);
-      }
-    };
-
-    if (!territoryThrottleRef.current) {
-      // Leading edge — fire immediately
-      fire();
-      territoryThrottleRef.current = setTimeout(() => {
-        territoryThrottleRef.current = null;
-        // Trailing edge — fire again if changes came in during the wait
-        if (territoryPendingRef.current) fire();
-      }, 500);
+    if (m.isStyleLoaded()) {
+      loadTerritoryDataRef.current(m);
     } else {
-      // Already throttled — mark pending for trailing edge
-      territoryPendingRef.current = true;
+      const onIdle = () => {
+        if (map.current) loadTerritoryDataRef.current(map.current);
+      };
+      m.once("idle", onIdle);
+      return () => {
+        m.off("idle", onIdle);
+      };
     }
   }, [loaded, territoryDate]);
 

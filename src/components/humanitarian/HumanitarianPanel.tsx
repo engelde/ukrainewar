@@ -474,7 +474,12 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
       </div>
 
       {/* Sources */}
-      <div className={cn("px-3 py-1.5 border-t border-border/30", loading && "hidden")}>
+      <div
+        className={cn(
+          "drag-handle px-3 py-1.5 border-t border-border/30 cursor-grab active:cursor-grabbing",
+          loading && "hidden",
+        )}
+      >
         <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
           <span>{t("common.sources")}:</span>
           <a
