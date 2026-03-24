@@ -137,7 +137,7 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
     else if (type === "Humanitarian") totalHumanitarian += val;
   }
 
-  // Top weapons
+  // Top weapons (legacy field)
   const weaponCounts: Record<string, number> = {};
   for (const r of mainData) {
     if (
@@ -153,6 +153,109 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
     .map(([name, count]) => ({ name, count: Math.round(count) }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 15);
+
+  // Normalized weapon categories
+  const CATEGORY_MAP: Record<string, string> = {
+    "heavy weapon": "Heavy Weapons",
+    "ammunition for heavy weapon": "Heavy Weapon Ammo",
+    "aviation and drones": "Aviation & Drones",
+    "portable defence system": "Portable Defense",
+    "ammunition for portable defence system": "Portable Defense Ammo",
+    "military equipment": "Military Equipment",
+    "light armaments & infantry": "Light Arms & Infantry",
+    "ammunition for light infantry": "Small Arms Ammo",
+    ammunition: "Ammunition",
+    "funding, training, services": "Training & Services",
+    missile: "Missiles",
+  };
+  function normalizeCategory(raw: string): string | null {
+    return CATEGORY_MAP[(raw || "").trim().toLowerCase()] || null;
+  }
+
+  const milRows = mainData.filter(
+    (r) => ((r.aid_type_general as string) || "").trim() === "Military",
+  );
+
+  const catBuckets: Record<string, { valueEUR: number; records: number }> = {};
+  for (const r of milRows) {
+    const cat = normalizeCategory(r.item_type as string);
+    if (!cat) continue;
+    if (!catBuckets[cat]) catBuckets[cat] = { valueEUR: 0, records: 0 };
+    catBuckets[cat].valueEUR += Number(r.tot_sub_activity_value_EUR) || 0;
+    catBuckets[cat].records++;
+  }
+  const weaponsByCategory = Object.entries(catBuckets)
+    .map(([name, d]) => ({ name, valueEUR: round(d.valueEUR / 1e9), records: d.records }))
+    .sort((a, b) => b.valueEUR - a.valueEUR);
+
+  const hwRows = milRows.filter((r) => {
+    const t = ((r.item_type as string) || "").trim().toLowerCase();
+    return t.includes("heavy weapon") || t.includes("aviation") || t.includes("portable defence");
+  });
+  const systemBuckets: Record<
+    string,
+    {
+      valueEUR: number;
+      delivered: number;
+      pledged: number;
+      donors: string[];
+      nameVotes: Record<string, number>;
+    }
+  > = {};
+  for (const r of hwRows) {
+    const item = ((r.item as string) || "").trim();
+    if (!item || item === ".") continue;
+    const key = item.toLowerCase();
+    const val = Number(r.tot_sub_activity_value_EUR) || 0;
+    const deliv = Number(r.item_numb_deliv);
+    const pledged = Number(r.item_numb);
+    const donor = ((r.donor as string) || "").trim();
+    if (!systemBuckets[key])
+      systemBuckets[key] = { valueEUR: 0, delivered: 0, pledged: 0, donors: [], nameVotes: {} };
+    systemBuckets[key].valueEUR += val;
+    systemBuckets[key].nameVotes[item] = (systemBuckets[key].nameVotes[item] || 0) + 1;
+    if (!Number.isNaN(deliv) && deliv > 0) systemBuckets[key].delivered += deliv;
+    if (!Number.isNaN(pledged) && pledged > 0) systemBuckets[key].pledged += pledged;
+    if (!systemBuckets[key].donors.includes(donor)) systemBuckets[key].donors.push(donor);
+  }
+  const notableWeapons = Object.entries(systemBuckets)
+    .filter(([, d]) => d.valueEUR > 500_000_000)
+    .map(([, d]) => {
+      const displayName = Object.entries(d.nameVotes).sort((a, b) => b[1] - a[1])[0][0];
+      return {
+        name: displayName,
+        valueEUR: round(d.valueEUR / 1e9),
+        delivered: Math.round(d.delivered),
+        pledged: Math.round(d.pledged),
+        donors: d.donors.slice(0, 4),
+      };
+    })
+    .sort((a, b) => b.valueEUR - a.valueEUR)
+    .slice(0, 20);
+
+  const donorWeaponBuckets: Record<string, { total: number; categories: Record<string, number> }> =
+    {};
+  for (const r of milRows) {
+    const donor = ((r.donor as string) || "").trim();
+    const cat = normalizeCategory(r.item_type as string);
+    const val = Number(r.tot_sub_activity_value_EUR) || 0;
+    if (!donorWeaponBuckets[donor]) donorWeaponBuckets[donor] = { total: 0, categories: {} };
+    donorWeaponBuckets[donor].total += val;
+    if (cat)
+      donorWeaponBuckets[donor].categories[cat] =
+        (donorWeaponBuckets[donor].categories[cat] || 0) + val;
+  }
+  const weaponsByDonor = Object.entries(donorWeaponBuckets)
+    .sort((a, b) => b[1].total - a[1].total)
+    .slice(0, 10)
+    .map(([donor, d]) => ({
+      donor,
+      totalEUR: round(d.total / 1e9),
+      categories: Object.entries(d.categories)
+        .map(([name, val]) => ({ name, valueEUR: round(val / 1e9) }))
+        .sort((a, b) => b.valueEUR - a.valueEUR)
+        .slice(0, 5),
+    }));
 
   // Cumulative
   const cumulative: Record<string, unknown>[] = [];
@@ -188,6 +291,9 @@ async function processKielXLSX(): Promise<Record<string, unknown>> {
     byMonth,
     cumulative,
     topWeapons,
+    weaponsByCategory,
+    notableWeapons,
+    weaponsByDonor,
     source: {
       name: "Kiel Institute Ukraine Support Tracker",
       url: "https://www.kielinstitut.de/topics/war-against-ukraine/ukraine-support-tracker/",

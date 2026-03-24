@@ -125,7 +125,11 @@
     "financial": "Фінансова",
     "humanitarian": "Гуманітарна",
     "topDonors": "Топ донорів",
-    "monthlyTrend": "Щомісячний тренд"
+    "monthlyTrend": "Щомісячний тренд",
+    "weaponCategories": "Категорії озброєнь",
+    "notableSystems": "Основні системи",
+    "delivered": "доставлено",
+    "pledged": "обіцяно"
   },
   "humanitarian": {
     "title": "Гуманітарна ситуація",

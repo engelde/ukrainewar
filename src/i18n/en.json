@@ -125,7 +125,11 @@
     "financial": "Financial",
     "humanitarian": "Humanitarian",
     "topDonors": "Top Donors",
-    "monthlyTrend": "Monthly Trend"
+    "monthlyTrend": "Monthly Trend",
+    "weaponCategories": "Weapon Categories",
+    "notableSystems": "Notable Systems",
+    "delivered": "delivered",
+    "pledged": "pledged"
   },
   "humanitarian": {
     "title": "Humanitarian",

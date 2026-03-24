@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState } from "react";
+import { GiMissileLauncher } from "react-icons/gi";
 import {
   TbBuildingBank,
   TbChevronDown,
@@ -13,6 +14,20 @@ import { AnimatedCounter } from "@/components/stats/AnimatedCounter";
 import { PanelSkeleton } from "@/components/ui/PanelSkeleton";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+
+interface WeaponCategory {
+  name: string;
+  valueEUR: number;
+  records: number;
+}
+
+interface NotableWeapon {
+  name: string;
+  valueEUR: number;
+  delivered: number;
+  pledged: number;
+  donors: string[];
+}
 
 interface SpendingData {
   lastUpdated: string;
@@ -49,6 +64,13 @@ interface SpendingData {
     total: number;
   }[];
   topWeapons: { name: string; count: number }[];
+  weaponsByCategory?: WeaponCategory[];
+  notableWeapons?: NotableWeapon[];
+  weaponsByDonor?: {
+    donor: string;
+    totalEUR: number;
+    categories: { name: string; valueEUR: number }[];
+  }[];
   source: { name: string; url: string; release: string };
 }
 
@@ -135,6 +157,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
           </span>
         </div>
         <button
+          type="button"
           onClick={onToggle}
           aria-label="Expand spending panel"
           className="px-2 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -167,6 +190,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
           </span>
         </div>
         <button
+          type="button"
           onClick={onToggle}
           aria-label="Close spending panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
@@ -226,6 +250,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
           {/* Top Donors (expandable) */}
           <div>
             <button
+              type="button"
               onClick={() => setExpandedSection(expandedSection === "donors" ? null : "donors")}
               className="flex items-center gap-1 w-full text-left"
             >
@@ -266,6 +291,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
           {data.byMonth.length > 0 && (
             <div>
               <button
+                type="button"
                 onClick={() => setExpandedSection(expandedSection === "trend" ? null : "trend")}
                 className="flex items-center gap-1 w-full text-left"
               >
@@ -281,6 +307,65 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
               {expandedSection === "trend" && (
                 <div className="mt-1.5">
                   <MiniBarChart months={displayMonths} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Weapon Categories */}
+          {data.weaponsByCategory && data.weaponsByCategory.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setExpandedSection(expandedSection === "weapons" ? null : "weapons")}
+                className="flex items-center gap-1 w-full text-left"
+              >
+                {expandedSection === "weapons" ? (
+                  <TbChevronUp className="h-2.5 w-2.5 text-muted-foreground" />
+                ) : (
+                  <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
+                )}
+                <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
+                  {t("spending.weaponCategories")}
+                </span>
+              </button>
+              {expandedSection === "weapons" && (
+                <div className="mt-1.5 space-y-1">
+                  {data.weaponsByCategory.map((cat) => (
+                    <WeaponCategoryRow
+                      key={cat.name}
+                      name={cat.name}
+                      valueEUR={cat.valueEUR}
+                      maxValueEUR={data.weaponsByCategory![0].valueEUR}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notable Systems */}
+          {data.notableWeapons && data.notableWeapons.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setExpandedSection(expandedSection === "systems" ? null : "systems")}
+                className="flex items-center gap-1 w-full text-left"
+              >
+                {expandedSection === "systems" ? (
+                  <TbChevronUp className="h-2.5 w-2.5 text-muted-foreground" />
+                ) : (
+                  <TbChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
+                )}
+                <span className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider">
+                  {t("spending.notableSystems")}
+                </span>
+              </button>
+              {expandedSection === "systems" && (
+                <div className="mt-1.5 space-y-1.5">
+                  {data.notableWeapons.map((w) => (
+                    <NotableWeaponRow key={w.name} weapon={w} />
+                  ))}
                 </div>
               )}
             </div>
@@ -380,6 +465,101 @@ function MiniBarChart({ months }: { months: SpendingData["byMonth"] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "Heavy Weapons": "bg-destruction/70",
+  "Heavy Weapon Ammo": "bg-destruction/40",
+  "Aviation & Drones": "bg-ua-blue/60",
+  "Portable Defense": "bg-amber-500/60",
+  "Portable Defense Ammo": "bg-amber-500/35",
+  "Military Equipment": "bg-slate-400/50",
+  "Light Arms & Infantry": "bg-emerald-500/50",
+  "Small Arms Ammo": "bg-emerald-500/30",
+  Ammunition: "bg-orange-400/50",
+  "Training & Services": "bg-violet-400/50",
+  Missiles: "bg-rose-400/60",
+};
+
+function WeaponCategoryRow({
+  name,
+  valueEUR,
+  maxValueEUR,
+}: {
+  name: string;
+  valueEUR: number;
+  maxValueEUR: number;
+}) {
+  const pct = maxValueEUR > 0 ? (valueEUR / maxValueEUR) * 100 : 0;
+  const color = CATEGORY_COLORS[name] || "bg-muted-foreground/30";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[0.5625rem] text-muted-foreground w-[4.5rem] truncate text-right leading-tight">
+        {name}
+      </span>
+      <div className="flex-1 h-2 bg-surface-elevated/50 rounded-sm overflow-hidden">
+        <div
+          className={cn("h-full rounded-sm transition-all duration-500", color)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-[0.5625rem] text-foreground/70 w-10 text-right font-mono tabular-nums">
+        {formatEUR(valueEUR)}
+      </span>
+    </div>
+  );
+}
+
+function formatDeliveryCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return String(n);
+}
+
+function NotableWeaponRow({ weapon }: { weapon: NotableWeapon }) {
+  const delivPct =
+    weapon.pledged > 0 ? Math.min((weapon.delivered / weapon.pledged) * 100, 100) : 0;
+  const hasDelivery = weapon.delivered > 0 || weapon.pledged > 0;
+  return (
+    <div className="rounded bg-surface-elevated/30 px-2 py-1.5">
+      <div className="flex items-start gap-1.5">
+        <GiMissileLauncher className="h-3 w-3 text-destruction/70 mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-baseline gap-1">
+            <span className="text-[0.5625rem] font-medium text-foreground/90 truncate leading-tight">
+              {weapon.name}
+            </span>
+            <span className="text-[0.5rem] text-foreground/60 font-mono tabular-nums shrink-0">
+              {formatEUR(weapon.valueEUR)}
+            </span>
+          </div>
+          {hasDelivery && (
+            <div className="mt-1">
+              <div className="h-1 bg-surface-elevated/80 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500/60 rounded-full transition-all duration-500"
+                  style={{ width: `${delivPct}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-0.5">
+                <span className="text-[0.5rem] text-muted-foreground/70">
+                  {formatDeliveryCount(weapon.delivered)} {t("spending.delivered")}
+                </span>
+                {weapon.pledged > 0 && (
+                  <span className="text-[0.5rem] text-muted-foreground/50">
+                    {formatDeliveryCount(weapon.pledged)} {t("spending.pledged")}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="text-[0.5rem] text-muted-foreground/50 mt-0.5 truncate">
+            {weapon.donors.join(", ")}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
