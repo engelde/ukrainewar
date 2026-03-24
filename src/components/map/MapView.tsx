@@ -21,7 +21,6 @@ import { t } from "@/i18n";
 import { MAP_CENTER, MAP_STYLE, MAP_ZOOM } from "@/lib/constants";
 import type { EquipmentMarker, MapLayers } from "@/lib/types";
 import { formatDateDisplay, formatISODate } from "@/lib/utils";
-import MapLegend from "./MapLegend";
 import {
   battleGeoJSON,
   findFirstSymbolLayer,
@@ -1545,7 +1544,7 @@ export default function MapView({
         id: "gas-pipeline-lines",
         type: "line",
         source: "gas-pipelines",
-        filter: ["!=", ["get", "status"], "shutdown"],
+        filter: ["all", ["!=", ["get", "status"], "shutdown"], ["!=", ["get", "id"], "turkstream"]],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": ["case", ["==", ["get", "status"], "destroyed"], "#ef4444", "#a855f7"],
@@ -1554,12 +1553,12 @@ export default function MapView({
         },
       });
 
-      // Gas pipeline lines — shutdown (dashed)
+      // Gas pipeline lines — shutdown + TurkStream (gray dashed)
       mapInstance.addLayer({
         id: "gas-pipeline-lines-shutdown",
         type: "line",
         source: "gas-pipelines",
-        filter: ["==", ["get", "status"], "shutdown"],
+        filter: ["any", ["==", ["get", "status"], "shutdown"], ["==", ["get", "id"], "turkstream"]],
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": "#6b7280",
@@ -2872,7 +2871,6 @@ export default function MapView({
         className="fixed inset-0 z-0"
         style={{ width: "100%", height: "100%" }}
       />
-      {loaded && <MapLegend />}
       {!loaded && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-3">

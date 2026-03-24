@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TbRefresh } from "react-icons/tb";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { WarEvent } from "@/data/events";
@@ -38,6 +39,7 @@ interface DayTrackerProps {
   territoryDate?: string | null;
   dates?: WarEvent[];
   onDateChange?: (date: string) => void;
+  onReset?: () => void;
   panelToggles?: PanelToggles;
   panelStates?: PanelStates;
   layers?: MapLayers;
@@ -48,6 +50,7 @@ export default function DayTracker({
   warDay,
   territoryDate,
   onDateChange,
+  onReset,
   panelToggles,
   panelStates,
   layers,
@@ -67,6 +70,22 @@ export default function DayTracker({
 
   return (
     <div className="fixed top-3 right-4 z-40 sm:top-4 sm:right-6 flex items-center gap-1.5">
+      {onReset && (
+        <button
+          onClick={onReset}
+          aria-label="Reset view"
+          title={t("timeline.resetTooltip")}
+          className={cn(
+            "flex items-center gap-1 rounded-md px-2 py-1 cursor-pointer",
+            "text-[10px] font-semibold uppercase tracking-wider",
+            "transition-colors group",
+            "text-muted-foreground/70 hover:text-muted-foreground",
+          )}
+        >
+          <TbRefresh className="h-3 w-3 group-hover:rotate-180 transition-transform duration-300" />
+          <span className="hidden lg:inline">{t("common.reset")}</span>
+        </button>
+      )}
       <OptionsPopup
         panelToggles={panelToggles}
         panelStates={panelStates}

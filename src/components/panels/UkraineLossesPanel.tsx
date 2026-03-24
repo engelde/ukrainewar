@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { TbAlertTriangle, TbChevronDown, TbInfoCircle, TbUserMinus, TbX } from "react-icons/tb";
+import { TbAlertTriangle, TbChevronDown, TbInfoCircle, TbUserMinus } from "react-icons/tb";
 import { getUkraineLossSummary } from "@/data/ukraine-losses";
 import { t } from "@/i18n";
 import { cn, formatDateDisplay } from "@/lib/utils";
@@ -78,7 +78,7 @@ function UkraineLossesPanelInner({ isOpen, onToggle }: UkraineLossesPanelProps) 
           aria-label="Close Ukrainian losses panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          <TbX className="h-3.5 w-3.5" />
+          <TbChevronDown className="h-3.5 w-3.5" />
         </button>
       </div>
 

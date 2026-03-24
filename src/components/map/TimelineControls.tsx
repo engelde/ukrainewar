@@ -6,7 +6,6 @@ import {
   TbPlayerPlayFilled,
   TbPlayerSkipBackFilled,
   TbPlayerSkipForwardFilled,
-  TbRefresh,
   TbTimeline,
 } from "react-icons/tb";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,7 +27,6 @@ export interface TimelineControlsProps {
   availableYears: string[];
   showPlayHint: boolean;
   eventsOpen?: boolean;
-  isHistorical?: boolean;
   onTogglePlay: () => void;
   onJumpToStart: () => void;
   onJumpToEnd: () => void;
@@ -40,7 +38,6 @@ export interface TimelineControlsProps {
   onCycleSpeed: () => void;
   onJumpToYear: (year: string) => void;
   onToggleEvents?: () => void;
-  onReset?: () => void;
 }
 
 export function TimelineControls({
@@ -56,7 +53,6 @@ export function TimelineControls({
   availableYears,
   showPlayHint,
   eventsOpen,
-  isHistorical,
   onTogglePlay,
   onJumpToStart,
   onJumpToEnd,
@@ -68,7 +64,6 @@ export function TimelineControls({
   onCycleSpeed,
   onJumpToYear,
   onToggleEvents,
-  onReset,
 }: TimelineControlsProps) {
   return (
     <div className="flex items-center gap-2.5 px-4 pt-3 sm:gap-3">
@@ -235,24 +230,6 @@ export function TimelineControls({
         >
           <TbFlag className="h-3 w-3" />
           <span>{t("timeline.events")}</span>
-        </button>
-      )}
-
-      {/* Reset button */}
-      {isHistorical && onReset && (
-        <button
-          onClick={onReset}
-          aria-label="Reset view"
-          className={cn(
-            "flex h-7 items-center gap-1.5 rounded-md px-2.5 transition-colors",
-            "text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
-            "hover:text-foreground hover:bg-surface-elevated",
-            "group",
-          )}
-          title={t("timeline.resetTooltip")}
-        >
-          <TbRefresh className="h-3 w-3 group-hover:rotate-180 transition-transform duration-300" />
-          <span className="hidden sm:inline">{t("common.reset")}</span>
         </button>
       )}
     </div>

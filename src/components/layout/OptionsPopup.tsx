@@ -148,18 +148,14 @@ export default function OptionsPopup({
       <button
         onClick={() => setOpen((p) => !p)}
         className={cn(
-          "flex items-center gap-1.5 rounded-lg px-3 py-2 cursor-pointer",
-          "bg-background/70 backdrop-blur-xl",
-          "border",
-          "text-xs font-bold uppercase tracking-wider",
+          "flex items-center gap-1 rounded-md px-2 py-1 cursor-pointer",
+          "text-[10px] font-semibold uppercase tracking-wider",
           "transition-colors",
-          open
-            ? "border-ua-blue/50 text-ua-blue"
-            : "border-border/40 text-muted-foreground hover:text-foreground hover:border-border/60",
+          open ? "text-ua-blue" : "text-muted-foreground/70 hover:text-muted-foreground",
         )}
       >
-        <TbSettings className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Options</span>
+        <TbSettings className="h-3 w-3" />
+        <span className="hidden lg:inline">Options</span>
       </button>
 
       {open && (

@@ -664,6 +664,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           territoryDate={territoryDate}
           dates={events}
           onDateChange={handleTimelineDateChange}
+          onReset={handleReset}
           layers={layers}
           onToggleLayer={handleToggleLayer}
           panelToggles={{
@@ -773,8 +774,6 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           externalDate={territoryDate}
           eventsOpen={panelVisibility.events && sidebarOpen}
           onToggleEvents={handleToggleSidebar}
-          onReset={handleReset}
-          isHistorical={isViewingPast}
           dockSlot={
             <>
               {panelVisibility.russianLosses && statsCollapsed && displayData && (

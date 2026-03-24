@@ -11,7 +11,6 @@ import {
   TbShield,
   TbSword,
   TbUsers,
-  TbX,
 } from "react-icons/tb";
 import {
   type CountrySupport,
@@ -223,7 +222,7 @@ function InternationalSupportPanelInner({ isOpen, onToggle }: InternationalSuppo
           aria-label="Close international support panel"
           className="text-muted-foreground hover:text-foreground transition-colors"
         >
-          <TbX className="h-3.5 w-3.5" />
+          <TbChevronDown className="h-3.5 w-3.5" />
         </button>
       </div>
 

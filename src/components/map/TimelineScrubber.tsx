@@ -23,8 +23,6 @@ interface TimelineScrubberProps {
   dockSlot?: React.ReactNode;
   eventsOpen?: boolean;
   onToggleEvents?: () => void;
-  onReset?: () => void;
-  isHistorical?: boolean;
 }
 
 export default function TimelineScrubber({
@@ -35,8 +33,6 @@ export default function TimelineScrubber({
   dockSlot,
   eventsOpen,
   onToggleEvents,
-  onReset,
-  isHistorical,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -512,7 +508,6 @@ export default function TimelineScrubber({
           availableYears={availableYears}
           showPlayHint={showPlayHint}
           eventsOpen={eventsOpen}
-          isHistorical={isHistorical}
           onTogglePlay={togglePlay}
           onJumpToStart={jumpToStart}
           onJumpToEnd={jumpToEnd}
@@ -524,7 +519,6 @@ export default function TimelineScrubber({
           onCycleSpeed={cycleSpeed}
           onJumpToYear={handleJumpToYear}
           onToggleEvents={onToggleEvents}
-          onReset={onReset}
         />
 
         {/* Scrollable timeline */}
