@@ -4,50 +4,10 @@ import { INTERNATIONAL_SUPPORT } from "@/data/international-support";
 const WORLD_GEOJSON_URL =
   "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
 
-// ISO alpha-3 → alpha-2 mapping for countries in our support data
-const ISO3_TO_ISO2: Record<string, string> = {
-  USA: "US",
-  GBR: "GB",
-  DEU: "DE",
-  FRA: "FR",
-  CAN: "CA",
-  POL: "PL",
-  AUS: "AU",
-  JPN: "JP",
-  NLD: "NL",
-  NOR: "NO",
-  ITA: "IT",
-  ESP: "ES",
-  SWE: "SE",
-  DNK: "DK",
-  FIN: "FI",
-  BEL: "BE",
-  CZE: "CZ",
-  PRT: "PT",
-  GRC: "GR",
-  ROU: "RO",
-  BGR: "BG",
-  HRV: "HR",
-  EST: "EE",
-  LVA: "LV",
-  LTU: "LT",
-  SVK: "SK",
-  IRL: "IE",
-  NZL: "NZ",
-  KOR: "KR",
-  CHE: "CH",
-  RUS: "RU",
-  CHN: "CN",
-  BLR: "BY",
-  IRN: "IR",
-  PRK: "KP",
-  SYR: "SY",
-  CUB: "CU",
-  NIC: "NI",
-  ERI: "ER",
-  MLI: "ML",
-  MMR: "MM",
-  UKR: "UA",
+// Fallback: country name → ISO alpha-2 for entries missing codes in the GeoJSON
+const NAME_TO_ISO2: Record<string, string> = {
+  France: "FR",
+  Norway: "NO",
 };
 
 export async function GET() {
@@ -69,8 +29,11 @@ export async function GET() {
     const features: GeoJSON.Feature[] = [];
 
     for (const feature of world.features) {
-      const iso3 = (feature.properties?.["ISO_A3"] ?? feature.properties?.["ISO3"]) as string;
-      const iso2 = ISO3_TO_ISO2[iso3];
+      let iso2 = (feature.properties?.["ISO3166-1-Alpha-2"] ?? "") as string;
+      if (!iso2 || iso2 === "-99") {
+        const name = (feature.properties?.name ?? "") as string;
+        iso2 = NAME_TO_ISO2[name] ?? "";
+      }
       if (!iso2) continue;
 
       // Skip Ukraine and Russia themselves — they're already rendered differently
