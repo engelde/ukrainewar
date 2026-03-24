@@ -7,9 +7,9 @@ import DayTracker from "@/components/layout/day-tracker";
 import EventSidebar from "@/components/layout/event-sidebar";
 import Header, { Footer } from "@/components/layout/header";
 import DetailPanel from "@/components/map/detail-panel";
-import TimelineScrubber from "@/components/map/timeline-scrubber";
+import TimelineScrubber from "@/components/timeline/timeline-scrubber";
 
-const HumanitarianPanel = dynamic(() => import("@/components/humanitarian/humanitarian-panel"), {
+const HumanitarianPanel = dynamic(() => import("@/components/panels/humanitarian-panel"), {
   ssr: false,
 });
 const AirDefensePanel = dynamic(() => import("@/components/panels/air-defense-panel"), {
@@ -27,7 +27,7 @@ const SanctionsPanel = dynamic(() => import("@/components/panels/sanctions-panel
 const InfrastructurePanel = dynamic(() => import("@/components/panels/infrastructure-panel"), {
   ssr: false,
 });
-const SpendingPanel = dynamic(() => import("@/components/spending/spending-panel"), { ssr: false });
+const SpendingPanel = dynamic(() => import("@/components/panels/spending-panel"), { ssr: false });
 
 import StatsOverlay from "@/components/stats/stats-overlay";
 import DraggablePanel from "@/components/ui/draggable-panel";
