@@ -13,7 +13,7 @@
     "build:worker": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "deploy:cron": "cd workers/data-refresh && npx wrangler deploy",
+    "deploy:cron": "cd workers/data-refresh && npx wrangler deploy --config wrangler.toml",
     "data:kiel": "node scripts/process-kiel.mjs",
     "data:acled": "node scripts/process-acled-hdx.mjs",
     "data:viina": "node scripts/process-viina.mjs",

@@ -1,0 +1,51 @@
+name: Warm Cache
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Deploy]
+    types: [completed]
+
+jobs:
+  warm:
+    name: Warm production caches
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Warm API caches
+        run: |
+          BASE_URL="https://ukrainewar.app"
+          ENDPOINTS=(
+            "/api/acled/regional"
+            "/api/events"
+            "/api/spending"
+            "/api/casualties"
+            "/api/casualties/history"
+            "/api/casualties/daily-totals"
+            "/api/losses/stats"
+            "/api/losses/recent"
+            "/api/losses/trend"
+            "/api/humanitarian/refugees"
+            "/api/humanitarian/funding"
+            "/api/territory"
+            "/api/firms"
+            "/api/energy"
+            "/api/energy/gas"
+          )
+          for ep in "${ENDPOINTS[@]}"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}${ep}")
+            echo "${ep}: ${STATUS}"
+            sleep 1
+          done
+      - name: Trigger ACLED refresh
+        run: |
+          curl -s -o /dev/null -w "ACLED refresh: %{http_code}\n" \
+            -X POST "https://ukrainewar.app/api/cache/refresh" \
+            -H "Authorization: Bearer ${{ secrets.CACHE_REFRESH_SECRET }}" \
+            -H "Content-Type: application/json"
+      - name: Trigger FIRMS pre-warm
+        run: |
+          curl -s -o /dev/null -w "FIRMS pre-warm: %{http_code}\n" \
+            -X POST "https://ukrainewar.app/api/cache/refresh-firms" \
+            -H "Authorization: Bearer ${{ secrets.CACHE_REFRESH_SECRET }}" \
+            -H "Content-Type: application/json"
