@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="rounded">
+      <rect width="512" height="512" rx="102" ry="102"/>
+    </clipPath>
+    <clipPath id="bottomRight">
+      <polygon points="512,0 512,512 0,512"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#rounded)">
+    <!-- Ukraine flag (top-left half) -->
+    <rect x="0" y="0" width="512" height="256" fill="#005cbd"/>
+    <rect x="0" y="256" width="512" height="256" fill="#ffc928"/>
+    <!-- Russian flag (bottom-right triangle) -->
+    <g clip-path="url(#bottomRight)">
+      <rect x="0" y="0" width="512" height="171" fill="#ffffff"/>
+      <rect x="0" y="171" width="512" height="170" fill="#0039a6"/>
+      <rect x="0" y="341" width="512" height="171" fill="#d52b1e"/>
+    </g>
+    <!-- Subtle diagonal line -->
+    <line x1="512" y1="0" x2="0" y2="512" stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>
+  </g>
+</svg>
