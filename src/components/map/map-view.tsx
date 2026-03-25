@@ -6,6 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Battle } from "@/data/battles";
 import type { BelarusBase } from "@/data/belarus-bases";
 import type { GasPipeline, GasStation, PowerPlant } from "@/data/energy-assets";
+import type { WarEvent } from "@/data/events";
 import type { Bridge, Dam, Port } from "@/data/infrastructure";
 import { getStatusAtDate } from "@/data/infrastructure";
 import { getAttackLocations, MISSILE_ATTACKS } from "@/data/missile-attacks";
@@ -79,6 +80,7 @@ interface MapViewProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   activeEvent?: { label: string; description: string; lat: number; lng: number } | null;
+  keyEvents?: WarEvent[];
   nuclearPlants?: NuclearPlant[];
   dams?: Dam[];
   bridges?: Bridge[];
@@ -104,6 +106,7 @@ export default function MapView({
   initialCenter,
   initialZoom,
   activeEvent,
+  keyEvents = [],
   nuclearPlants = [],
   dams = [],
   bridges = [],
@@ -136,6 +139,7 @@ export default function MapView({
   const heatmapPopupRef = useRef<maplibregl.Popup | null>(null);
   const attackPopupRef = useRef<maplibregl.Popup | null>(null);
   const buildupPopupRef = useRef<maplibregl.Popup | null>(null);
+  const keyEventPopupRef = useRef<maplibregl.Popup | null>(null);
   const eventMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMoveEndRef = useRef(onMoveEnd);
   useEffect(() => {
@@ -2435,6 +2439,7 @@ export default function MapView({
             : "";
 
           buildupPopupRef.current?.remove();
+          keyEventPopupRef.current?.remove();
           buildupPopupRef.current = new maplibregl.Popup({
             closeOnClick: true,
             maxWidth: "280px",
@@ -2720,6 +2725,74 @@ export default function MapView({
         loadAttackMarkers(map.current);
         loadBuildupLayer(map.current);
         ensureAllianceLayers(map.current);
+
+        // ── Key events accumulation layer ──
+        if (!map.current.getSource("key-events")) {
+          map.current.addSource("key-events", {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: [] },
+          });
+
+          // Outer glow
+          map.current.addLayer({
+            id: "key-events-glow",
+            type: "circle",
+            source: "key-events",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 8, 8, 14, 12, 20],
+              "circle-color": "oklch(0.85 0.18 85)",
+              "circle-opacity": 0.15,
+              "circle-blur": 1,
+            },
+          });
+
+          // Inner dot
+          map.current.addLayer({
+            id: "key-events-dots",
+            type: "circle",
+            source: "key-events",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 5, 12, 7],
+              "circle-color": "oklch(0.85 0.18 85)",
+              "circle-opacity": 0.85,
+              "circle-stroke-width": 1.5,
+              "circle-stroke-color": "oklch(0.15 0 0)",
+            },
+          });
+
+          // Hover tooltip for key events
+          map.current.on("mouseenter", "key-events-dots", (e) => {
+            if (!map.current) return;
+            map.current.getCanvas().style.cursor = "pointer";
+            const f = e.features?.[0];
+            if (!f || f.geometry.type !== "Point") return;
+            const { label, description } = f.properties as { label: string; description: string };
+            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+
+            keyEventPopupRef.current?.remove();
+            keyEventPopupRef.current = new maplibregl.Popup({
+              offset: 10,
+              closeButton: false,
+              closeOnClick: false,
+              className: "event-marker-popup",
+            })
+              .setLngLat(coords)
+              .setHTML(
+                `<div style="padding:6px 10px;max-width:220px">
+                  <div style="font-size:0.75rem;font-weight:600;color:oklch(0.85 0.18 85);margin-bottom:2px">${label}</div>
+                  <div style="font-size:0.625rem;color:oklch(0.65 0 0);line-height:1.4">${description}</div>
+                </div>`,
+              )
+              .addTo(map.current);
+          });
+
+          map.current.on("mouseleave", "key-events-dots", () => {
+            if (!map.current) return;
+            map.current.getCanvas().style.cursor = "";
+            keyEventPopupRef.current?.remove();
+            keyEventPopupRef.current = null;
+          });
+        }
 
         // Safety net: retry territory load if source is still empty after 3s
         const m = map.current;
@@ -3132,6 +3205,23 @@ export default function MapView({
       // --- Buildup markers ---
       loadBuildupLayer(m);
 
+      // --- Key curated events (accumulated markers) ---
+      const keyEvtSrc = m.getSource("key-events") as maplibregl.GeoJSONSource | undefined;
+      if (keyEvtSrc) {
+        const eventsWithCoords = keyEvents.filter(
+          (e): e is WarEvent & { lat: number; lng: number } =>
+            e.lat != null && e.lng != null && (!territoryDate || e.date <= territoryDate),
+        );
+        keyEvtSrc.setData({
+          type: "FeatureCollection",
+          features: eventsWithCoords.map((e) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [e.lng, e.lat] },
+            properties: { label: e.label, description: e.description, date: e.date },
+          })),
+        });
+      }
+
       // --- ACLED heatmap ---
       const heatmapSource = m.getSource("acled-heatmap") as maplibregl.GeoJSONSource | undefined;
       if (heatmapSource && acledRegionalRef.current && oblastsRef.current) {
@@ -3208,6 +3298,7 @@ export default function MapView({
     loadBuildupLayer,
     buildInfraFeatures,
     gasPipelines,
+    keyEvents,
   ]);
 
   // ── Thermal layer date update (heavily debounced — 2s) ──

@@ -225,6 +225,7 @@ export default function EventSidebar({
   onClose,
 }: EventSidebarProps) {
   const activeRef = useRef<HTMLButtonElement>(null);
+  const isInitialScrollRef = useRef(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [activeFilters, setActiveFilters] = useState<Set<EventCategory>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
@@ -319,7 +320,13 @@ export default function EventSidebar({
 
   useEffect(() => {
     if (activeRef.current) {
-      activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      // On first render scroll instantly; afterwards animate
+      if (isInitialScrollRef.current) {
+        activeRef.current.scrollIntoView({ behavior: "instant", block: "end" });
+        isInitialScrollRef.current = false;
+      } else {
+        activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
     }
   }, [activeEventDate]);
 

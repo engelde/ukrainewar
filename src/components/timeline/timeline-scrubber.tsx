@@ -378,7 +378,8 @@ export default function TimelineScrubber({
     const viewWidth = container.clientWidth;
 
     if (isInitialScroll.current) {
-      container.scrollLeft = pos - viewWidth * 0.7;
+      // Place the playhead at the right edge so today is fully visible
+      container.scrollLeft = pos - viewWidth + 40;
       isInitialScroll.current = false;
       return;
     }

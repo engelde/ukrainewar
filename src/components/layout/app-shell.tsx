@@ -798,6 +798,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           initialCenter={urlLng != null && urlLat != null ? [urlLng, urlLat] : undefined}
           initialZoom={urlZoom ?? undefined}
           activeEvent={activeMapEvent}
+          keyEvents={events}
         />
         <Header />
         <DayTracker
