@@ -15,19 +15,28 @@ jobs:
       - name: Warm API caches
         run: |
           BASE_URL="https://ukrainewar.app"
+          TODAY=$(date -u +%Y-%m-%d)
+          MONTH=$(date -u +%Y-%m)
           ENDPOINTS=(
             "/api/acled/regional"
+            "/api/alliance"
+            "/api/battles"
             "/api/events"
             "/api/spending"
+            "/api/sanctions"
             "/api/casualties"
             "/api/casualties/history"
             "/api/casualties/daily-totals"
             "/api/losses/stats"
             "/api/losses/recent"
             "/api/losses/trend"
+            "/api/losses/historical?date=${TODAY}"
+            "/api/losses/month?month=${MONTH}"
             "/api/humanitarian/refugees"
             "/api/humanitarian/funding"
+            "/api/humanitarian/civilian-casualties"
             "/api/territory"
+            "/api/territory/dates"
             "/api/firms"
             "/api/energy"
             "/api/energy/gas"
