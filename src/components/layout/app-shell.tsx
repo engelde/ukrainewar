@@ -698,24 +698,30 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     return diff >= 0 ? diff + 1 : diff;
   })();
 
-  // Find the active event for the current date (within 3 days)
+  // Find the active event for the current date — prefer exact match, then closest within 3 days
   // Prefer the explicitly-clicked event when available
   const activeMapEvent = (() => {
     if (clickedEvent) return clickedEvent;
     if (!territoryDate) return null;
     const currentDateNum = parseInt(territoryDate, 10);
+    let best: (typeof events)[number] | null = null;
+    let bestDist = Infinity;
     for (const event of events) {
-      const eventDateNum = parseInt(event.date, 10);
-      if (Math.abs(currentDateNum - eventDateNum) <= 3 && event.lat != null && event.lng != null) {
-        return {
-          label: event.label,
-          description: event.description,
-          lat: event.lat,
-          lng: event.lng,
-        };
+      if (event.lat == null || event.lng == null) continue;
+      const dist = Math.abs(currentDateNum - parseInt(event.date, 10));
+      if (dist <= 3 && dist < bestDist) {
+        best = event;
+        bestDist = dist;
+        if (dist === 0) break; // exact match — no need to keep looking
       }
     }
-    return null;
+    if (!best) return null;
+    return {
+      label: best.label,
+      description: best.description,
+      lat: best.lat!,
+      lng: best.lng!,
+    };
   })();
 
   // Dynamic panel positioning — compute non-overlapping positions for left-side panels
