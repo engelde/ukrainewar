@@ -16,6 +16,16 @@
 			"id": "9d81f7d785254ccd8020f7de87a2a92c"
 		}
 	],
+	"routes": [
+		{
+			"pattern": "ukrainewar.app",
+			"custom_domain": true
+		},
+		{
+			"pattern": "www.ukrainewar.app",
+			"custom_domain": true
+		}
+	],
 	"workers_dev": false,
 	"preview_urls": false
 }
