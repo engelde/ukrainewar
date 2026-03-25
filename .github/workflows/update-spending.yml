@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update:
@@ -24,14 +25,23 @@ jobs:
 
       - run: npx tsx scripts/prebuild-spending.ts
 
-      - name: Commit and push if changed
+      - name: Create PR if data changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/kiel-spending.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
-          else
-            git commit -m "chore: update Kiel spending data"
-            git push
+            exit 0
           fi
+          BRANCH="chore/update-spending-$(date +%Y%m%d)"
+          git checkout -b "$BRANCH"
+          git commit -m "chore: update Kiel spending data"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore: update Kiel spending data" \
+            --body "Automated weekly update of Kiel Institute bilateral aid data." \
+            --base main \
+            --head "$BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
