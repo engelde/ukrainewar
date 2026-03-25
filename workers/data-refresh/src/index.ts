@@ -14,6 +14,8 @@
 interface Env {
   APP_URL: string;
   CACHE_REFRESH_SECRET?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  CLOUDFLARE_ZONE_ID?: string;
 }
 
 // Endpoints hit with GET to warm caches
@@ -135,6 +137,33 @@ export default {
           "Data refresh complete:",
           JSON.stringify(results, null, 2)
         );
+
+        // 4. Purge Cloudflare CDN edge cache so users get fresh warmed data
+        if (env.CACHE_REFRESH_SECRET) {
+          const purgeStart = Date.now();
+          try {
+            const purgeRes = await fetch(`${baseUrl}/api/cache/purge`, {
+              method: "POST",
+              headers: {
+                "User-Agent": "UkraineWarTracker-CronWorker/1.0",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${env.CACHE_REFRESH_SECRET}`,
+              },
+              body: JSON.stringify({ purge_everything: true }),
+            });
+            const purgeBody = (await purgeRes.json()) as {
+              purged: boolean;
+              mode?: string;
+            };
+            console.log(
+              `CDN cache purge: ${purgeBody.purged ? "success" : "failed"} (${purgeBody.mode || "unknown"}) in ${Date.now() - purgeStart}ms`
+            );
+          } catch (err) {
+            console.log(
+              `CDN cache purge error: ${err instanceof Error ? err.message : "unknown"} in ${Date.now() - purgeStart}ms`
+            );
+          }
+        }
       })
     );
   },
