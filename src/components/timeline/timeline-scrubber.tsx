@@ -36,6 +36,10 @@ export default function TimelineScrubber({
   onToggleEvents,
 }: TimelineScrubberProps) {
   const [dates] = useState<string[]>(() => generateDateRange());
+  const warStartIndex = useMemo(() => {
+    const idx = dates.indexOf(WAR_START_DATE);
+    return idx >= 0 ? idx : 0;
+  }, [dates]);
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
     if (initialDate) {
       const allDates = generateDateRange();
@@ -157,7 +161,7 @@ export default function TimelineScrubber({
       if (!prev) {
         // Starting playback
         setCurrentIndex((idx) => {
-          if (idx >= dates.length - 1) return 0; // at end → restart
+          if (idx >= dates.length - 1) return warStartIndex; // at end → loop to war start
           return idx;
         });
         return true;
@@ -232,8 +236,7 @@ export default function TimelineScrubber({
       playIntervalRef.current = setInterval(() => {
         setCurrentIndex((prev) => {
           if (prev >= dates.length - 1) {
-            setIsPlaying(false);
-            return prev;
+            return warStartIndex; // loop back to war start
           }
           return prev + 1;
         });
