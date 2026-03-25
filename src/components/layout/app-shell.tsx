@@ -44,7 +44,7 @@ import { UKRAINE_BASES } from "@/data/ukraine-bases";
 import { useBattles } from "@/hooks/use-battles";
 import { useEvents } from "@/hooks/use-events";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MAP_CENTER, MAP_ZOOM } from "@/lib/constants";
+import { MAP_CENTER, MAP_ZOOM, WAR_START } from "@/lib/constants";
 import type { CasualtyData, EquipmentMarker, MapLayers } from "@/lib/types";
 import { usePanelPositionStore } from "@/stores/panel-position-store";
 
@@ -357,6 +357,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const casualtyAbortRef = useRef<AbortController | null>(null);
 
   const fetchCasualties = useCallback(async (dateToFetch: string) => {
+    // No casualty data exists before the war started
+    if (dateToFetch < WAR_START) {
+      lastFetchedDate.current = dateToFetch;
+      setHistoricalData(null);
+      return;
+    }
     const today = new Date();
     const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
     if (dateToFetch >= todayStr) {
