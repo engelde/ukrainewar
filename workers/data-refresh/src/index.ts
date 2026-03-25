@@ -21,8 +21,11 @@ interface Env {
 // Endpoints hit with GET to warm caches
 const GET_ENDPOINTS = [
   "/api/acled/regional",
+  "/api/alliance",
+  "/api/battles",
   "/api/events",
   "/api/spending",
+  "/api/sanctions",
   "/api/casualties",
   "/api/casualties/history",
   "/api/casualties/daily-totals",
@@ -33,10 +36,22 @@ const GET_ENDPOINTS = [
   "/api/humanitarian/funding",
   "/api/humanitarian/civilian-casualties",
   "/api/territory",
+  "/api/territory/dates",
   "/api/firms",
   "/api/energy",
   "/api/energy/gas",
 ];
+
+/** Date-parameterized endpoints to warm with today's date / current month */
+function getDateEndpoints(): string[] {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  const month = now.toISOString().slice(0, 7); // YYYY-MM
+  return [
+    `/api/losses/historical?date=${today}`,
+    `/api/losses/month?month=${month}`,
+  ];
+}
 
 export default {
   async scheduled(
@@ -76,8 +91,9 @@ export default {
       });
     }
 
-    // 2. Warm remaining endpoints in parallel
-    const tasks = GET_ENDPOINTS.map(async (endpoint) => {
+    // 2. Warm remaining endpoints in parallel (including date-parameterized)
+    const allEndpoints = [...GET_ENDPOINTS, ...getDateEndpoints()];
+    const tasks = allEndpoints.map(async (endpoint) => {
       const start = Date.now();
       try {
         const res = await fetch(`${baseUrl}${endpoint}`, {
@@ -173,7 +189,7 @@ export default {
       JSON.stringify({
         name: "ukrainewar-data-refresh",
         description: "Daily cron worker for warming data caches",
-        endpoints: ["/api/cache/refresh (POST)", "/api/cache/refresh-firms (POST)", ...GET_ENDPOINTS],
+        endpoints: ["/api/cache/refresh (POST)", "/api/cache/refresh-firms (POST)", ...GET_ENDPOINTS, "...date-parameterized losses"],
         schedule: "0 */6 * * * (every 6 hours)",
       }),
       {
