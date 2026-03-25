@@ -1,0 +1,354 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { GiBattleship, GiHelicopter, GiRocket, GiTank } from "react-icons/gi";
+import {
+  TbBomb,
+  TbChevronDown,
+  TbDrone,
+  TbPlane,
+  TbRadar,
+  TbShieldChevron,
+  TbSkull,
+  TbTruck,
+  TbUsers,
+} from "react-icons/tb";
+import { t } from "@/i18n";
+import type { CasualtyData } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import Sparkline from "./sparkline";
+
+interface StatsEntry {
+  key: string;
+  label: string;
+  daily: number;
+  total: number;
+  icon: ReactNode;
+  trendKey: string;
+}
+
+interface TrendData {
+  totalTrend: { date: string; count: number }[];
+  typeTrends: Record<string, { date: string; count: number }[]>;
+}
+
+function mapCasualtyData(data: CasualtyData): StatsEntry[] {
+  const iconClass = "h-4 w-4";
+  return [
+    {
+      key: "personnel",
+      label: t("stats.personnel"),
+      daily: data.militaryPersonnel[0],
+      total: data.militaryPersonnel[1],
+      icon: <TbUsers className={iconClass} />,
+      trendKey: "_total",
+    },
+    {
+      key: "tanks",
+      label: t("stats.tanks"),
+      daily: data.tank[0],
+      total: data.tank[1],
+      icon: <GiTank className={iconClass} />,
+      trendKey: "tanks",
+    },
+    {
+      key: "ifv",
+      label: t("stats.armoredVehicles"),
+      daily: data.armoredCombatVehicle[0],
+      total: data.armoredCombatVehicle[1],
+      icon: <TbShieldChevron className={iconClass} />,
+      trendKey: "ifv",
+    },
+    {
+      key: "artillery",
+      label: t("stats.artillery"),
+      daily: data.artillerySystem[0],
+      total: data.artillerySystem[1],
+      icon: <TbBomb className={iconClass} />,
+      trendKey: "artillery",
+    },
+    {
+      key: "mlrs",
+      label: t("stats.mlrs"),
+      daily: data.mlrs[0],
+      total: data.mlrs[1],
+      icon: <GiRocket className={iconClass} />,
+      trendKey: "mlrs",
+    },
+    {
+      key: "uav",
+      label: t("stats.uavs"),
+      daily: data.uav[0],
+      total: data.uav[1],
+      icon: <TbDrone className={iconClass} />,
+      trendKey: "uav",
+    },
+    {
+      key: "airDefense",
+      label: t("stats.airDefense"),
+      daily: data.airDefenceSystem[0],
+      total: data.airDefenceSystem[1],
+      icon: <TbRadar className={iconClass} />,
+      trendKey: "airDefense",
+    },
+    {
+      key: "jets",
+      label: t("stats.jets"),
+      daily: data.jet[0],
+      total: data.jet[1],
+      icon: <TbPlane className={iconClass} />,
+      trendKey: "jets",
+    },
+    {
+      key: "helicopters",
+      label: t("stats.helicopters"),
+      daily: data.copter[0],
+      total: data.copter[1],
+      icon: <GiHelicopter className={iconClass} />,
+      trendKey: "helicopters",
+    },
+    {
+      key: "vehicles",
+      label: t("stats.vehicles"),
+      daily: data.supplyVehicle[0],
+      total: data.supplyVehicle[1],
+      icon: <TbTruck className={iconClass} />,
+      trendKey: "vehicles",
+    },
+    {
+      key: "ships",
+      label: t("stats.ships"),
+      daily: data.ship[0],
+      total: data.ship[1],
+      icon: <GiBattleship className={iconClass} />,
+      trendKey: "ships",
+    },
+  ];
+}
+
+const TREND_COLORS: Record<string, string> = {
+  _total: "#e53e3e",
+  tanks: "#e53e3e",
+  ifv: "#ed8936",
+  artillery: "#ed8936",
+  mlrs: "#d69e2e",
+  uav: "#3d8fd6",
+  airDefense: "#9f7aea",
+  jets: "#3d8fd6",
+  helicopters: "#3d8fd6",
+  vehicles: "#48bb78",
+  ships: "#4a90d9",
+};
+
+interface StatsOverlayProps {
+  data: CasualtyData;
+  isHistorical?: boolean;
+  collapsed?: boolean;
+  onCollapse?: () => void;
+  onExpand?: () => void;
+}
+
+export default function StatsOverlay({
+  data,
+  isHistorical,
+  collapsed = false,
+  onCollapse,
+  onExpand,
+}: StatsOverlayProps) {
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
+  const stats = mapCasualtyData(data);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTrend() {
+      try {
+        const res = await fetch("/api/losses/trend");
+        if (res.ok && !cancelled) {
+          const json = await res.json();
+          setTrendData(json);
+        }
+      } catch {
+        // Silently fail — sparklines are supplementary
+      }
+    }
+    loadTrend();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getTrendValues = (trendKey: string): number[] => {
+    if (!trendData) return [];
+    const raw =
+      trendKey === "_total" ? trendData.totalTrend : (trendData.typeTrends[trendKey] ?? []);
+    return raw.map((d) => d.count);
+  };
+
+  const getTrendDates = (): string[] => {
+    if (!trendData) return [];
+    return trendData.totalTrend.map((d) => d.date);
+  };
+
+  return (
+    <div className={cn("flex flex-col transition-all duration-300", collapsed && "w-auto")}>
+      {/* Collapsed state — compact bar with expand indicator */}
+      {collapsed && (
+        <div
+          className={cn(
+            "flex items-center rounded-lg",
+            "bg-background/80 backdrop-blur-xl",
+            "border border-border/50",
+            "overflow-hidden",
+          )}
+        >
+          <div className="flex items-center gap-2 px-3 py-2 flex-1">
+            <TbSkull className="h-3.5 w-3.5 text-destruction" />
+            <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-destruction">
+              {t("stats.title")}
+            </span>
+          </div>
+          <button
+            onClick={onExpand}
+            aria-label="Expand stats panel"
+            className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <TbChevronDown className="h-3 w-3 rotate-180" />
+          </button>
+        </div>
+      )}
+
+      {/* Expanded state */}
+      {!collapsed && (
+        <>
+          {/* Header — drag handle with separate collapse button */}
+          <div
+            className={cn(
+              "flex items-center rounded-t-lg",
+              "bg-background/80 backdrop-blur-xl",
+              "border border-b-0 border-border/50",
+              "overflow-hidden",
+            )}
+          >
+            <div
+              className={cn(
+                "drag-handle flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing flex-1",
+                "text-xs font-semibold uppercase tracking-wider",
+                "text-destruction",
+              )}
+            >
+              <TbSkull className="h-3.5 w-3.5" />
+              <span>{t("stats.title")}</span>
+            </div>
+            <button
+              onClick={onCollapse}
+              aria-label="Collapse stats panel"
+              className="px-2 py-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <TbChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Stats list */}
+          <div
+            className={cn(
+              "flex flex-col rounded-b-lg",
+              "bg-background/80 backdrop-blur-xl",
+              "border border-t-0 border-border/50",
+              "overflow-hidden",
+            )}
+          >
+            {stats.map((stat) => {
+              const isExpanded = expandedKey === stat.key;
+              const trendValues = getTrendValues(stat.trendKey);
+              const hasTrend = trendValues.length > 2;
+              const dates = getTrendDates();
+
+              return (
+                <div key={stat.key}>
+                  <button
+                    onClick={() => setExpandedKey(isExpanded ? null : stat.key)}
+                    className={cn(
+                      "group flex w-full items-center gap-2 px-3 py-1.5",
+                      "border-b border-border/30 last:border-b-0",
+                      "hover:bg-surface-elevated/50 transition-colors",
+                      isExpanded && "bg-surface-elevated/30",
+                    )}
+                  >
+                    <span className="flex w-5 items-center justify-center text-muted-foreground">
+                      {stat.icon}
+                    </span>
+                    <span className="min-w-[85px] text-left text-xs text-muted-foreground sm:min-w-[100px]">
+                      {stat.label}
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5">
+                      {stat.daily > 0 && (
+                        <span className="text-[0.625rem] font-medium text-destruction">
+                          +{stat.daily.toLocaleString()}
+                        </span>
+                      )}
+                      <span className="text-sm font-bold text-foreground tabular-nums text-right">
+                        {stat.total.toLocaleString()}
+                      </span>
+                    </span>
+                  </button>
+                  {/* Expanded sparkline */}
+                  {isExpanded && (
+                    <div
+                      className={cn(
+                        "border-b border-border/30 bg-surface/40 px-3 py-2",
+                        "animate-in slide-in-from-top-2 fade-in duration-200",
+                      )}
+                    >
+                      {hasTrend ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[0.625rem] text-muted-foreground">
+                              {t("stats.confirmedLosses", { count: dates.length })}
+                            </span>
+                            <span
+                              className="text-[0.625rem] font-medium"
+                              style={{ color: TREND_COLORS[stat.trendKey] || "#3d8fd6" }}
+                            >
+                              {trendValues.reduce((a, b) => a + b, 0)} {t("common.total")}
+                            </span>
+                          </div>
+                          <Sparkline
+                            data={trendValues}
+                            width={200}
+                            height={32}
+                            color={TREND_COLORS[stat.trendKey] || "#3d8fd6"}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-[0.5625rem] text-muted-foreground/60">
+                            <span>{dates[0]?.slice(5)}</span>
+                            <span>{dates[dates.length - 1]?.slice(5)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-[0.625rem] text-muted-foreground">
+                          {t("stats.noTrendData")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <div className="drag-handle px-3 py-1.5 border-t border-border/30 cursor-grab active:cursor-grabbing">
+              <a
+                href="https://www.mil.gov.ua"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[0.5rem] text-muted-foreground/50 hover:text-ua-blue transition-colors"
+              >
+                {t("stats.sourceMOD")}
+              </a>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
