@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Downloads and processes Kiel Institute Ukraine Support Tracker XLSX
  * into a compact JSON file for the frontend.
@@ -8,10 +9,10 @@
  * Run: node scripts/process-kiel.mjs
  */
 
+import ExcelJS from "exceljs";
 import { writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import XLSX from "xlsx";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT = join(__dirname, "..", "public", "data", "kiel-spending.json");
@@ -34,6 +35,38 @@ const _MONTH_NAMES = [
   "December",
 ];
 
+/** Read a named worksheet as array-of-objects (keyed by first row headers). */
+function sheetToJson(wb, sheetName) {
+  const ws = wb.getWorksheet(sheetName);
+  if (!ws) return [];
+  const headers = [];
+  const rows = [];
+  ws.eachRow((row, idx) => {
+    const vals = row.values.slice(1);
+    if (idx === 1) {
+      for (const v of vals) headers.push(v);
+      return;
+    }
+    const obj = {};
+    for (let i = 0; i < headers.length; i++) {
+      obj[headers[i]] = vals[i] ?? null;
+    }
+    rows.push(obj);
+  });
+  return rows;
+}
+
+/** Read a named worksheet as array-of-arrays (raw rows). */
+function sheetToArrays(wb, sheetName) {
+  const ws = wb.getWorksheet(sheetName);
+  if (!ws) return [];
+  const rows = [];
+  ws.eachRow((row) => {
+    rows.push(row.values.slice(1));
+  });
+  return rows;
+}
+
 async function main() {
   console.log("Downloading Kiel Institute XLSX...");
   const res = await fetch(KIEL_XLSX_URL);
@@ -41,13 +74,14 @@ async function main() {
   const buf = await res.arrayBuffer();
 
   console.log("Parsing XLSX...");
-  const wb = XLSX.read(buf, { type: "array" });
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(Buffer.from(buf));
 
   // --- Main data ---
-  const mainData = XLSX.utils.sheet_to_json(wb.Sheets["Bilateral Assistance, MAIN DATA"]);
+  const mainData = sheetToJson(wb, "Bilateral Assistance, MAIN DATA");
 
   // --- Country Summary ---
-  const summarySheet = XLSX.utils.sheet_to_json(wb.Sheets["Country Summary (€)"], { header: 1 });
+  const summarySheet = sheetToArrays(wb, "Country Summary (€)");
   // Find header row (contains "Country")
   const headerIdx = summarySheet.findIndex((r) => r && r[0] === "Country");
   const _summaryHeaders = summarySheet[headerIdx];
@@ -68,9 +102,7 @@ async function main() {
   byCountry.sort((a, b) => b.total - a.total);
 
   // --- Monthly allocations ---
-  const allocSheet = XLSX.utils.sheet_to_json(wb.Sheets["Allocations by type and month"], {
-    header: 1,
-  });
+  const allocSheet = sheetToArrays(wb, "Allocations by type and month");
   const byMonth = [];
   for (const row of allocSheet) {
     if (!row || typeof row[1] !== "number" || row[1] < 40000) continue;

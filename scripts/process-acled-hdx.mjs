@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Downloads and processes ACLED HDX Ukraine conflict data XLSX files
  * into a compact JSON file for the frontend.
@@ -8,10 +9,10 @@
  * Run: node scripts/process-acled-hdx.mjs
  */
 
+import ExcelJS from "exceljs";
 import { writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import XLSX from "xlsx";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT = join(__dirname, "..", "public", "data", "acled-regional.json");
@@ -46,13 +47,34 @@ const MONTH_TO_NUM = {
   December: "12",
 };
 
+/** Read an XLSX buffer and return rows as objects keyed by header names. */
+async function readXlsxSheet(buf) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  const ws = wb.getWorksheet("Data") || wb.worksheets[0];
+  const headers = [];
+  const rows = [];
+  ws.eachRow((row, idx) => {
+    const vals = row.values.slice(1); // ExcelJS row.values is 1-indexed
+    if (idx === 1) {
+      for (const v of vals) headers.push(v);
+      return;
+    }
+    const obj = {};
+    for (let i = 0; i < headers.length; i++) {
+      obj[headers[i]] = vals[i] ?? null;
+    }
+    rows.push(obj);
+  });
+  return rows;
+}
+
 async function downloadXLSX(url) {
   console.log(`  Downloading ${url.split("/").pop().slice(0, 60)}...`);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-  const buf = await res.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array" });
-  return XLSX.utils.sheet_to_json(wb.Sheets.Data);
+  const buf = Buffer.from(await res.arrayBuffer());
+  return readXlsxSheet(buf);
 }
 
 async function main() {

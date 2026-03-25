@@ -11,7 +11,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { discoverLatestRelease } from "../src/lib/kiel-url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -30,6 +30,36 @@ function excelDateToISO(serial: number): string {
   return `${y}-${m}`;
 }
 
+function sheetToJson(wb: ExcelJS.Workbook, sheetName: string): Record<string, unknown>[] {
+  const ws = wb.getWorksheet(sheetName);
+  if (!ws) return [];
+  const headers: string[] = [];
+  const rows: Record<string, unknown>[] = [];
+  ws.eachRow((row, idx) => {
+    const vals = (row.values as unknown[]).slice(1);
+    if (idx === 1) {
+      for (const v of vals) headers.push(String(v));
+      return;
+    }
+    const obj: Record<string, unknown> = {};
+    for (let i = 0; i < headers.length; i++) {
+      obj[headers[i]] = vals[i] ?? null;
+    }
+    rows.push(obj);
+  });
+  return rows;
+}
+
+function sheetToArrays(wb: ExcelJS.Workbook, sheetName: string): unknown[][] {
+  const ws = wb.getWorksheet(sheetName);
+  if (!ws) return [];
+  const rows: unknown[][] = [];
+  ws.eachRow((row) => {
+    rows.push((row.values as unknown[]).slice(1));
+  });
+  return rows;
+}
+
 async function main() {
   console.log("Discovering latest Kiel Institute release...");
   const { release, url } = await discoverLatestRelease();
@@ -41,17 +71,15 @@ async function main() {
   const buf = await res.arrayBuffer();
 
   console.log("Parsing XLSX...");
-  const wb = XLSX.read(buf, { type: "array" });
+  const wb = new ExcelJS.Workbook();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await wb.xlsx.load(Buffer.from(buf) as any);
 
   // Main data
-  const mainData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-    wb.Sheets["Bilateral Assistance, MAIN DATA"],
-  );
+  const mainData = sheetToJson(wb, "Bilateral Assistance, MAIN DATA");
 
   // Country summary
-  const summarySheet = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets["Country Summary (€)"], {
-    header: 1,
-  });
+  const summarySheet = sheetToArrays(wb, "Country Summary (€)");
   const headerIdx = (summarySheet as unknown[][]).findIndex((r) => r && r[0] === "Country");
 
   const byCountry: Record<string, unknown>[] = [];
@@ -70,12 +98,12 @@ async function main() {
   byCountry.sort((a, b) => (b.total as number) - (a.total as number));
 
   // Monthly allocations — try dedicated sheet first, fall back to aggregating main data
-  const allocSheetName = Object.keys(wb.Sheets).find((s) => s.toLowerCase().includes("allocation"));
+  const allocSheetName = wb.worksheets
+    .map((ws) => ws.name)
+    .find((s) => s.toLowerCase().includes("allocation"));
   let byMonth: Record<string, unknown>[] = [];
   if (allocSheetName) {
-    const allocSheet = XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[allocSheetName], {
-      header: 1,
-    });
+    const allocSheet = sheetToArrays(wb, allocSheetName);
     for (const row of allocSheet as unknown[][]) {
       if (!row || !row[1]) continue;
 
