@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npx tsx scripts/prebuild-viina.ts && next build --webpack",
+    "build": "npx tsx scripts/prebuild-viina.ts && npx tsx scripts/prebuild-alliance.ts && npx tsx scripts/prebuild-territory-dates.ts && next build --webpack",
     "start": "next start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
