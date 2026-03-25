@@ -32,6 +32,8 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - name: Generate prebuild data (needed for type-checking JSON imports)
+        run: npx tsx scripts/prebuild-alliance.ts && npx tsx scripts/prebuild-territory-dates.ts
       - run: npm run typecheck
 
   build:
