@@ -34,7 +34,6 @@ const GET_ENDPOINTS = [
   "/api/losses/trend",
   "/api/humanitarian/refugees",
   "/api/humanitarian/funding",
-  "/api/humanitarian/civilian-casualties",
   "/api/territory",
   "/api/territory/dates",
   "/api/firms",
