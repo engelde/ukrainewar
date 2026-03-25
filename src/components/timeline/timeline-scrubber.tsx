@@ -481,7 +481,7 @@ export default function TimelineScrubber({
     >
       {/* Minimized panels dock */}
       {dockSlot && (
-        <div className="flex flex-wrap-reverse items-end gap-1.5 px-4 pb-1.5 pointer-events-auto">
+        <div className="flex flex-wrap items-end gap-1.5 px-4 pb-1.5 pointer-events-auto">
           {dockSlot}
         </div>
       )}

@@ -94,16 +94,8 @@ const PANEL_KEYS = [
   "infrastructurePanel",
 ] as const;
 type PanelKey = (typeof PANEL_KEYS)[number];
-const DEFAULT_VISIBLE_PANELS: PanelKey[] = [...PANEL_KEYS];
-const DEFAULT_MINIMIZED_PANELS: PanelKey[] = [
-  "events",
-  "energy",
-  "airDefense",
-  "support",
-  "ukraineLosses",
-  "sanctions",
-  "infrastructurePanel",
-];
+const DEFAULT_VISIBLE_PANELS: PanelKey[] = ["russianLosses"];
+const DEFAULT_MINIMIZED_PANELS: PanelKey[] = [];
 
 // Custom nuqs parser: comma-separated set of strings
 const parseAsStringSet = createParser({
@@ -411,17 +403,34 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   }, [setUrlStats]);
 
   // Expand handler — removes panel key from minimized set
+  // On mobile, only one left-side panel is expanded at a time
+  const LEFT_PANEL_KEYS: PanelKey[] = [
+    "humanitarian",
+    "spending",
+    "energy",
+    "airDefense",
+    "support",
+    "ukraineLosses",
+    "sanctions",
+    "infrastructurePanel",
+  ];
   const handleExpandPanel = useCallback(
     (key: string) => {
       const current = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
       const next = new Set(current);
       next.delete(key);
+      // On mobile, auto-minimize other left-side panels
+      if (isMobile) {
+        for (const pk of LEFT_PANEL_KEYS) {
+          if (pk !== key) next.add(pk);
+        }
+      }
       const isDefault =
         next.size === DEFAULT_MINIMIZED_PANELS.length &&
         DEFAULT_MINIMIZED_PANELS.every((k) => next.has(k));
       setUrlMinimized(isDefault ? null : next);
     },
-    [urlMinimized, setUrlMinimized],
+    [urlMinimized, setUrlMinimized, isMobile],
   );
   const handleExpandHumanitarian = useCallback(
     () => handleExpandPanel("humanitarian"),
@@ -758,7 +767,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         {panelOpen.russianLosses && displayData && !statsCollapsed && (
           <DraggablePanel
             panelKey="russianLosses"
-            className="fixed right-4 top-14 z-30 sm:right-6 sm:top-16 max-w-xs"
+            className="fixed right-2 top-14 z-30 sm:right-6 sm:top-16 max-w-[calc(100vw-2rem)] sm:max-w-xs"
           >
             <StatsOverlay
               data={displayData}
@@ -769,76 +778,145 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           </DraggablePanel>
         )}
         {selectedMarker && <DetailPanel marker={selectedMarker} onClose={handleCloseDetail} />}
-        {panelOpen.humanitarian && (
-          <DraggablePanel panelKey="humanitarian" defaultPosition={panelPositions.humanitarian}>
-            <HumanitarianPanel
-              isOpen={true}
-              onToggle={handleMinimizeHumanitarian}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
+
+        {/* Mobile: left-side panels in a bottom sheet (one at a time) */}
+        {isMobile && (
+          <div className="fixed inset-x-0 bottom-[120px] z-30 flex justify-center px-2 pointer-events-none">
+            <div className="pointer-events-auto max-h-[50vh] overflow-y-auto scrollbar-none">
+              {panelOpen.humanitarian && (
+                <HumanitarianPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeHumanitarian}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelOpen.spending && (
+                <SpendingPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeSpending}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelOpen.energy && (
+                <EnergyPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeEnergy}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelOpen.airDefense && (
+                <AirDefensePanel
+                  isOpen={true}
+                  onToggle={handleMinimizeAirDefense}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelOpen.support && (
+                <InternationalSupportPanel isOpen={true} onToggle={handleMinimizeSupport} />
+              )}
+              {panelOpen.ukraineLosses && (
+                <UkraineLossesPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeUkraineLosses}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelOpen.sanctions && (
+                <SanctionsPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeSanctions}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+              {panelOpen.infrastructurePanel && (
+                <InfrastructurePanel
+                  isOpen={true}
+                  onToggle={handleMinimizeInfrastructure}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              )}
+            </div>
+          </div>
         )}
-        {panelOpen.spending && (
-          <DraggablePanel panelKey="spending" defaultPosition={panelPositions.spending}>
-            <SpendingPanel
-              isOpen={true}
-              onToggle={handleMinimizeSpending}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
-        )}
-        {panelOpen.energy && (
-          <DraggablePanel panelKey="energy" defaultPosition={panelPositions.energy}>
-            <EnergyPanel
-              isOpen={true}
-              onToggle={handleMinimizeEnergy}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
-        )}
-        {panelOpen.airDefense && (
-          <DraggablePanel panelKey="airDefense" defaultPosition={panelPositions.airDefense}>
-            <AirDefensePanel
-              isOpen={true}
-              onToggle={handleMinimizeAirDefense}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
-        )}
-        {panelOpen.support && (
-          <DraggablePanel panelKey="support" defaultPosition={panelPositions.support}>
-            <InternationalSupportPanel isOpen={true} onToggle={handleMinimizeSupport} />
-          </DraggablePanel>
-        )}
-        {panelOpen.ukraineLosses && (
-          <DraggablePanel panelKey="ukraineLosses" defaultPosition={panelPositions.ukraineLosses}>
-            <UkraineLossesPanel
-              isOpen={true}
-              onToggle={handleMinimizeUkraineLosses}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
-        )}
-        {panelOpen.sanctions && (
-          <DraggablePanel panelKey="sanctions" defaultPosition={panelPositions.sanctions}>
-            <SanctionsPanel
-              isOpen={true}
-              onToggle={handleMinimizeSanctions}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
-        )}
-        {panelOpen.infrastructurePanel && (
-          <DraggablePanel
-            panelKey="infrastructurePanel"
-            defaultPosition={panelPositions.infrastructurePanel}
-          >
-            <InfrastructurePanel
-              isOpen={true}
-              onToggle={handleMinimizeInfrastructure}
-              timelineDate={territoryDate ?? undefined}
-            />
-          </DraggablePanel>
+
+        {/* Desktop: left-side panels as draggable positioned panels */}
+        {!isMobile && (
+          <>
+            {panelOpen.humanitarian && (
+              <DraggablePanel panelKey="humanitarian" defaultPosition={panelPositions.humanitarian}>
+                <HumanitarianPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeHumanitarian}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+            {panelOpen.spending && (
+              <DraggablePanel panelKey="spending" defaultPosition={panelPositions.spending}>
+                <SpendingPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeSpending}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+            {panelOpen.energy && (
+              <DraggablePanel panelKey="energy" defaultPosition={panelPositions.energy}>
+                <EnergyPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeEnergy}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+            {panelOpen.airDefense && (
+              <DraggablePanel panelKey="airDefense" defaultPosition={panelPositions.airDefense}>
+                <AirDefensePanel
+                  isOpen={true}
+                  onToggle={handleMinimizeAirDefense}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+            {panelOpen.support && (
+              <DraggablePanel panelKey="support" defaultPosition={panelPositions.support}>
+                <InternationalSupportPanel isOpen={true} onToggle={handleMinimizeSupport} />
+              </DraggablePanel>
+            )}
+            {panelOpen.ukraineLosses && (
+              <DraggablePanel
+                panelKey="ukraineLosses"
+                defaultPosition={panelPositions.ukraineLosses}
+              >
+                <UkraineLossesPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeUkraineLosses}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+            {panelOpen.sanctions && (
+              <DraggablePanel panelKey="sanctions" defaultPosition={panelPositions.sanctions}>
+                <SanctionsPanel
+                  isOpen={true}
+                  onToggle={handleMinimizeSanctions}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+            {panelOpen.infrastructurePanel && (
+              <DraggablePanel
+                panelKey="infrastructurePanel"
+                defaultPosition={panelPositions.infrastructurePanel}
+              >
+                <InfrastructurePanel
+                  isOpen={true}
+                  onToggle={handleMinimizeInfrastructure}
+                  timelineDate={territoryDate ?? undefined}
+                />
+              </DraggablePanel>
+            )}
+          </>
         )}
 
         <TimelineScrubber

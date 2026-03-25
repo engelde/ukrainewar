@@ -167,11 +167,12 @@ export default function OptionsPopup({
         <div
           className={cn(
             "absolute top-full right-0 mt-2 z-50",
+            "sm:right-0 fixed sm:absolute inset-x-4 sm:inset-x-auto top-14 sm:top-full sm:mt-2",
             "rounded-lg overflow-hidden",
             "bg-background/90 backdrop-blur-xl",
             "border border-border/50",
             "shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
-            "w-[300px]",
+            "w-auto sm:w-[300px]",
             "max-h-[calc(100vh-5rem)] overflow-y-auto scrollbar-none",
           )}
         >
@@ -203,7 +204,7 @@ export default function OptionsPopup({
                     type="button"
                     onClick={() => panelToggles?.[key]?.()}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5",
+                      "flex items-center gap-2 px-3 py-2.5 sm:py-1.5",
                       "border-b border-border/20",
                       i % 2 === 0 && "border-r border-r-border/20",
                       "hover:bg-surface-elevated/50 transition-colors",
@@ -240,7 +241,7 @@ export default function OptionsPopup({
                     type="button"
                     onClick={() => onToggleLayer?.(key)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5",
+                      "flex items-center gap-2 px-3 py-2.5 sm:py-1.5",
                       "border-b border-border/20",
                       i % 2 === 0 && "border-r border-r-border/20",
                       "hover:bg-surface-elevated/50 transition-colors",
