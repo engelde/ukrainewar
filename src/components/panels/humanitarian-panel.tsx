@@ -139,6 +139,8 @@ function getCumulativeCasualties(
   timelineDate?: string,
 ): { killed: number; injured: number } {
   if (!timelineDate) return data.cumulativeTotal;
+  // No civilian casualties before the war
+  if (timelineDate < "20220224") return { killed: 0, injured: 0 };
   const year = timelineDate.slice(0, 4);
   const month = timelineDate.slice(4, 6);
   const targetMonth = `${year}-${month}`;
@@ -195,6 +197,14 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
   const currentRefugees = useMemo(() => {
     if (!refugees) return null;
     if (!isHistorical || !timelineYear) return refugees.summary;
+    // No war refugees before the invasion
+    if (timelineDate && timelineDate < "20220224")
+      return {
+        total_refugees: 0,
+        total_idps: 0,
+        total_countries: 0,
+        latest_year: timelineYear,
+      };
     const yearData = refugees.yearly
       .filter((y) => y.year <= timelineYear)
       .sort((a, b) => b.year - a.year);
@@ -218,6 +228,9 @@ function HumanitarianPanelInner({ isOpen, onToggle, timelineDate }: Humanitarian
   const currentFunding = useMemo(() => {
     if (!funding) return null;
     if (!isHistorical || !timelineYear) return funding.summary;
+    // No humanitarian appeals before the invasion
+    if (timelineDate && timelineDate < "20220224")
+      return { total_required_usd: 0, total_funded_usd: 0, overall_pct: 0 };
     const filtered = funding.appeals.filter((a) => a.year <= timelineYear);
     const total_required = filtered.reduce((s, a) => s + a.requirements_usd, 0);
     const total_funded = filtered.reduce((s, a) => s + a.funding_usd, 0);

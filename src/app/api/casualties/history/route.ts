@@ -5,6 +5,9 @@ function findByDate(data: OrcLossEntry[], targetDate: string): OrcLossEntry | nu
   // targetDate is "YYYYMMDD", data dates are "YYYY-MM-DD"
   const formatted = `${targetDate.slice(0, 4)}-${targetDate.slice(4, 6)}-${targetDate.slice(6, 8)}`;
 
+  // No data exists before the war started
+  if (data.length === 0 || formatted < data[0].date) return null;
+
   // Binary search
   let lo = 0,
     hi = data.length - 1;
@@ -16,8 +19,7 @@ function findByDate(data: OrcLossEntry[], targetDate: string): OrcLossEntry | nu
   }
 
   // Return closest earlier date if exact not found
-  const idx = Math.max(0, hi);
-  return data[idx] || null;
+  return hi >= 0 ? data[hi] : null;
 }
 
 export async function GET(request: Request) {

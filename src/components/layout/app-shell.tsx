@@ -377,6 +377,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         const data = await res.json();
         lastFetchedDate.current = dateToFetch;
         setHistoricalData(data);
+      } else if (!controller.signal.aborted) {
+        // Pre-war dates return 404 — clear historical data
+        lastFetchedDate.current = dateToFetch;
+        setHistoricalData(null);
       }
     } catch {
       // Aborted or failed
@@ -682,7 +686,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const today = new Date();
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
   const isViewingPast = !!territoryDate && territoryDate < todayStr;
-  const displayData = isViewingPast ? (historicalData ?? casualtyData) : casualtyData;
+  const isPreWar = !!territoryDate && territoryDate < "20220224";
+  const displayData = isPreWar
+    ? null
+    : isViewingPast
+      ? (historicalData ?? casualtyData)
+      : casualtyData;
 
   const warDay = (() => {
     const start = new Date(2022, 1, 24);

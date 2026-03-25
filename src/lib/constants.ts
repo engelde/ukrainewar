@@ -5,6 +5,9 @@ export const MAP_CENTER: [number, number] = [34.5, 48.2];
 export const MAP_ZOOM = 6;
 export const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
+/** War started on February 24, 2022 — used to gate pre-war panel data */
+export const WAR_START = "20220224";
+
 export const DEEPSTATE_DATA_BASE =
   "https://raw.githubusercontent.com/cyterat/deepstate-map-data/main/data";
 

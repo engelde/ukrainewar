@@ -114,6 +114,8 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
 
   const timelineTotals = useMemo(() => {
     if (!data || !timelineDate) return null;
+    // No bilateral aid data before the war
+    if (timelineDate < "20220224") return null;
     const norm =
       timelineDate.length === 8
         ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}`
@@ -131,6 +133,8 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
   const displayMonths = useMemo(() => {
     if (!data?.byMonth) return [];
     if (!timelineDate) return data.byMonth;
+    // No bilateral aid data before the war
+    if (timelineDate < "20220224") return [];
     const norm =
       timelineDate.length === 8
         ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}`
