@@ -95,7 +95,7 @@ export function TimelineControls({
           <Calendar
             mode="single"
             captionLayout="dropdown"
-            startMonth={new Date(2021, 0)}
+            startMonth={new Date(2021, 2)}
             endMonth={new Date()}
             selected={(() => {
               const y = Number.parseInt(currentDate.slice(0, 4), 10);
@@ -104,7 +104,7 @@ export function TimelineControls({
               return new Date(y, m, d);
             })()}
             onSelect={onCalendarSelect}
-            disabled={[{ before: new Date(2021, 0, 1) }, { after: new Date() }]}
+            disabled={[{ before: new Date(2021, 2, 1) }, { after: new Date() }]}
             defaultMonth={(() => {
               const y = Number.parseInt(currentDate.slice(0, 4), 10);
               const m = Number.parseInt(currentDate.slice(4, 6), 10) - 1;

@@ -31,9 +31,11 @@ export function formatDateShort(dateStr: string): string {
   return `${m}.${d}`;
 }
 
+export const TIMELINE_START_DATE = "2021-03-01";
+
 export function generateDateRange(): string[] {
   const dates: string[] = [];
-  const start = new Date("2021-01-01");
+  const start = new Date(TIMELINE_START_DATE);
   const end = new Date();
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const y = d.getFullYear();

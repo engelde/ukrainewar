@@ -95,17 +95,17 @@ const PANEL_KEYS = [
   "infrastructurePanel",
 ] as const;
 type PanelKey = (typeof PANEL_KEYS)[number];
-// Desktop: 3 expanded + rest minimized
+// Desktop: all panels visible; RU losses, humanitarian, and bilateral aid expanded
 const DEFAULT_VISIBLE_PANELS_DESKTOP: PanelKey[] = [...PANEL_KEYS];
 const DEFAULT_MINIMIZED_PANELS_DESKTOP: PanelKey[] = PANEL_KEYS.filter(
-  (k) => k !== "russianLosses" && k !== "humanitarian" && k !== "support",
+  (k) => k !== "russianLosses" && k !== "humanitarian" && k !== "spending",
 );
 // Tablet (md–lg): 3 expanded, no others
-const DEFAULT_VISIBLE_PANELS_TABLET: PanelKey[] = ["russianLosses", "humanitarian", "support"];
+const DEFAULT_VISIBLE_PANELS_TABLET: PanelKey[] = ["russianLosses", "humanitarian", "spending"];
 const DEFAULT_MINIMIZED_PANELS_TABLET: PanelKey[] = [];
-// Mobile: RU losses expanded, aid + humanitarian minimized
-const DEFAULT_VISIBLE_PANELS_MOBILE: PanelKey[] = ["russianLosses", "humanitarian", "support"];
-const DEFAULT_MINIMIZED_PANELS_MOBILE: PanelKey[] = ["humanitarian", "support"];
+// Mobile: RU losses expanded, bilateral aid + humanitarian minimized
+const DEFAULT_VISIBLE_PANELS_MOBILE: PanelKey[] = ["russianLosses", "humanitarian", "spending"];
+const DEFAULT_MINIMIZED_PANELS_MOBILE: PanelKey[] = ["humanitarian", "spending"];
 
 // Custom nuqs parser: comma-separated set of strings
 const parseAsStringSet = createParser({
