@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { createParser, parseAsBoolean, parseAsFloat, parseAsString, useQueryState } from "nuqs";
+import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DayTracker from "@/components/layout/day-tracker";
 import EventSidebar from "@/components/layout/event-sidebar";
@@ -94,8 +95,17 @@ const PANEL_KEYS = [
   "infrastructurePanel",
 ] as const;
 type PanelKey = (typeof PANEL_KEYS)[number];
-const DEFAULT_VISIBLE_PANELS: PanelKey[] = ["russianLosses"];
-const DEFAULT_MINIMIZED_PANELS: PanelKey[] = [];
+// Desktop: 3 expanded + rest minimized
+const DEFAULT_VISIBLE_PANELS_DESKTOP: PanelKey[] = [...PANEL_KEYS];
+const DEFAULT_MINIMIZED_PANELS_DESKTOP: PanelKey[] = PANEL_KEYS.filter(
+  (k) => k !== "russianLosses" && k !== "humanitarian" && k !== "support",
+);
+// Tablet (md–lg): 3 expanded, no others
+const DEFAULT_VISIBLE_PANELS_TABLET: PanelKey[] = ["russianLosses", "humanitarian", "support"];
+const DEFAULT_MINIMIZED_PANELS_TABLET: PanelKey[] = [];
+// Mobile: RU losses expanded, aid + humanitarian minimized
+const DEFAULT_VISIBLE_PANELS_MOBILE: PanelKey[] = ["russianLosses", "humanitarian", "support"];
+const DEFAULT_MINIMIZED_PANELS_MOBILE: PanelKey[] = ["humanitarian", "support"];
 
 // Custom nuqs parser: comma-separated set of strings
 const parseAsStringSet = createParser({
@@ -109,8 +119,31 @@ const parseAsStringSet = createParser({
   },
 });
 
+const TABLET_BREAKPOINT = 1024;
+
+function useIsTablet() {
+  const [isTablet, setIsTablet] = React.useState(false);
+  React.useEffect(() => {
+    const check = () => {
+      const w = window.innerWidth;
+      setIsTablet(w >= 768 && w < TABLET_BREAKPOINT);
+    };
+    check();
+    const mql = window.matchMedia(`(max-width: ${TABLET_BREAKPOINT - 1}px)`);
+    mql.addEventListener("change", check);
+    const mql2 = window.matchMedia("(max-width: 767px)");
+    mql2.addEventListener("change", check);
+    return () => {
+      mql.removeEventListener("change", check);
+      mql2.removeEventListener("change", check);
+    };
+  }, []);
+  return isTablet;
+}
+
 export default function AppShell({ casualtyData }: AppShellProps) {
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const { events } = useEvents();
   const { battles } = useBattles();
   const [urlDate, setUrlDate] = useQueryState(
@@ -185,25 +218,38 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     [urlLayersOff, setUrlLayersOff],
   );
 
+  // Responsive panel defaults based on device size
+  const defaultVisiblePanels = useMemo<PanelKey[]>(() => {
+    if (isMobile) return DEFAULT_VISIBLE_PANELS_MOBILE;
+    if (isTablet) return DEFAULT_VISIBLE_PANELS_TABLET;
+    return DEFAULT_VISIBLE_PANELS_DESKTOP;
+  }, [isMobile, isTablet]);
+
+  const defaultMinimizedPanels = useMemo<PanelKey[]>(() => {
+    if (isMobile) return DEFAULT_MINIMIZED_PANELS_MOBILE;
+    if (isTablet) return DEFAULT_MINIMIZED_PANELS_TABLET;
+    return DEFAULT_MINIMIZED_PANELS_DESKTOP;
+  }, [isMobile, isTablet]);
+
   // Derive panel visibility from URL
   const panelVisibility = useMemo(() => {
-    const visible = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
+    const visible = urlPanels ?? new Set<string>(defaultVisiblePanels);
     const result = {} as Record<PanelKey, boolean>;
     for (const key of PANEL_KEYS) {
       result[key] = visible.has(key);
     }
     return result;
-  }, [urlPanels]);
+  }, [urlPanels, defaultVisiblePanels]);
 
   // Derive panel minimized state from URL (default: most panels minimized)
   const panelMinimized = useMemo(() => {
-    const min = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
+    const min = urlMinimized ?? new Set<string>(defaultMinimizedPanels);
     const result = {} as Record<PanelKey, boolean>;
     for (const key of PANEL_KEYS) {
       result[key] = min.has(key);
     }
     return result;
-  }, [urlMinimized]);
+  }, [urlMinimized, defaultMinimizedPanels]);
 
   // Panel open = visible AND not minimized
   const panelOpen = useMemo(() => {
@@ -230,7 +276,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     zoom?: number;
   } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(urlEvents !== false);
+  const [sidebarOpen, setSidebarOpen] = useState(urlEvents === true);
 
   // Sync sidebar state to URL
   useEffect(() => {
@@ -243,9 +289,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     if (didMountDefaultsRef.current) return;
     didMountDefaultsRef.current = true;
 
-    // Open sidebar by default if no URL preference set
-    if (urlEvents === null) {
+    // On mobile, keep sidebar closed by default; on desktop, open if no URL preference
+    if (urlEvents === null && !isMobile) {
       setSidebarOpen(true);
+    } else if (isMobile && urlEvents === null) {
+      setSidebarOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -355,15 +403,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   // Minimize handler — adds panel key to minimized set
   const handleMinimizePanel = useCallback(
     (key: string) => {
-      const current = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
+      const current = urlMinimized ?? new Set<string>(defaultMinimizedPanels);
       const next = new Set(current);
       next.add(key);
       const isDefault =
-        next.size === DEFAULT_MINIMIZED_PANELS.length &&
-        DEFAULT_MINIMIZED_PANELS.every((k) => next.has(k));
+        next.size === defaultMinimizedPanels.length &&
+        defaultMinimizedPanels.every((k) => next.has(k));
       setUrlMinimized(isDefault ? null : next);
     },
-    [urlMinimized, setUrlMinimized],
+    [urlMinimized, setUrlMinimized, defaultMinimizedPanels],
   );
   const handleMinimizeHumanitarian = useCallback(
     () => handleMinimizePanel("humanitarian"),
@@ -416,7 +464,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   ];
   const handleExpandPanel = useCallback(
     (key: string) => {
-      const current = urlMinimized ?? new Set<string>(DEFAULT_MINIMIZED_PANELS);
+      const current = urlMinimized ?? new Set<string>(defaultMinimizedPanels);
       const next = new Set(current);
       next.delete(key);
       // On mobile, auto-minimize other left-side panels
@@ -426,11 +474,11 @@ export default function AppShell({ casualtyData }: AppShellProps) {
         }
       }
       const isDefault =
-        next.size === DEFAULT_MINIMIZED_PANELS.length &&
-        DEFAULT_MINIMIZED_PANELS.every((k) => next.has(k));
+        next.size === defaultMinimizedPanels.length &&
+        defaultMinimizedPanels.every((k) => next.has(k));
       setUrlMinimized(isDefault ? null : next);
     },
-    [urlMinimized, setUrlMinimized, isMobile],
+    [urlMinimized, setUrlMinimized, isMobile, defaultMinimizedPanels],
   );
   const handleExpandHumanitarian = useCallback(
     () => handleExpandPanel("humanitarian"),
@@ -466,7 +514,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   // Visibility toggles — called by Options popup (hide/show entirely)
   const handleVisibilityToggle = useCallback(
     (key: string) => {
-      const current = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
+      const current = urlPanels ?? new Set<string>(defaultVisiblePanels);
       const next = new Set(current);
       const wasVisible = next.has(key);
       if (wasVisible) {
@@ -489,11 +537,10 @@ export default function AppShell({ casualtyData }: AppShellProps) {
       }
       // Store null if matches defaults to keep URL clean
       const isDefault =
-        next.size === DEFAULT_VISIBLE_PANELS.length &&
-        DEFAULT_VISIBLE_PANELS.every((k) => next.has(k));
+        next.size === defaultVisiblePanels.length && defaultVisiblePanels.every((k) => next.has(k));
       setUrlPanels(isDefault ? null : next);
     },
-    [urlPanels, setUrlPanels, setUrlStats, handleExpandPanel],
+    [urlPanels, setUrlPanels, setUrlStats, handleExpandPanel, defaultVisiblePanels],
   );
 
   // Global Escape key handler — minimizes the topmost open panel
@@ -574,18 +621,18 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     setSidebarOpen((prev) => {
       const next = !prev;
       // Ensure events panel visibility stays in sync
-      const current = urlPanels ?? new Set<string>(DEFAULT_VISIBLE_PANELS);
+      const current = urlPanels ?? new Set<string>(defaultVisiblePanels);
       if (next && !current.has("events")) {
         const updated = new Set(current);
         updated.add("events");
         const isDefault =
-          updated.size === DEFAULT_VISIBLE_PANELS.length &&
-          DEFAULT_VISIBLE_PANELS.every((k) => updated.has(k));
+          updated.size === defaultVisiblePanels.length &&
+          defaultVisiblePanels.every((k) => updated.has(k));
         setUrlPanels(isDefault ? null : updated);
       }
       return next;
     });
-  }, [urlPanels, setUrlPanels]);
+  }, [urlPanels, setUrlPanels, defaultVisiblePanels]);
 
   const handleReset = useCallback(() => {
     resetPendingRef.current = true;

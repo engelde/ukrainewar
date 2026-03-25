@@ -66,24 +66,24 @@ export function TimelineControls({
   onToggleEvents,
 }: TimelineControlsProps) {
   return (
-    <div className="flex items-center gap-2.5 px-4 pt-3 sm:gap-3">
+    <div className="flex items-center gap-1.5 px-2 pt-3 sm:gap-2.5 sm:px-4">
       {/* Date info — click to open calendar picker */}
       <Popover open={calendarOpen} onOpenChange={onCalendarOpenChange}>
         <PopoverTrigger
           render={
-            <button className="flex flex-col items-start gap-0 min-w-[100px] sm:min-w-[130px] rounded-md hover:bg-surface-elevated/50 transition-colors px-1.5 py-1 -mx-1.5 -my-1 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <TbTimeline className="h-3.5 w-3.5 text-ua-blue" />
-                <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-ua-blue">
+            <button className="flex flex-col items-start gap-0 min-w-0 sm:min-w-[130px] rounded-md hover:bg-surface-elevated/50 transition-colors px-1 py-1 -mx-1 -my-1 sm:px-1.5 sm:-mx-1.5 cursor-pointer">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <TbTimeline className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-ua-blue" />
+                <span className="text-[0.6rem] sm:text-[0.6875rem] font-semibold uppercase tracking-wider text-ua-blue">
                   {t("timeline.title")}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-mono text-foreground font-medium">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <span className="text-sm sm:text-lg font-mono text-foreground font-medium">
                   {formatDateDisplay(currentDate)}
                 </span>
                 {currentIndex === datesLength - 1 && (
-                  <span className="text-[0.5625rem] text-capture font-mono">
+                  <span className="text-[0.5625rem] text-capture font-mono hidden sm:inline">
                     {t("common.today")}
                   </span>
                 )}
@@ -116,11 +116,11 @@ export function TimelineControls({
       </Popover>
 
       {/* Transport controls */}
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0">
         <button
           onClick={onJumpToStart}
           aria-label="Jump to start"
-          className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+          className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
           title={t("timeline.jumpToStart")}
         >
           <TbPlayerSkipBackFilled className="h-4.5 w-4.5" />
@@ -132,25 +132,25 @@ export function TimelineControls({
           onMouseLeave={onStepUp}
           disabled={currentIndex <= 0}
           aria-label="Step back one day"
-          className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+          className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
         >
-          <TbChevronLeft className="h-5 w-5" />
+          <TbChevronLeft className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
         </button>
         <div className="relative">
           <button
             onClick={onTogglePlay}
             aria-label={isPlaying ? "Pause timeline" : "Play timeline"}
             className={cn(
-              "relative z-10 flex h-10 w-10 items-center justify-center rounded-md transition-colors",
+              "relative z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-md transition-colors",
               isPlaying
                 ? "bg-ua-blue/20 text-ua-blue"
                 : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
             )}
           >
             {isPlaying ? (
-              <TbPlayerPauseFilled className="h-5 w-5" />
+              <TbPlayerPauseFilled className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
             ) : (
-              <TbPlayerPlayFilled className="h-5 w-5" />
+              <TbPlayerPlayFilled className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
             )}
           </button>
           {showPlayHint && !isPlaying && (
@@ -164,14 +164,14 @@ export function TimelineControls({
           onMouseLeave={onStepUp}
           disabled={currentIndex >= datesLength - 1}
           aria-label="Step forward one day"
-          className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
+          className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground disabled:opacity-30"
         >
-          <TbChevronRight className="h-5 w-5" />
+          <TbChevronRight className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
         </button>
         <button
           onClick={onJumpToEnd}
           aria-label="Jump to today"
-          className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
+          className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-elevated transition-colors text-muted-foreground hover:text-foreground"
           title={t("timeline.jumpToToday")}
         >
           <TbPlayerSkipForwardFilled className="h-4.5 w-4.5" />
@@ -183,8 +183,8 @@ export function TimelineControls({
         onClick={onCycleSpeed}
         aria-label={`Playback speed: ${speedLabel}`}
         className={cn(
-          "flex h-9 items-center justify-center rounded-md px-2.5 transition-colors",
-          "text-xs font-mono font-semibold",
+          "flex h-8 sm:h-9 items-center justify-center rounded-md px-1.5 sm:px-2.5 transition-colors",
+          "text-[0.625rem] sm:text-xs font-mono font-semibold",
           isPlaying
             ? "bg-ua-blue/15 text-ua-blue"
             : "hover:bg-surface-elevated text-muted-foreground hover:text-foreground",
@@ -223,15 +223,15 @@ export function TimelineControls({
           title={t("timeline.toggleEvents")}
           aria-label="Toggle events sidebar"
           className={cn(
-            "flex h-7 items-center gap-1 rounded-md px-2.5 transition-colors",
+            "flex h-7 items-center gap-1 rounded-md px-1.5 sm:px-2.5 transition-colors",
             "text-[0.625rem] font-semibold uppercase tracking-wider",
             eventsOpen
               ? "bg-ua-yellow/15 text-ua-yellow"
               : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated",
           )}
         >
-          <TbFlag className="h-3 w-3" />
-          <span>{t("timeline.events")}</span>
+          <TbFlag className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
+          <span className="hidden sm:inline">{t("timeline.events")}</span>
         </button>
       )}
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
   TbBrandGithub,
@@ -363,10 +364,13 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <div className="flex items-center gap-2">
-            <div className="flex h-5 w-1 flex-col overflow-hidden rounded-full">
-              <div className="h-1/2 bg-ua-blue" />
-              <div className="h-1/2 bg-ua-yellow" />
-            </div>
+            <Image
+              src="/icon.svg"
+              alt=""
+              width={20}
+              height={20}
+              className="h-5 w-5 rounded-[4px]"
+            />
             <span className="text-sm font-bold tracking-tight text-foreground">
               {t("header.title")}
             </span>
