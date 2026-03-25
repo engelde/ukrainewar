@@ -148,6 +148,7 @@ export default function MapView({
   const acledRegionalRef = useRef<AcledRegionalData | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const oblastsRef = useRef<GeoJSON.FeatureCollection | null>(null);
+  const viinaIndexRef = useRef<string[] | null>(null);
 
   const loadUkraineBorder = useCallback(async (mapInstance: maplibregl.Map) => {
     if (mapInstance.getSource("ukraine-border")) return;
@@ -496,7 +497,39 @@ export default function MapView({
 
       try {
         if (useViina) {
-          const res = await fetch(`/api/territory/viina?date=${territoryDate}`, {
+          // Load snapshot index on first VIINA request
+          if (!viinaIndexRef.current) {
+            const idxRes = await fetch("/data/viina/snapshots/index.json", {
+              signal: controller.signal,
+            });
+            if (idxRes.ok) viinaIndexRef.current = await idxRes.json();
+          }
+
+          // Find closest available snapshot date
+          const index = viinaIndexRef.current;
+          let snapDate = territoryDate;
+          if (index && index.length > 0) {
+            if (territoryDate <= index[0]) snapDate = index[0];
+            else if (territoryDate >= index[index.length - 1]) snapDate = index[index.length - 1];
+            else {
+              let lo = 0;
+              let hi = index.length - 1;
+              while (lo <= hi) {
+                const mid = Math.floor((lo + hi) / 2);
+                if (index[mid] === territoryDate) {
+                  snapDate = index[mid];
+                  break;
+                }
+                if (index[mid] < territoryDate) lo = mid + 1;
+                else hi = mid - 1;
+              }
+              if (snapDate === territoryDate && !index.includes(territoryDate)) {
+                snapDate = index[hi];
+              }
+            }
+          }
+
+          const res = await fetch(`/data/viina/snapshots/${snapDate}.json`, {
             signal: controller.signal,
           });
 
