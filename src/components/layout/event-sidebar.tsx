@@ -197,7 +197,8 @@ function getWarDay(dateStr: string): number {
     parseInt(dateStr.slice(4, 6), 10) - 1,
     parseInt(dateStr.slice(6, 8), 10),
   );
-  return Math.floor((d.getTime() - start.getTime()) / 86400000) + 1;
+  const diff = Math.floor((d.getTime() - start.getTime()) / 86400000);
+  return diff >= 0 ? diff + 1 : diff;
 }
 
 function groupByYear(events: WarEvent[]) {
@@ -212,7 +213,7 @@ function groupByYear(events: WarEvent[]) {
 
 interface EventSidebarProps {
   events: WarEvent[];
-  onEventClick: (date: string) => void;
+  onEventClick: (date: string, event?: WarEvent) => void;
   currentDate?: string | null;
   onClose?: () => void;
 }
@@ -329,8 +330,8 @@ export default function EventSidebar({
   }, [showSearch]);
 
   const handleEventClick = useCallback(
-    (date: string) => {
-      onEventClick(date);
+    (date: string, event?: WarEvent) => {
+      onEventClick(date, event);
     },
     [onEventClick],
   );
@@ -544,7 +545,7 @@ export default function EventSidebar({
                       >
                         <SidebarMenuButton
                           ref={isActive ? activeRef : undefined}
-                          onClick={() => handleEventClick(event.date)}
+                          onClick={() => handleEventClick(event.date, event)}
                           isActive={isActive}
                           className={cn("h-auto py-2 px-2", isFuture && "opacity-40")}
                         >

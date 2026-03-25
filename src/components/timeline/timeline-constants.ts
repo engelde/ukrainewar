@@ -14,7 +14,9 @@ export const SPEED_OPTIONS: SpeedOption[] = [
 
 export const PIXELS_PER_DAY = 2;
 
-export const YEAR_MARKS = ["2022", "2023", "2024", "2025", "2026"];
+export const WAR_START_DATE = "20220224";
+
+export const YEAR_MARKS = ["2021", "2022", "2023", "2024", "2025", "2026"];
 
 export function formatDateDisplay(dateStr: string): string {
   const m = dateStr.slice(4, 6);
@@ -31,7 +33,7 @@ export function formatDateShort(dateStr: string): string {
 
 export function generateDateRange(): string[] {
   const dates: string[] = [];
-  const start = new Date("2022-02-24");
+  const start = new Date("2021-01-01");
   const end = new Date();
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const y = d.getFullYear();

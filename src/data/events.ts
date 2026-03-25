@@ -9,7 +9,87 @@ export interface WarEvent {
 }
 
 export const KEY_EVENTS: WarEvent[] = [
-  // 2022
+  // ── 2021 — Pre-invasion buildup ──────────────────────────────────────
+  {
+    date: "20210322",
+    label: "Russian military buildup begins",
+    description:
+      "Russia begins massing troops and equipment near the Ukrainian border; satellite imagery shows large-scale military deployments",
+    lat: 51.77,
+    lng: 36.19,
+  },
+  {
+    date: "20210413",
+    label: "Largest buildup since 2014",
+    description:
+      "US intelligence estimates over 100,000 Russian troops positioned along Ukraine's borders, the largest concentration since the 2014 annexation of Crimea",
+    lat: 50.0,
+    lng: 36.25,
+  },
+  {
+    date: "20210422",
+    label: "Partial withdrawal announced",
+    description:
+      "Russia announces partial withdrawal of troops from the border; Western officials express skepticism as significant forces remain",
+    lat: 45.35,
+    lng: 33.97,
+  },
+  {
+    date: "20210614",
+    label: "NATO summit addresses Ukraine",
+    description:
+      "NATO leaders formally acknowledge Russia's military buildup as a threat; allies reaffirm Ukraine's future membership path",
+  },
+  {
+    date: "20210616",
+    label: "Biden–Putin Geneva summit",
+    description:
+      "US President Biden and Russian President Putin meet in Geneva; Biden warns of consequences for further aggression against Ukraine",
+    lat: 46.21,
+    lng: 6.14,
+  },
+  {
+    date: "20211028",
+    label: "Second buildup begins",
+    description:
+      "Satellite imagery reveals renewed Russian troop concentrations near Ukraine; tens of thousands of additional troops deployed to western Russia and Belarus",
+    lat: 52.43,
+    lng: 31.0,
+  },
+  {
+    date: "20211203",
+    label: "US warns of invasion plans",
+    description:
+      'Washington intelligence warns that Russia could invade Ukraine with up to 175,000 troops as early as 2022; Russia calls claims "hysteria"',
+  },
+  {
+    date: "20211217",
+    label: "Russia demands security guarantees",
+    description:
+      "Russia publishes draft treaties demanding NATO halt eastward expansion and withdraw forces from Eastern Europe; the West rejects the demands as non-starters",
+  },
+  // ── 2022 ─────────────────────────────────────────────────────────────
+  {
+    date: "20220110",
+    label: "US–Russia talks in Geneva",
+    description:
+      "US and Russian diplomats hold talks in Geneva on the security proposals; no breakthrough reached",
+  },
+  {
+    date: "20220119",
+    label: "Biden warns of imminent invasion",
+    description:
+      'President Biden says he believes Putin has decided to invade, warning of "severe consequences" including unprecedented sanctions',
+  },
+  {
+    date: "20220221",
+    label: "Russia recognizes separatist republics",
+    description:
+      "Putin signs decrees recognizing the independence of the Donetsk and Luhansk People's Republics and orders Russian troops into the regions",
+    lat: 48.02,
+    lng: 37.8,
+    highlight: true,
+  },
   {
     date: "20220224",
     label: "Invasion begins",

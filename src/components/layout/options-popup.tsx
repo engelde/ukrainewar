@@ -166,15 +166,16 @@ export default function OptionsPopup({
       {open && (
         <div
           className={cn(
-            "absolute top-full right-0 mt-2 z-50",
-            "sm:right-0 fixed sm:absolute inset-x-4 sm:inset-x-auto top-14 sm:top-full sm:mt-2",
+            "fixed inset-x-4 z-50",
+            "sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2",
             "rounded-lg overflow-hidden",
             "bg-background/90 backdrop-blur-xl",
             "border border-border/50",
             "shadow-[0_4px_20px_rgba(0,0,0,0.4)]",
             "w-auto sm:w-[300px]",
-            "max-h-[calc(100vh-5rem)] overflow-y-auto scrollbar-none",
+            "max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-none",
           )}
+          style={{ top: "3.5rem", bottom: "auto" }}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">

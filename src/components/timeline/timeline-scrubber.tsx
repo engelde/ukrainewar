@@ -9,6 +9,7 @@ import {
   generateDateRange,
   PIXELS_PER_DAY,
   SPEED_OPTIONS,
+  WAR_START_DATE,
   YEAR_MARKS,
 } from "./timeline-constants";
 import { TimelineControls } from "./timeline-controls";
@@ -316,7 +317,7 @@ export default function TimelineScrubber({
 
   const handleJumpToYear = useCallback(
     (year: string) => {
-      const targetDate = year === "2022" ? "20220224" : `${year}0101`;
+      const targetDate = year === "2021" ? "20210101" : `${year}0101`;
       const idx = dates.findIndex((d) => d >= targetDate);
       if (idx >= 0) {
         setCurrentIndex(idx);
@@ -457,14 +458,18 @@ export default function TimelineScrubber({
 
   // Year boundaries in pixels
   const yearTicksPx = YEAR_MARKS.map((y) => {
-    if (y === "2022") return { year: y, px: 0 };
+    if (y === "2021") return { year: y, px: 0 };
     const idx = dates.indexOf(`${y}0101`);
     return idx >= 0 ? { year: y, px: idx * PIXELS_PER_DAY } : null;
   }).filter(Boolean) as { year: string; px: number }[];
 
+  // War start line position
+  const warStartIdx = dates.indexOf(WAR_START_DATE);
+  const warStartPx = warStartIdx >= 0 ? warStartIdx * PIXELS_PER_DAY : null;
+
   // Which years are available for jump buttons
   const availableYears = YEAR_MARKS.filter((y) => {
-    if (y === "2022") return true;
+    if (y === "2021") return true;
     return dates.indexOf(`${y}0101`) >= 0;
   });
 
@@ -569,6 +574,19 @@ export default function TimelineScrubber({
               </div>
             ))}
 
+            {/* War start vertical line — prominent marker */}
+            {warStartPx != null && (
+              <div
+                className="absolute top-0 z-[5] pointer-events-none"
+                style={{ left: `${warStartPx}px` }}
+              >
+                <div className="w-0.5 bg-destruction/70" style={{ height: "40px" }} />
+                <span className="absolute -top-0.5 left-1.5 text-[0.5rem] font-semibold text-destruction/80 whitespace-nowrap tracking-wide uppercase">
+                  Feb 24
+                </span>
+              </div>
+            )}
+
             {/* Event marker dots */}
             {eventPositionsPx.map((event, i) => (
               <Tooltip key={`${event.date}-${i}`}>
@@ -629,7 +647,7 @@ export default function TimelineScrubber({
         {/* Year / month progress tracker — clickable to jump */}
         <div className="mx-4 mb-1.5 mt-0 flex items-end h-4">
           {YEAR_MARKS.map((year) => {
-            const yearStartIdx = year === "2022" ? 0 : dates.indexOf(`${year}0101`);
+            const yearStartIdx = year === "2021" ? 0 : dates.indexOf(`${year}0101`);
             if (yearStartIdx < 0) return null;
             const nextYear = String(Number(year) + 1);
             const nextYearIdx = dates.indexOf(`${nextYear}0101`);

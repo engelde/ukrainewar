@@ -275,6 +275,12 @@ export default function AppShell({ casualtyData }: AppShellProps) {
     lng: number;
     zoom?: number;
   } | null>(null);
+  const [clickedEvent, setClickedEvent] = useState<{
+    label: string;
+    description: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(urlEvents === true);
 
@@ -333,6 +339,7 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const handleTimelineDateChange = useCallback(
     (date: string) => {
       setTerritoryDate(date);
+      setClickedEvent(null);
       const today = new Date();
       const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
       if (date >= todayStr) {
@@ -607,11 +614,18 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   );
 
   const handleEventClick = useCallback(
-    (date: string) => {
+    (date: string, event?: import("@/data/events").WarEvent) => {
       handleTimelineDateChange(date);
-      const event = events.find((e) => e.date === date);
-      if (event?.lat != null && event?.lng != null) {
-        setFlyToTarget({ lat: event.lat, lng: event.lng, zoom: 9 });
+      // Use the specific event clicked, falling back to first match
+      const target = event ?? events.find((e) => e.date === date);
+      if (target?.lat != null && target?.lng != null) {
+        setFlyToTarget({ lat: target.lat, lng: target.lng, zoom: 9 });
+        setClickedEvent({
+          label: target.label,
+          description: target.description,
+          lat: target.lat,
+          lng: target.lng,
+        });
       }
     },
     [handleTimelineDateChange, events],
@@ -679,11 +693,15 @@ export default function AppShell({ casualtyData }: AppShellProps) {
           parseInt(territoryDate.slice(6, 8), 10),
         )
       : new Date();
-    return Math.floor((current.getTime() - start.getTime()) / 86400000) + 1;
+    const diff = Math.floor((current.getTime() - start.getTime()) / 86400000);
+    // Day 1 = Feb 24 2022, Day -1 = Feb 23 2022 (no Day 0)
+    return diff >= 0 ? diff + 1 : diff;
   })();
 
   // Find the active event for the current date (within 3 days)
+  // Prefer the explicitly-clicked event when available
   const activeMapEvent = (() => {
+    if (clickedEvent) return clickedEvent;
     if (!territoryDate) return null;
     const currentDateNum = parseInt(territoryDate, 10);
     for (const event of events) {

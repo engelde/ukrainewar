@@ -115,7 +115,7 @@ export default function DayTracker({
             <Calendar
               mode="single"
               captionLayout="dropdown"
-              startMonth={new Date(2022, 1)}
+              startMonth={new Date(2021, 0)}
               endMonth={new Date()}
               selected={selectedDate}
               onSelect={(date) => {
@@ -126,7 +126,7 @@ export default function DayTracker({
                 onDateChange(`${y}${m}${d}`);
                 setCalendarOpen(false);
               }}
-              disabled={[{ before: new Date(2022, 1, 24) }, { after: new Date() }]}
+              disabled={[{ before: new Date(2021, 0, 1) }, { after: new Date() }]}
               defaultMonth={new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)}
               className="bg-background/95 backdrop-blur-xl border border-border/40 rounded-lg"
             />
