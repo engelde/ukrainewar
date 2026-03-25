@@ -2663,6 +2663,11 @@ export default function MapView({
     map.current.on("load", async () => {
       setLoaded(true);
       if (map.current) {
+        // Pre-load all icons synchronously before any layers reference them
+        loadEquipmentIcons(map.current);
+        loadConflictIcons(map.current);
+        loadInfrastructureIcons(map.current);
+
         // Border must complete first — heatmap depends on oblastsRef
         await loadUkraineBorder(map.current);
         loadTerritoryDataRef.current(map.current);
