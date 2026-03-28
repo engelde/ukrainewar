@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.1.0...ukrainewar-v1.1.1) (2026-03-28)
+
+
+### Bug Fixes
+
+* timeline seek updates all map layers and panels consistently ([#19](https://github.com/engelde/ukrainewar/issues/19)) ([fa1e738](https://github.com/engelde/ukrainewar/commit/fa1e738645dd439b8cfc2090fcede70a3e77e0b1))
+
 ## [1.1.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.0.0...ukrainewar-v1.1.0) (2026-03-25)
 
 
