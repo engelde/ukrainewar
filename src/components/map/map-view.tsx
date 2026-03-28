@@ -2660,6 +2660,221 @@ export default function MapView({
     [territoryDate],
   );
 
+  // Load current troop positions and attack directions from DeepState direct API
+  const loadTroopPositions = useCallback(
+    async (mapInstance: maplibregl.Map) => {
+      try {
+        const res = await fetch("/api/positions");
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (map.current !== mapInstance) return;
+
+        // ── Unit positions ──
+        if (!mapInstance.getSource("troop-units") && data.units?.features?.length) {
+          mapInstance.addSource("troop-units", {
+            type: "geojson",
+            data: data.units,
+          });
+
+          const troopsVis = layersRef.current.troops ? "visible" : "none";
+
+          // Outer glow
+          mapInstance.addLayer({
+            id: "troop-units-glow",
+            type: "circle",
+            source: "troop-units",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 5, 8, 10, 12, 16],
+              "circle-color": "oklch(0.55 0.2 25)",
+              "circle-opacity": 0.2,
+              "circle-blur": 1,
+            },
+            layout: { visibility: troopsVis },
+          });
+
+          // Unit dot
+          mapInstance.addLayer({
+            id: "troop-units-points",
+            type: "circle",
+            source: "troop-units",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 8, 4, 12, 6],
+              "circle-color": "oklch(0.6 0.22 25)",
+              "circle-opacity": 0.9,
+              "circle-stroke-width": 1,
+              "circle-stroke-color": "oklch(0.15 0 0)",
+            },
+            layout: { visibility: troopsVis },
+          });
+
+          // Unit label (visible at zoom 8+)
+          mapInstance.addLayer({
+            id: "troop-units-labels",
+            type: "symbol",
+            source: "troop-units",
+            minzoom: 8,
+            layout: {
+              "text-field": ["get", "name"],
+              "text-size": 9,
+              "text-offset": [0, 1.3],
+              "text-anchor": "top",
+              "text-max-width": 12,
+              visibility: troopsVis,
+            },
+            paint: {
+              "text-color": "oklch(0.75 0.12 25)",
+              "text-halo-color": "oklch(0.15 0 0)",
+              "text-halo-width": 1,
+            },
+          });
+
+          // Tooltip on hover
+          mapInstance.on("mouseenter", "troop-units-points", (e) => {
+            if (!map.current) return;
+            map.current.getCanvas().style.cursor = "pointer";
+            const f = e.features?.[0];
+            if (!f || f.geometry.type !== "Point") return;
+            const props = f.properties as { name: string; unitId: string };
+            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+
+            // Format unit ID: units.brigade.38-air-assault → 38th Air Assault Brigade
+            const unitParts = (props.unitId || "").replace("units.", "").split(".");
+            const unitType = unitParts[0] || "";
+            const unitName = (unitParts[1] || "").replace(/-/g, " ");
+
+            new maplibregl.Popup({
+              offset: 8,
+              closeButton: false,
+              closeOnClick: false,
+              className: "event-marker-popup",
+            })
+              .setLngLat(coords)
+              .setHTML(
+                `<div style="padding:4px 8px;font-size:11px">
+                  <div style="color:#ef4444;font-weight:600">🔴 Russian ${unitType}</div>
+                  <div style="color:#d4d4d8;margin-top:2px">${unitName}</div>
+                </div>`,
+              )
+              .addTo(map.current);
+          });
+
+          mapInstance.on("mouseleave", "troop-units-points", () => {
+            if (!map.current) return;
+            map.current.getCanvas().style.cursor = "";
+            // Remove all popups with this class
+            for (const el of document.querySelectorAll(".event-marker-popup")) {
+              el.remove();
+            }
+          });
+        }
+
+        // ── Attack direction arrows ──
+        if (!mapInstance.getSource("troop-attacks") && data.attacks?.features?.length) {
+          mapInstance.addSource("troop-attacks", {
+            type: "geojson",
+            data: data.attacks,
+          });
+
+          const troopsVis = layersRef.current.troops ? "visible" : "none";
+
+          mapInstance.addLayer({
+            id: "troop-attacks-arrows",
+            type: "circle",
+            source: "troop-attacks",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 6, 12, 10],
+              "circle-color": "oklch(0.7 0.25 30)",
+              "circle-opacity": 0.7,
+              "circle-stroke-width": 1.5,
+              "circle-stroke-color": "oklch(0.5 0.2 25)",
+            },
+            layout: { visibility: troopsVis },
+          });
+        }
+
+        // ── Airfields ──
+        if (!mapInstance.getSource("troop-airfields") && data.airfields?.features?.length) {
+          mapInstance.addSource("troop-airfields", {
+            type: "geojson",
+            data: data.airfields,
+          });
+
+          const troopsVis = layersRef.current.troops ? "visible" : "none";
+
+          mapInstance.addLayer({
+            id: "troop-airfields-points",
+            type: "circle",
+            source: "troop-airfields",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 5, 12, 8],
+              "circle-color": "oklch(0.5 0.15 250)",
+              "circle-opacity": 0.8,
+              "circle-stroke-width": 1,
+              "circle-stroke-color": "oklch(0.15 0 0)",
+            },
+            layout: { visibility: troopsVis },
+          });
+
+          mapInstance.addLayer({
+            id: "troop-airfields-labels",
+            type: "symbol",
+            source: "troop-airfields",
+            minzoom: 7,
+            layout: {
+              "text-field": ["get", "name"],
+              "text-size": 8,
+              "text-offset": [0, 1.2],
+              "text-anchor": "top",
+              "text-max-width": 10,
+              visibility: troopsVis,
+            },
+            paint: {
+              "text-color": "oklch(0.65 0.1 250)",
+              "text-halo-color": "oklch(0.15 0 0)",
+              "text-halo-width": 1,
+            },
+          });
+
+          // Tooltip on hover
+          mapInstance.on("mouseenter", "troop-airfields-points", (e) => {
+            if (!map.current) return;
+            map.current.getCanvas().style.cursor = "pointer";
+            const f = e.features?.[0];
+            if (!f || f.geometry.type !== "Point") return;
+            const props = f.properties as { name: string; id: string };
+            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+
+            new maplibregl.Popup({
+              offset: 8,
+              closeButton: false,
+              closeOnClick: false,
+              className: "event-marker-popup",
+            })
+              .setLngLat(coords)
+              .setHTML(
+                `<div style="padding:4px 8px;font-size:11px">
+                  <div style="color:#60a5fa;font-weight:600">✈️ ${props.name || "Airfield"}</div>
+                </div>`,
+              )
+              .addTo(map.current);
+          });
+
+          mapInstance.on("mouseleave", "troop-airfields-points", () => {
+            if (!map.current) return;
+            map.current.getCanvas().style.cursor = "";
+            for (const el of document.querySelectorAll(".event-marker-popup")) {
+              el.remove();
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load troop positions:", err);
+      }
+    },
+    [onMarkerClick],
+  );
+
   // Store initial-load callbacks in refs so the init effect never re-runs
   const loadTerritoryDataRef = useRef(loadTerritoryData);
   useEffect(() => {
@@ -2725,6 +2940,7 @@ export default function MapView({
         loadAttackMarkers(map.current);
         loadBuildupLayer(map.current);
         ensureAllianceLayers(map.current);
+        loadTroopPositions(map.current);
 
         // ── Key events accumulation layer ──
         if (!map.current.getSource("key-events")) {
@@ -3010,6 +3226,21 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.buildup ? "visible" : "none");
       }
     }
+
+    // Troop position layers (DeepState unit positions, attack arrows, airfields)
+    const troopLayers = [
+      "troop-units-glow",
+      "troop-units-points",
+      "troop-units-labels",
+      "troop-attacks-arrows",
+      "troop-airfields-points",
+      "troop-airfields-labels",
+    ];
+    for (const layer of troopLayers) {
+      if (map.current?.getLayer(layer)) {
+        map.current.setLayoutProperty(layer, "visibility", layers.troops ? "visible" : "none");
+      }
+    }
   }, [
     loaded,
     layers.territory,
@@ -3025,6 +3256,7 @@ export default function MapView({
     layers.thermal,
     layers.alliance,
     layers.buildup,
+    layers.troops,
   ]);
 
   // Update territory when timeline date changes

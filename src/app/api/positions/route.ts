@@ -1,0 +1,197 @@
+import { NextResponse } from "next/server";
+import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+/**
+ * GET /api/positions
+ *
+ * Fetches the latest military positions from DeepState's direct API.
+ * Returns parsed unit positions, attack direction arrows, and airfields
+ * as separate GeoJSON FeatureCollections for map layer rendering.
+ */
+
+const CACHE_KEY = "deepstate-positions";
+const TTL = 6 * 60 * 60; // 6 hours
+const DEEPSTATE_API = "https://deepstatemap.live/api/history/last";
+
+interface ParsedPositions {
+  datetime: string;
+  units: GeoJSON.FeatureCollection;
+  attacks: GeoJSON.FeatureCollection;
+  airfields: GeoJSON.FeatureCollection;
+}
+
+let memCache: ParsedPositions | null = null;
+let memCacheAt = 0;
+
+function parseDeepStateResponse(data: {
+  id: number;
+  datetime: string;
+  map: GeoJSON.FeatureCollection;
+}): ParsedPositions {
+  const units: GeoJSON.Feature[] = [];
+  const attacks: GeoJSON.Feature[] = [];
+  const airfields: GeoJSON.Feature[] = [];
+
+  for (const feature of data.map.features) {
+    if (feature.geometry.type !== "Point") continue;
+
+    const name = (feature.properties?.name as string) || "";
+    const desc = (feature.properties?.description as string) || "";
+
+    if (name.includes("geoJSON.status.attack_direction")) {
+      // Extract arrow direction from description {icon=arrow_N}
+      const arrowMatch = desc.match(/icon=arrow_(\d+)/);
+      const rotation = arrowMatch ? Number.parseInt(arrowMatch[1], 10) * 22.5 : 0;
+      attacks.push({
+        ...feature,
+        properties: {
+          type: "attack_direction",
+          rotation,
+        },
+      });
+    } else if (name.includes("units.")) {
+      // Extract unit identifier from name
+      const unitMatch = name.match(/geoJSON\.(units\.[^\s]+)/);
+      const unitId = unitMatch ? unitMatch[1] : name;
+
+      // Extract readable name (before ///)
+      const displayName = name.split("///")[0].trim();
+
+      units.push({
+        ...feature,
+        properties: {
+          type: "unit",
+          unitId,
+          name: displayName,
+          fullName: name,
+        },
+      });
+    } else if (
+      name.includes("airfield.") ||
+      name.includes("airbase.") ||
+      name.includes("airport.")
+    ) {
+      const displayName = name.split("///")[0].trim();
+      const idMatch = name.match(/geoJSON\.((?:airfield|airbase|airport)\.[^\s]+)/);
+      airfields.push({
+        ...feature,
+        properties: {
+          type: "airfield",
+          id: idMatch ? idMatch[1] : name,
+          name: displayName,
+        },
+      });
+    }
+  }
+
+  return {
+    datetime: data.datetime,
+    units: { type: "FeatureCollection", features: units },
+    attacks: { type: "FeatureCollection", features: attacks },
+    airfields: { type: "FeatureCollection", features: airfields },
+  };
+}
+
+let inflightPromise: Promise<ParsedPositions> | null = null;
+
+async function fetchAndCache(): Promise<ParsedPositions> {
+  if (inflightPromise) return inflightPromise;
+  inflightPromise = (async () => {
+    const res = await fetch(DEEPSTATE_API, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: TTL },
+    });
+    if (!res.ok) throw new Error(`DeepState API returned ${res.status}`);
+    const raw = await res.json();
+    const parsed = parseDeepStateResponse(raw);
+    memCache = parsed;
+    memCacheAt = Date.now();
+    await cacheSet(CACHE_KEY, parsed, TTL);
+    return parsed;
+  })();
+  try {
+    return await inflightPromise;
+  } finally {
+    inflightPromise = null;
+  }
+}
+
+function refreshInBackground() {
+  if (inflightPromise) return;
+  fetchAndCache().catch((err) => {
+    console.error("[positions] Background refresh failed:", err);
+  });
+}
+
+export async function GET(request: Request) {
+  const limited = checkRateLimit(request, "positions", 60, 60_000);
+  if (limited) return limited;
+
+  try {
+    if (memCache && Date.now() - memCacheAt < TTL * 1000) {
+      return NextResponse.json(memCache, {
+        headers: {
+          "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=3600",
+          "X-Cache": "HIT",
+        },
+      });
+    }
+
+    const cached = await cacheGet<ParsedPositions>(CACHE_KEY);
+    if (cached && isFresh(cached)) {
+      memCache = cached.data;
+      memCacheAt = Date.now();
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=3600",
+          "X-Cache": "HIT",
+        },
+      });
+    }
+
+    if (cached && isUsableStale(cached)) {
+      refreshInBackground();
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=21600",
+          "X-Cache": "STALE",
+        },
+      });
+    }
+
+    const data = await fetchAndCache();
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=21600, stale-while-revalidate=3600",
+        "X-Cache": "MISS",
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch positions";
+    console.error("Positions API error:", message);
+
+    const stale = await cacheGet<ParsedPositions>(CACHE_KEY);
+    if (stale) {
+      return NextResponse.json(stale.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-STALE",
+          "X-Error": message,
+        },
+      });
+    }
+
+    if (memCache) {
+      return NextResponse.json(memCache, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-STALE",
+          "X-Error": message,
+        },
+      });
+    }
+
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+}

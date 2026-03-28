@@ -327,6 +327,10 @@ export default function EventSidebar({
       } else {
         activeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+    } else if (isInitialScrollRef.current && contentRef.current) {
+      // Fallback: scroll container to bottom so latest events are visible
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+      isInitialScrollRef.current = false;
     }
   }, [activeEventDate]);
 

@@ -43,6 +43,16 @@ const PIPELINES: PipelineConfig[] = [
     description: "Historical territory tessellations",
     type: "static",
   },
+  {
+    id: "deepstate-positions",
+    name: "DeepState Positions",
+    category: "Territory",
+    cacheKey: "deepstate-positions",
+    ttl: 21600,
+    url: "https://deepstatemap.live",
+    description: "Russian unit positions & attack directions",
+    type: "cached",
+  },
 
   // ── Casualties ─────────────────────────────────────────────────────────
   {

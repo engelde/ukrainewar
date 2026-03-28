@@ -79,6 +79,7 @@ const ALL_LAYER_KEYS: (keyof MapLayers)[] = [
   "thermal",
   "alliance",
   "buildup",
+  "troops",
 ];
 
 // All panel visibility keys and their defaults

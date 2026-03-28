@@ -492,6 +492,7 @@ const sidebarMenuButtonVariants = cva(
 
 function SidebarMenuButton({
   render,
+  ref,
   isActive = false,
   variant = "default",
   size = "default",
@@ -506,6 +507,7 @@ function SidebarMenuButton({
   const { isMobile, state } = useSidebar();
   const comp = useRender({
     defaultTagName: "button",
+    ref,
     props: mergeProps<"button">(
       {
         className: cn(sidebarMenuButtonVariants({ variant, size }), className),
