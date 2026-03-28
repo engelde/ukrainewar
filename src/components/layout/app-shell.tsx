@@ -693,8 +693,29 @@ export default function AppShell({ casualtyData }: AppShellProps) {
   const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
   const isViewingPast = !!territoryDate && territoryDate < todayStr;
   const isPreWar = !!territoryDate && territoryDate < "20220224";
+
+  // Zero-value fallback so panels stay mounted during pre-war timeline dates
+  const preWarData: CasualtyData = useMemo(
+    () => ({
+      day: 0,
+      militaryPersonnel: [0, 0],
+      jet: [0, 0],
+      copter: [0, 0],
+      tank: [0, 0],
+      armoredCombatVehicle: [0, 0],
+      artillerySystem: [0, 0],
+      airDefenceSystem: [0, 0],
+      mlrs: [0, 0],
+      supplyVehicle: [0, 0],
+      ship: [0, 0],
+      uav: [0, 0],
+      _meta: { last_updated: "2022-02-24", days: [], last: "2022-02-24" },
+    }),
+    [],
+  );
+
   const displayData = isPreWar
-    ? null
+    ? preWarData
     : isViewingPast
       ? (historicalData ?? casualtyData)
       : casualtyData;
