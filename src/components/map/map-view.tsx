@@ -3121,8 +3121,6 @@ export default function MapView({
   }, [loaded, territoryDate]);
 
   // Batch-update all map sources when timeline date changes (single debounced effect)
-  const lastMapUpdateRef = useRef<string | null>(null);
-
   useEffect(() => {
     if (!map.current || !loaded) return;
 
@@ -3133,10 +3131,6 @@ export default function MapView({
       const timelineDateNorm = territoryDate
         ? `${territoryDate.slice(0, 4)}-${territoryDate.slice(4, 6)}-${territoryDate.slice(6, 8)}`
         : null;
-
-      // Skip if the normalised date hasn't actually changed
-      if (timelineDateNorm === lastMapUpdateRef.current) return;
-      lastMapUpdateRef.current = timelineDateNorm;
 
       // --- Equipment markers ---
       const eqSource = m.getSource("equipment") as maplibregl.GeoJSONSource | undefined;

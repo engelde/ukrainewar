@@ -39,3 +39,4 @@ yarn-error.log*
 /public/data/viina/snapshots/
 /public/data/alliance.json
 /public/data/territory-dates.json
+.wrangler/

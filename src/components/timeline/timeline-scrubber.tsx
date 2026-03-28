@@ -170,11 +170,11 @@ export default function TimelineScrubber({
     });
   }, [dates.length, showPlayHint]);
 
-  // Jump to start
+  // Jump to start of war
   const jumpToStart = useCallback(() => {
-    setCurrentIndex(0);
+    setCurrentIndex(warStartIndex);
     setIsPlaying(false);
-  }, []);
+  }, [warStartIndex]);
 
   // Jump to end (today)
   const jumpToEnd = useCallback(() => {
