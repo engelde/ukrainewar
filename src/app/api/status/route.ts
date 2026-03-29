@@ -101,29 +101,39 @@ const PIPELINES: PipelineConfig[] = [
   // ── Events ─────────────────────────────────────────────────────────────
   {
     id: "events",
-    name: "Wikidata",
+    name: "Wikidata / ACLED",
     category: "Events",
-    cacheKey: "events",
-    ttl: 86400,
+    cacheKey: null,
+    ttl: 0,
     url: "https://www.wikidata.org",
-    description: "Structured war event data via SPARQL",
-    type: "cached",
+    description: "Structured war events (prebuild)",
+    type: "static",
   },
   {
     id: "acled",
     name: "ACLED",
     category: "Events",
-    cacheKey: "acled-map",
+    cacheKey: null,
+    ttl: 0,
+    url: "https://acleddata.com",
+    description: "Armed conflict event data (prebuild)",
+    type: "static",
+  },
+  {
+    id: "battles",
+    name: "ACLED Battles",
+    category: "Events",
+    cacheKey: "battles",
     ttl: 86400,
     url: "https://acleddata.com",
-    description: "Armed conflict event data",
+    description: "Major battles & high-fatality events",
     type: "cached",
   },
   {
     id: "firms",
     name: "NASA FIRMS",
     category: "Events",
-    cacheKey: "firms:ukraine",
+    cacheKey: "firms:ukraine:nrt",
     ttl: 10800,
     url: "https://firms.modaps.eosdis.nasa.gov",
     description: "Satellite thermal anomalies (VIIRS)",
@@ -187,43 +197,37 @@ const PIPELINES: PipelineConfig[] = [
     id: "spending",
     name: "Kiel Institute",
     category: "Humanitarian",
-    cacheKey: "spending-kiel",
-    ttl: 604800,
+    cacheKey: null,
+    ttl: 0,
     url: "https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/",
-    description: "Bilateral aid tracker",
-    type: "cached",
+    description: "Bilateral aid tracker (prebuild, weekly update)",
+    type: "static",
   },
 
   // ── International ──────────────────────────────────────────────────────
   {
     id: "sanctions",
-    name: "Sanctions",
+    name: "UK OFSI Sanctions",
+    category: "International",
+    cacheKey: "sanctions-live",
+    ttl: 86400,
+    url: "https://www.gov.uk/government/publications/the-uk-sanctions-list",
+    description: "Consolidated sanctions list",
+    type: "cached",
+  },
+  {
+    id: "alliance",
+    name: "Alliance Alignment",
     category: "International",
     cacheKey: null,
     ttl: 0,
-    url: "https://ofsistorage.blob.core.windows.net/publishlive/2022format/ConList.csv",
-    description: "OFSI consolidated sanctions list",
+    url: "https://www.un.org/en/",
+    description: "Country alignment based on UN votes (prebuild)",
     type: "static",
   },
 ];
 
 const DAY = 86400;
-
-/**
- * ACLED uses a dynamic cache key based on date range.
- * Try the last 7 days to find the most recent entry.
- */
-async function findAcledCache() {
-  for (let daysBack = 0; daysBack < 7; daysBack++) {
-    const d = new Date(Date.now() - daysBack * DAY * 1000);
-    const end = d.toISOString().slice(0, 10);
-    const startD = new Date(d.getTime() - 365 * DAY * 1000);
-    const start = startD.toISOString().slice(0, 10);
-    const entry = await cacheGet(`acled-map:${start}:${end}`);
-    if (entry) return entry;
-  }
-  return null;
-}
 
 export async function GET() {
   const results = await Promise.all(
@@ -242,8 +246,7 @@ export async function GET() {
         };
       }
 
-      const entry =
-        pipeline.id === "acled" ? await findAcledCache() : await cacheGet(pipeline.cacheKey);
+      const entry = await cacheGet(pipeline.cacheKey);
 
       if (!entry) {
         return {
