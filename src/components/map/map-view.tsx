@@ -2679,9 +2679,7 @@ export default function MapView({
 
         // No archive for this date → clear troop data
         const noData = !res.ok;
-        const data = noData
-          ? { units: EMPTY_FC, attacks: EMPTY_FC, airfields: EMPTY_FC }
-          : await res.json();
+        const data = noData ? { units: EMPTY_FC, attacks: EMPTY_FC } : await res.json();
 
         const troopsVis = layersRef.current.troops ? "visible" : "none";
 
@@ -2810,75 +2808,6 @@ export default function MapView({
               "circle-stroke-color": "#881337",
             },
             layout: { visibility: troopsVis },
-          });
-        }
-
-        // ── Airfields ──
-        ensureSource("troop-airfields", data.airfields ?? EMPTY_FC);
-        if (!mapInstance.getLayer("troop-airfields-points")) {
-          mapInstance.addLayer({
-            id: "troop-airfields-points",
-            type: "circle",
-            source: "troop-airfields",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 5, 12, 8],
-              "circle-color": "#22d3ee",
-              "circle-opacity": 0.85,
-              "circle-stroke-width": 1,
-              "circle-stroke-color": "#0e7490",
-            },
-            layout: { visibility: troopsVis },
-          });
-
-          mapInstance.addLayer({
-            id: "troop-airfields-labels",
-            type: "symbol",
-            source: "troop-airfields",
-            minzoom: 7,
-            layout: {
-              "text-field": ["get", "name"],
-              "text-size": 8,
-              "text-offset": [0, 1.2],
-              "text-anchor": "top",
-              "text-max-width": 10,
-              visibility: troopsVis,
-            },
-            paint: {
-              "text-color": "#67e8f9",
-              "text-halo-color": "#0f0f1a",
-              "text-halo-width": 1.5,
-            },
-          });
-
-          mapInstance.on("mouseenter", "troop-airfields-points", (e) => {
-            if (!map.current) return;
-            map.current.getCanvas().style.cursor = "pointer";
-            const f = e.features?.[0];
-            if (!f || f.geometry.type !== "Point") return;
-            const props = f.properties as { name: string; id: string };
-            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
-
-            new maplibregl.Popup({
-              offset: 8,
-              closeButton: false,
-              closeOnClick: false,
-              className: "event-marker-popup",
-            })
-              .setLngLat(coords)
-              .setHTML(
-                `<div style="padding:4px 8px;font-size:11px">
-                  <div style="color:#22d3ee;font-weight:600">✈ ${props.name || "Airfield"}</div>
-                </div>`,
-              )
-              .addTo(map.current);
-          });
-
-          mapInstance.on("mouseleave", "troop-airfields-points", () => {
-            if (!map.current) return;
-            map.current.getCanvas().style.cursor = "";
-            for (const el of document.querySelectorAll(".event-marker-popup")) {
-              el.remove();
-            }
           });
         }
       } catch (err) {
@@ -3247,8 +3176,6 @@ export default function MapView({
       "troop-units-labels",
       "troop-attacks-glow",
       "troop-attacks-arrows",
-      "troop-airfields-points",
-      "troop-airfields-labels",
     ];
     for (const layer of troopLayers) {
       if (map.current?.getLayer(layer)) {

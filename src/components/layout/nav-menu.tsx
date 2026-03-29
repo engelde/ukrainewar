@@ -71,7 +71,6 @@ const OVERLAY_ITEMS: LegendItem[] = [
 const TROOP_ITEMS: LegendItem[] = [
   { label: "Russian unit positions", color: "#e879f9", type: "circle" },
   { label: "Attack directions", color: "#f43f5e", type: "circle" },
-  { label: "Airfields / Airbases", color: "#22d3ee", type: "circle" },
 ];
 
 function LegendSwatch({ item }: { item: LegendItem }) {
