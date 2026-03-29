@@ -92,7 +92,6 @@ export interface MapLayers {
   thermal: boolean;
   alliance: boolean;
   buildup: boolean;
-  troops: boolean;
 }
 
 export type EquipmentStatus = "destroyed" | "damaged" | "captured" | "abandoned";

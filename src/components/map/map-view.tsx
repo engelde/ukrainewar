@@ -2659,164 +2659,6 @@ export default function MapView({
     },
     [territoryDate],
   );
-
-  // Load current troop positions and attack directions from DeepState direct API
-  const EMPTY_FC: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
-  const lastTroopDateRef = useRef<string | null>(null);
-
-  const loadTroopPositions = useCallback(
-    async (mapInstance: maplibregl.Map, date?: string | null) => {
-      try {
-        const dateParam = date || null;
-        const fetchUrl = dateParam ? `/api/positions?date=${dateParam}` : "/api/positions";
-
-        // Deduplicate: don't refetch if date hasn't changed
-        if (lastTroopDateRef.current === (dateParam ?? "latest")) return;
-        lastTroopDateRef.current = dateParam ?? "latest";
-
-        const res = await fetch(fetchUrl);
-        if (map.current !== mapInstance) return;
-
-        // No archive for this date → clear troop data
-        const noData = !res.ok;
-        const data = noData ? { units: EMPTY_FC, attacks: EMPTY_FC } : await res.json();
-
-        const troopsVis = layersRef.current.troops ? "visible" : "none";
-
-        // Helper: create source + layers if first call, or update existing source data
-        const ensureSource = (id: string, geojson: GeoJSON.FeatureCollection) => {
-          const existing = mapInstance.getSource(id) as maplibregl.GeoJSONSource | undefined;
-          if (existing) {
-            existing.setData(geojson);
-          } else {
-            mapInstance.addSource(id, { type: "geojson", data: geojson });
-          }
-        };
-
-        // ── Unit positions ──
-        ensureSource("troop-units", data.units ?? EMPTY_FC);
-        if (!mapInstance.getLayer("troop-units-glow")) {
-          mapInstance.addLayer({
-            id: "troop-units-glow",
-            type: "circle",
-            source: "troop-units",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 6, 8, 12, 12, 18],
-              "circle-color": "#a21caf",
-              "circle-opacity": 0.25,
-              "circle-blur": 1,
-            },
-            layout: { visibility: troopsVis },
-          });
-
-          mapInstance.addLayer({
-            id: "troop-units-points",
-            type: "circle",
-            source: "troop-units",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 5, 12, 7],
-              "circle-color": "#e879f9",
-              "circle-opacity": 0.95,
-              "circle-stroke-width": 1.5,
-              "circle-stroke-color": "#1a1a2e",
-            },
-            layout: { visibility: troopsVis },
-          });
-
-          mapInstance.addLayer({
-            id: "troop-units-labels",
-            type: "symbol",
-            source: "troop-units",
-            minzoom: 8,
-            layout: {
-              "text-field": ["get", "name"],
-              "text-size": 9,
-              "text-offset": [0, 1.3],
-              "text-anchor": "top",
-              "text-max-width": 12,
-              visibility: troopsVis,
-            },
-            paint: {
-              "text-color": "#d946ef",
-              "text-halo-color": "#0f0f1a",
-              "text-halo-width": 1.5,
-            },
-          });
-
-          mapInstance.on("mouseenter", "troop-units-points", (e) => {
-            if (!map.current) return;
-            map.current.getCanvas().style.cursor = "pointer";
-            const f = e.features?.[0];
-            if (!f || f.geometry.type !== "Point") return;
-            const props = f.properties as { name: string; unitId: string };
-            const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
-
-            const unitParts = (props.unitId || "").replace("units.", "").split(".");
-            const unitType = unitParts[0] || "";
-            const unitName = (unitParts[1] || "").replace(/-/g, " ");
-
-            new maplibregl.Popup({
-              offset: 8,
-              closeButton: false,
-              closeOnClick: false,
-              className: "event-marker-popup",
-            })
-              .setLngLat(coords)
-              .setHTML(
-                `<div style="padding:4px 8px;font-size:11px">
-                  <div style="color:#e879f9;font-weight:600">⬟ Russian ${unitType}</div>
-                  <div style="color:#d4d4d8;margin-top:2px">${unitName}</div>
-                </div>`,
-              )
-              .addTo(map.current);
-          });
-
-          mapInstance.on("mouseleave", "troop-units-points", () => {
-            if (!map.current) return;
-            map.current.getCanvas().style.cursor = "";
-            for (const el of document.querySelectorAll(".event-marker-popup")) {
-              el.remove();
-            }
-          });
-        }
-
-        // ── Attack direction arrows ──
-        ensureSource("troop-attacks", data.attacks ?? EMPTY_FC);
-        if (!mapInstance.getLayer("troop-attacks-glow")) {
-          mapInstance.addLayer({
-            id: "troop-attacks-glow",
-            type: "circle",
-            source: "troop-attacks",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 5, 8, 9, 12, 14],
-              "circle-color": "#be123c",
-              "circle-opacity": 0.3,
-              "circle-blur": 0.8,
-            },
-            layout: { visibility: troopsVis },
-          });
-
-          mapInstance.addLayer({
-            id: "troop-attacks-arrows",
-            type: "circle",
-            source: "troop-attacks",
-            paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 6, 12, 10],
-              "circle-color": "#f43f5e",
-              "circle-opacity": 0.85,
-              "circle-stroke-width": 1.5,
-              "circle-stroke-color": "#881337",
-            },
-            layout: { visibility: troopsVis },
-          });
-        }
-      } catch (err) {
-        console.error("Failed to load troop positions:", err);
-      }
-    },
-    [onMarkerClick],
-  );
-
   // Store initial-load callbacks in refs so the init effect never re-runs
   const loadTerritoryDataRef = useRef(loadTerritoryData);
   useEffect(() => {
@@ -2882,7 +2724,6 @@ export default function MapView({
         loadAttackMarkers(map.current);
         loadBuildupLayer(map.current);
         ensureAllianceLayers(map.current);
-        loadTroopPositions(map.current, territoryDate);
 
         // ── Key events accumulation layer ──
         if (!map.current.getSource("key-events")) {
@@ -3168,20 +3009,6 @@ export default function MapView({
         map.current.setLayoutProperty(layer, "visibility", layers.buildup ? "visible" : "none");
       }
     }
-
-    // Troop position layers (DeepState unit positions, attack arrows, airfields)
-    const troopLayers = [
-      "troop-units-glow",
-      "troop-units-points",
-      "troop-units-labels",
-      "troop-attacks-glow",
-      "troop-attacks-arrows",
-    ];
-    for (const layer of troopLayers) {
-      if (map.current?.getLayer(layer)) {
-        map.current.setLayoutProperty(layer, "visibility", layers.troops ? "visible" : "none");
-      }
-    }
   }, [
     loaded,
     layers.territory,
@@ -3197,7 +3024,6 @@ export default function MapView({
     layers.thermal,
     layers.alliance,
     layers.buildup,
-    layers.troops,
   ]);
 
   // Update territory when timeline date changes
@@ -3218,25 +3044,6 @@ export default function MapView({
       };
     }
   }, [loaded, territoryDate, loadTerritoryData]);
-
-  // Update troop positions when timeline date changes
-  useEffect(() => {
-    if (!map.current || !loaded) return;
-    const m = map.current;
-    // Reset dedup ref so new date fetches fresh data
-    lastTroopDateRef.current = null;
-    if (m.isStyleLoaded()) {
-      loadTroopPositions(m, territoryDate);
-    } else {
-      const onIdle = () => {
-        if (map.current) loadTroopPositions(map.current, territoryDate);
-      };
-      m.once("idle", onIdle);
-      return () => {
-        m.off("idle", onIdle);
-      };
-    }
-  }, [loaded, territoryDate, loadTroopPositions]);
 
   // Update infrastructure status based on timeline date
   // Fetch historical equipment data when timeline moves to a new month

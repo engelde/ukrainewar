@@ -16,7 +16,6 @@ import {
   TbLineDashed,
   TbMap,
   TbMapPin,
-  TbMilitaryRank,
   TbMinus,
   TbPlus,
   TbSatellite,
@@ -95,7 +94,6 @@ const LAYER_ITEMS: { label: string; icon: IconType; key: keyof MapLayers }[] = [
   { label: "Thermal", icon: TbSatellite, key: "thermal" },
   { label: "Intl Support", icon: TbGlobe, key: "alliance" },
   { label: "Buildup", icon: TbUsers, key: "buildup" },
-  { label: "Troop Positions", icon: TbMilitaryRank, key: "troops" },
 ];
 
 function Checkbox({ checked }: { checked: boolean }) {
