@@ -2679,31 +2679,31 @@ export default function MapView({
 
           const troopsVis = layersRef.current.troops ? "visible" : "none";
 
-          // Outer glow
+          // Outer glow — magenta
           mapInstance.addLayer({
             id: "troop-units-glow",
             type: "circle",
             source: "troop-units",
             paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 5, 8, 10, 12, 16],
-              "circle-color": "oklch(0.55 0.2 25)",
-              "circle-opacity": 0.2,
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 6, 8, 12, 12, 18],
+              "circle-color": "#a21caf",
+              "circle-opacity": 0.25,
               "circle-blur": 1,
             },
             layout: { visibility: troopsVis },
           });
 
-          // Unit dot
+          // Unit dot — bright fuchsia
           mapInstance.addLayer({
             id: "troop-units-points",
             type: "circle",
             source: "troop-units",
             paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 8, 4, 12, 6],
-              "circle-color": "oklch(0.6 0.22 25)",
-              "circle-opacity": 0.9,
-              "circle-stroke-width": 1,
-              "circle-stroke-color": "oklch(0.15 0 0)",
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 5, 12, 7],
+              "circle-color": "#e879f9",
+              "circle-opacity": 0.95,
+              "circle-stroke-width": 1.5,
+              "circle-stroke-color": "#1a1a2e",
             },
             layout: { visibility: troopsVis },
           });
@@ -2723,9 +2723,9 @@ export default function MapView({
               visibility: troopsVis,
             },
             paint: {
-              "text-color": "oklch(0.75 0.12 25)",
-              "text-halo-color": "oklch(0.15 0 0)",
-              "text-halo-width": 1,
+              "text-color": "#d946ef",
+              "text-halo-color": "#0f0f1a",
+              "text-halo-width": 1.5,
             },
           });
 
@@ -2752,7 +2752,7 @@ export default function MapView({
               .setLngLat(coords)
               .setHTML(
                 `<div style="padding:4px 8px;font-size:11px">
-                  <div style="color:#ef4444;font-weight:600">🔴 Russian ${unitType}</div>
+                  <div style="color:#e879f9;font-weight:600">⬟ Russian ${unitType}</div>
                   <div style="color:#d4d4d8;margin-top:2px">${unitName}</div>
                 </div>`,
               )
@@ -2762,7 +2762,6 @@ export default function MapView({
           mapInstance.on("mouseleave", "troop-units-points", () => {
             if (!map.current) return;
             map.current.getCanvas().style.cursor = "";
-            // Remove all popups with this class
             for (const el of document.querySelectorAll(".event-marker-popup")) {
               el.remove();
             }
@@ -2778,16 +2777,31 @@ export default function MapView({
 
           const troopsVis = layersRef.current.troops ? "visible" : "none";
 
+          // Outer glow — rose
+          mapInstance.addLayer({
+            id: "troop-attacks-glow",
+            type: "circle",
+            source: "troop-attacks",
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 5, 8, 9, 12, 14],
+              "circle-color": "#be123c",
+              "circle-opacity": 0.3,
+              "circle-blur": 0.8,
+            },
+            layout: { visibility: troopsVis },
+          });
+
+          // Inner marker — rose/hot-pink
           mapInstance.addLayer({
             id: "troop-attacks-arrows",
             type: "circle",
             source: "troop-attacks",
             paint: {
               "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 6, 12, 10],
-              "circle-color": "oklch(0.7 0.25 30)",
-              "circle-opacity": 0.7,
+              "circle-color": "#f43f5e",
+              "circle-opacity": 0.85,
               "circle-stroke-width": 1.5,
-              "circle-stroke-color": "oklch(0.5 0.2 25)",
+              "circle-stroke-color": "#881337",
             },
             layout: { visibility: troopsVis },
           });
@@ -2802,16 +2816,17 @@ export default function MapView({
 
           const troopsVis = layersRef.current.troops ? "visible" : "none";
 
+          // Airfield dot — cyan
           mapInstance.addLayer({
             id: "troop-airfields-points",
             type: "circle",
             source: "troop-airfields",
             paint: {
               "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 5, 12, 8],
-              "circle-color": "oklch(0.5 0.15 250)",
-              "circle-opacity": 0.8,
+              "circle-color": "#22d3ee",
+              "circle-opacity": 0.85,
               "circle-stroke-width": 1,
-              "circle-stroke-color": "oklch(0.15 0 0)",
+              "circle-stroke-color": "#0e7490",
             },
             layout: { visibility: troopsVis },
           });
@@ -2830,9 +2845,9 @@ export default function MapView({
               visibility: troopsVis,
             },
             paint: {
-              "text-color": "oklch(0.65 0.1 250)",
-              "text-halo-color": "oklch(0.15 0 0)",
-              "text-halo-width": 1,
+              "text-color": "#67e8f9",
+              "text-halo-color": "#0f0f1a",
+              "text-halo-width": 1.5,
             },
           });
 
@@ -2854,7 +2869,7 @@ export default function MapView({
               .setLngLat(coords)
               .setHTML(
                 `<div style="padding:4px 8px;font-size:11px">
-                  <div style="color:#60a5fa;font-weight:600">✈️ ${props.name || "Airfield"}</div>
+                  <div style="color:#22d3ee;font-weight:600">✈ ${props.name || "Airfield"}</div>
                 </div>`,
               )
               .addTo(map.current);
@@ -3232,6 +3247,7 @@ export default function MapView({
       "troop-units-glow",
       "troop-units-points",
       "troop-units-labels",
+      "troop-attacks-glow",
       "troop-attacks-arrows",
       "troop-airfields-points",
       "troop-airfields-labels",

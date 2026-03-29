@@ -68,6 +68,12 @@ const OVERLAY_ITEMS: LegendItem[] = [
   { label: "Pro-Russia support", color: "#e85454", type: "line" },
 ];
 
+const TROOP_ITEMS: LegendItem[] = [
+  { label: "Russian unit positions", color: "#e879f9", type: "circle" },
+  { label: "Attack directions", color: "#f43f5e", type: "circle" },
+  { label: "Airfields / Airbases", color: "#22d3ee", type: "circle" },
+];
+
 function LegendSwatch({ item }: { item: LegendItem }) {
   if (item.type === "fill") {
     return (
@@ -321,6 +327,7 @@ function NavContent({ onItemClick }: { onItemClick?: () => void }) {
                 <LegendSection title="Borders" items={BORDER_ITEMS} />
                 <LegendSection title="Conflicts" items={CONFLICT_ITEMS} />
                 <LegendSection title="Operations" items={OPERATIONS_ITEMS} />
+                <LegendSection title="Troop Positions" items={TROOP_ITEMS} />
                 <LegendSection title="Infrastructure" items={INFRASTRUCTURE_ITEMS} />
                 <LegendSection title="Overlays" items={OVERLAY_ITEMS} />
               </div>
@@ -425,6 +432,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
               <LegendSection title="Borders" items={BORDER_ITEMS} />
               <LegendSection title="Conflicts" items={CONFLICT_ITEMS} />
               <LegendSection title="Operations" items={OPERATIONS_ITEMS} />
+              <LegendSection title="Troop Positions" items={TROOP_ITEMS} />
               <LegendSection title="Infrastructure" items={INFRASTRUCTURE_ITEMS} />
               <LegendSection title="Overlays" items={OVERLAY_ITEMS} />
             </div>

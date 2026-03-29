@@ -36,6 +36,12 @@ function parseDeepStateResponse(data: {
   for (const feature of data.map.features) {
     if (feature.geometry.type !== "Point") continue;
 
+    // Strip altitude from 3D coordinates [lng, lat, alt] → [lng, lat]
+    const coords = feature.geometry.coordinates;
+    if (Array.isArray(coords) && coords.length > 2) {
+      feature.geometry.coordinates = [coords[0], coords[1]];
+    }
+
     const name = (feature.properties?.name as string) || "";
     const desc = (feature.properties?.description as string) || "";
 
