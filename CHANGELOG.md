@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.1...ukrainewar-v1.2.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* remove troop positions layer and DeepState positions API ([#25](https://github.com/engelde/ukrainewar/issues/25)) ([3921455](https://github.com/engelde/ukrainewar/commit/3921455c3455d80599dd1a99eef09ada5a8f5004))
+
 ## [1.2.1](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.0...ukrainewar-v1.2.1) (2026-03-29)
 
 
