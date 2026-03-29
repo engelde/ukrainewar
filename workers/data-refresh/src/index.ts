@@ -39,6 +39,7 @@ const GET_ENDPOINTS = [
   "/api/firms",
   "/api/energy",
   "/api/energy/gas",
+  "/api/positions",
 ];
 
 /** Date-parameterized endpoints to warm with today's date / current month */

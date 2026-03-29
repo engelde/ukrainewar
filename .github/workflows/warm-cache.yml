@@ -39,6 +39,7 @@ jobs:
             "/api/firms"
             "/api/energy"
             "/api/energy/gas"
+            "/api/positions"
           )
           for ep in "${ENDPOINTS[@]}"; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}${ep}")
