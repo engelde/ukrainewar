@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.1.1...ukrainewar-v1.2.0) (2026-03-29)
+
+
+### Features
+
+* DeepState troop positions, snapshot archiving & data source status ([#21](https://github.com/engelde/ukrainewar/issues/21)) ([ababf16](https://github.com/engelde/ukrainewar/commit/ababf16d50d07b3db5f8e7364f10027f790cfe38))
+
 ## [1.1.1](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.1.0...ukrainewar-v1.1.1) (2026-03-28)
 
 
