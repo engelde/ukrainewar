@@ -23,7 +23,6 @@ interface ParsedPositions {
   datetime: string;
   units: GeoJSON.FeatureCollection;
   attacks: GeoJSON.FeatureCollection;
-  airfields: GeoJSON.FeatureCollection;
 }
 
 let memCache: ParsedPositions | null = null;
@@ -36,7 +35,6 @@ function parseDeepStateResponse(data: {
 }): ParsedPositions {
   const units: GeoJSON.Feature[] = [];
   const attacks: GeoJSON.Feature[] = [];
-  const airfields: GeoJSON.Feature[] = [];
 
   for (const feature of data.map.features) {
     if (feature.geometry.type !== "Point") continue;
@@ -51,7 +49,6 @@ function parseDeepStateResponse(data: {
     const desc = (feature.properties?.description as string) || "";
 
     if (name.includes("geoJSON.status.attack_direction")) {
-      // Extract arrow direction from description {icon=arrow_N}
       const arrowMatch = desc.match(/icon=arrow_(\d+)/);
       const rotation = arrowMatch ? Number.parseInt(arrowMatch[1], 10) * 22.5 : 0;
       attacks.push({
@@ -62,11 +59,8 @@ function parseDeepStateResponse(data: {
         },
       });
     } else if (name.includes("units.")) {
-      // Extract unit identifier from name
       const unitMatch = name.match(/geoJSON\.(units\.[^\s]+)/);
       const unitId = unitMatch ? unitMatch[1] : name;
-
-      // Extract readable name (before ///)
       const displayName = name.split("///")[0].trim();
 
       units.push({
@@ -78,21 +72,6 @@ function parseDeepStateResponse(data: {
           fullName: name,
         },
       });
-    } else if (
-      name.includes("airfield.") ||
-      name.includes("airbase.") ||
-      name.includes("airport.")
-    ) {
-      const displayName = name.split("///")[0].trim();
-      const idMatch = name.match(/geoJSON\.((?:airfield|airbase|airport)\.[^\s]+)/);
-      airfields.push({
-        ...feature,
-        properties: {
-          type: "airfield",
-          id: idMatch ? idMatch[1] : name,
-          name: displayName,
-        },
-      });
     }
   }
 
@@ -100,7 +79,6 @@ function parseDeepStateResponse(data: {
     datetime: data.datetime,
     units: { type: "FeatureCollection", features: units },
     attacks: { type: "FeatureCollection", features: attacks },
-    airfields: { type: "FeatureCollection", features: airfields },
   };
 }
 
