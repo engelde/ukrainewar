@@ -3,15 +3,20 @@ import { cacheGet, cacheSet, isFresh, isUsableStale } from "@/lib/cache";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
- * GET /api/positions
+ * GET /api/positions?date=YYYYMMDD
  *
- * Fetches the latest military positions from DeepState's direct API.
- * Returns parsed unit positions, attack direction arrows, and airfields
- * as separate GeoJSON FeatureCollections for map layer rendering.
+ * Fetches military positions from DeepState's direct API.
+ * - No date or today's date → fetches live data from DeepState
+ * - Past date → returns archived snapshot from KV (or 404 if none)
+ *
+ * Each live fetch is also archived with today's date key so
+ * historical data accumulates over time.
  */
 
 const CACHE_KEY = "deepstate-positions";
+const ARCHIVE_PREFIX = "deepstate-positions:";
 const TTL = 6 * 60 * 60; // 6 hours
+const ARCHIVE_TTL = 365 * 24 * 60 * 60; // 1 year for archived snapshots
 const DEEPSTATE_API = "https://deepstatemap.live/api/history/last";
 
 interface ParsedPositions {
@@ -114,6 +119,11 @@ async function fetchAndCache(): Promise<ParsedPositions> {
     memCache = parsed;
     memCacheAt = Date.now();
     await cacheSet(CACHE_KEY, parsed, TTL);
+
+    // Archive today's snapshot for future historical lookups
+    const today = todayYYYYMMDD();
+    await cacheSet(`${ARCHIVE_PREFIX}${today}`, parsed, ARCHIVE_TTL);
+
     return parsed;
   })();
   try {
@@ -130,10 +140,43 @@ function refreshInBackground() {
   });
 }
 
+function todayYYYYMMDD(): string {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export async function GET(request: Request) {
   const limited = checkRateLimit(request, "positions", 60, 60_000);
   if (limited) return limited;
 
+  const url = new URL(request.url);
+  const dateParam = url.searchParams.get("date");
+  const today = todayYYYYMMDD();
+  const isHistorical = dateParam && dateParam !== today;
+
+  // Historical date → look up archived snapshot only
+  if (isHistorical) {
+    const archived = await cacheGet<ParsedPositions>(`${ARCHIVE_PREFIX}${dateParam}`);
+    if (archived) {
+      return NextResponse.json(archived.data, {
+        headers: {
+          "Cache-Control": "public, s-maxage=86400, immutable",
+          "X-Cache": "ARCHIVE",
+          "X-Positions-Date": dateParam,
+        },
+      });
+    }
+    // No archive for this date
+    return NextResponse.json(
+      { error: "no_archive", date: dateParam },
+      {
+        status: 404,
+        headers: { "Cache-Control": "public, s-maxage=3600" },
+      },
+    );
+  }
+
+  // Current/today → live data flow (existing logic)
   try {
     if (memCache && Date.now() - memCacheAt < TTL * 1000) {
       return NextResponse.json(memCache, {
