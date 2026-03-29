@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.0...ukrainewar-v1.2.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* remove airfield/airbase layer from map ([#23](https://github.com/engelde/ukrainewar/issues/23)) ([ba0a17c](https://github.com/engelde/ukrainewar/commit/ba0a17cc2addba36ce67ea1c9ad7d0349100b40c))
+
 ## [1.2.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.1.1...ukrainewar-v1.2.0) (2026-03-29)
 
 
