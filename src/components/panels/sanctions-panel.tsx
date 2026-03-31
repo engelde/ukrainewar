@@ -179,8 +179,34 @@ function SanctionsPanelInner({ isOpen, onToggle, timelineDate }: SanctionsPanelP
 
       {/* Source footer */}
       <div className="drag-handle px-3 py-1.5 border-t border-border/30 cursor-grab active:cursor-grabbing">
-        <div className="text-[0.5rem] text-muted-foreground/50">
-          {t("common.source")}: {t("sanctions.source")}
+        <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
+          <span>{t("common.source")}:</span>
+          <a
+            href="https://www.consilium.europa.eu/en/policies/sanctions-against-russia/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            EU Council
+          </a>
+          <span>/</span>
+          <a
+            href="https://ofac.treasury.gov/sanctions-programs-and-information"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            US Treasury
+          </a>
+          <span>/</span>
+          <a
+            href="https://www.gov.uk/government/publications/the-uk-sanctions-list"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            UK Gov
+          </a>
         </div>
       </div>
     </div>

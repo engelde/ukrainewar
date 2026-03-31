@@ -298,9 +298,35 @@ function InfrastructurePanelInner({ isOpen, onToggle, timelineDate }: Infrastruc
 
       {/* Source */}
       <div className="drag-handle px-3 py-1.5 border-t border-border/20 cursor-grab active:cursor-grabbing">
-        <p className="text-[0.5rem] text-muted-foreground/60 text-center">
-          Sources: IAEA, Energoatom, OCHA, open-source intelligence
-        </p>
+        <div className="flex items-center justify-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
+          <span>Sources:</span>
+          <a
+            href="https://www.iaea.org/topics/response/ukraine"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            IAEA
+          </a>
+          <span>·</span>
+          <a
+            href="https://www.energoatom.com.ua"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            Energoatom
+          </a>
+          <span>·</span>
+          <a
+            href="https://www.unocha.org/ukraine"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            OCHA
+          </a>
+        </div>
       </div>
     </div>
   );

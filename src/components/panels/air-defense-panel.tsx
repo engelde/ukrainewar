@@ -194,8 +194,16 @@ function AirDefensePanelInner({ isOpen, onToggle, timelineDate }: AirDefensePane
 
       {/* Source footer */}
       <div className="drag-handle px-3 py-1.5 border-t border-border/30 cursor-grab active:cursor-grabbing">
-        <div className="text-[0.5rem] text-muted-foreground/50">
-          {t("common.source")}: {t("airDefense.source")}
+        <div className="flex items-center gap-1.5 text-[0.5rem] text-muted-foreground/50">
+          <span>{t("common.source")}:</span>
+          <a
+            href="https://t.me/kpszsu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ua-blue transition-colors"
+          >
+            Ukrainian Air Force
+          </a>
         </div>
       </div>
     </div>
