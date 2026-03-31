@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.2...ukrainewar-v1.2.3) (2026-03-31)
+
+
+### Bug Fixes
+
+* add source links to panels and fix KV cache access ([#30](https://github.com/engelde/ukrainewar/issues/30)) ([946d99e](https://github.com/engelde/ukrainewar/commit/946d99e3fd1d81a3541f3c3d06c8c8312ba651b2))
+
 ## [1.2.2](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.1...ukrainewar-v1.2.2) (2026-03-29)
 
 
