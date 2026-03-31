@@ -64,19 +64,19 @@ interface KVLike {
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
 }
 
-function getKV(): KVLike | null {
+async function getKV(): Promise<KVLike | null> {
   try {
-    // In OpenNext/Cloudflare, env bindings are available via globalThis
-    // biome-ignore lint/suspicious/noExplicitAny: runtime-injected binding
-    const kv = (globalThis as any).__env__?.CACHE || (globalThis as any).CACHE;
-    return kv || null;
+    // Use the official OpenNext/Cloudflare context API
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const ctx = await getCloudflareContext({ async: true });
+    return ctx?.env?.CACHE || null;
   } catch {
     return null;
   }
 }
 
 async function kvGet<T>(key: string): Promise<CacheEntry<T> | null> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return null;
   try {
     const raw = await kv.get(key, "text");
@@ -88,7 +88,7 @@ async function kvGet<T>(key: string): Promise<CacheEntry<T> | null> {
 }
 
 async function kvSet<T>(key: string, entry: CacheEntry<T>): Promise<void> {
-  const kv = getKV();
+  const kv = await getKV();
   if (!kv) return;
   try {
     await kv.put(key, JSON.stringify(entry), {
