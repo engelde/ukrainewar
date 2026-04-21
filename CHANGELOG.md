@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.5...ukrainewar-v1.3.0) (2026-04-21)
+
+
+### Features
+
+* fill post-ACLED event timeline gap with GeoConfirmed ([e047aeb](https://github.com/engelde/ukrainewar/commit/e047aeb5b166420a5df529ab2b59ce19a3b6ac3b))
+
 ## [1.2.5](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.4...ukrainewar-v1.2.5) (2026-04-21)
 
 
