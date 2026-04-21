@@ -173,9 +173,7 @@ async function main() {
   // --- Monthly allocations ---
   const allocSheet = sheetToArrays(wb, "Allocations by type and month");
   // Find header row: look for "Month" in any column
-  const allocHeaderIdx = allocSheet.findIndex(
-    (r) => r && r.some((v) => cellStr(v).trim() === "Month"),
-  );
+  const allocHeaderIdx = allocSheet.findIndex((r) => r?.some((v) => cellStr(v).trim() === "Month"));
   const allocHeader = allocSheet[allocHeaderIdx] ?? [];
   // Detect column indices from header (robust against future reordering)
   const allocMonthCol = allocHeader.findIndex((v) => cellStr(v).trim() === "Month");
@@ -262,7 +260,7 @@ async function main() {
     return t.includes("heavy weapon") || t.includes("aviation") || t.includes("portable defence");
   });
   const systemBuckets = {};
-  const systemDisplayNames = {};
+  const _systemDisplayNames = {};
   for (const r of hwRows) {
     const item = cellStr(r.item).trim();
     if (!item || item === ".") continue;
