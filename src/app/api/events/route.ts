@@ -5,7 +5,8 @@ import { cacheGet, cacheSet, isFresh } from "@/lib/cache";
 import { CACHE_TTL } from "@/lib/constants";
 import prebuildEvents from "../../../../public/data/events.json";
 
-const CACHE_KEY = "events";
+// Version cache key by event count so regenerated data invalidates stale KV
+const CACHE_KEY = `events-v${(prebuildEvents as unknown as WarEvent[]).length}`;
 
 /**
  * GET /api/events

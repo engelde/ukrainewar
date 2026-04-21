@@ -368,6 +368,182 @@ function mergeEvents(wikidata: WarEvent[], seed: WarEvent[], acled: WarEvent[]):
 
 // --- Main ---
 
+// --- GeoConfirmed (post-ACLED gap fill) ---
+
+import { fetchGeoConfirmedEvents, type GeoConfirmedEvent } from "./fetch-geoconfirmed";
+
+/**
+ * Score a GeoConfirmed event by significance. Higher = more timeline-worthy.
+ * Designed to mirror the ACLED filtering criteria already used elsewhere in
+ * this script: high-fatality battles, civilian violence, strategic strikes,
+ * and named platform losses.
+ */
+export function scoreGeoConfirmedEvent(e: GeoConfirmedEvent): number {
+  const desc = e.description.toLowerCase();
+  let score = 0;
+
+  // Hard filters (return -Infinity to drop entirely)
+  const isDroneIntercept =
+    e.iconType?.toLowerCase().includes("droneintercept") ||
+    /\bdrone (?:intercept|targeted by|hit by)/.test(desc) ||
+    /intercepted by .* drone/.test(desc);
+  if (isDroneIntercept) return Number.NEGATIVE_INFINITY;
+  // Bare observation/recon — "rough grid", individual soldier losses
+  if (desc.length < 100) return Number.NEGATIVE_INFINITY;
+  if (/\brough (?:grid|location)\b/.test(desc) && desc.length < 220) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  // Strategic infrastructure (refineries, oil, energy, ports, airfields)
+  if (/\b(refinery|oil depot|oil pumping|fuel depot|petroleum|tank farm)\b/.test(desc)) score += 6;
+  if (/\b(substation|power plant|energy infrastructure|electric|grid)\b/.test(desc)) score += 5;
+  if (/\b(airfield|airbase|air base|naval base|seaport|port of)\b/.test(desc)) score += 5;
+  if (/\b(railway|train station|locomotive|bridge)\b/.test(desc)) score += 3;
+
+  // Mass casualties / civilian harm
+  const killedMatch = desc.match(
+    /(\d+)\s+(?:were\s+)?(?:reportedly\s+)?(?:killed|dead|casualties)/,
+  );
+  if (killedMatch) {
+    const n = Number.parseInt(killedMatch[1], 10);
+    if (n >= 30) score += 8;
+    else if (n >= 10) score += 5;
+    else if (n >= 5) score += 3;
+    else if (n >= 2) score += 1;
+  }
+  if (/\b(civilian|civilians)\b/.test(desc) && /(killed|wounded|injured|died)/.test(desc)) {
+    score += 3;
+  }
+  if (/\b(massacre|mass grave|war crime)\b/.test(desc)) score += 6;
+
+  // Long-range / strategic weapons
+  if (/\b(iskander|kinzhal|atacms|storm shadow|tomahawk|kalibr|kh-\d+|tochka)\b/.test(desc)) {
+    score += 4;
+  }
+  if (/\b(ballistic missile|cruise missile)\b/.test(desc)) score += 3;
+  // Mass aerial attacks (multiple Shahed / drone barrages on cities)
+  if (/\b\d+\s+(?:shahed|drones?)\b/.test(desc) && /\b(\d+)\s+(?:shahed|drone)/.test(desc)) {
+    const n = Number.parseInt(desc.match(/\b(\d+)\s+(?:shahed|drones?)/)?.[1] || "0", 10);
+    if (n >= 50) score += 5;
+    else if (n >= 20) score += 3;
+    else if (n >= 10) score += 1;
+  }
+
+  // High-value platform losses
+  if (/\b(s-\d{3}|pantsir|buk|tor[- ]m|tos-1)\b/.test(desc)) score += 5; // air defense
+  if (/\b(su-\d+|mig-\d+|mi-\d+|tu-\d+|ka-\d+|a-50|il-\d+|aircraft carrier)\b/.test(desc))
+    score += 5;
+  if (/\b(landing ship|warship|frigate|corvette|submarine|naval (?:ship|vessel))\b/.test(desc)) {
+    score += 5;
+  }
+  if (/\b(t-\d+|t-90|t-80|tank battalion|armored column)\b/.test(desc)) score += 2;
+
+  // Cross-border / on Russian territory
+  if (
+    /\b(belgorod|kursk|bryansk|voronezh|krasnodar|rostov|moscow|saint petersburg|st\.? petersburg|tatarstan|tula|ryazan)\b/.test(
+      desc,
+    )
+  ) {
+    score += 3;
+  }
+  if (/\b(deep strike|behind enemy lines|inside russia|russian territory)\b/.test(desc)) score += 4;
+
+  // Strategic events
+  if (
+    /\b(captured|liberated|withdrew|withdrawn|retreated|advance into|broke through)\b/.test(desc)
+  ) {
+    score += 3;
+  }
+  if (/\b(commander|general|colonel|brigade commander) (?:was )?killed\b/.test(desc)) score += 5;
+
+  // Faction signal — civilian-tagged events are usually strikes ON civilians
+  if (e.faction === "Ukraine Civilian" || e.faction === "Russia Civilian") score += 2;
+
+  return score;
+}
+
+interface GeoConfirmedFilterOptions {
+  startDate: string; // YYYYMMDD inclusive
+  endDate: string; // YYYYMMDD inclusive
+  perMonthCap: number;
+  minScore: number;
+}
+
+export function selectGeoConfirmedEvents(
+  raw: GeoConfirmedEvent[],
+  opts: GeoConfirmedFilterOptions,
+): WarEvent[] {
+  // Group by YYYYMM, score, dedupe near-duplicates, take top N per month
+  const byMonth = new Map<string, Array<{ ev: GeoConfirmedEvent; score: number }>>();
+  for (const ev of raw) {
+    if (ev.date < opts.startDate || ev.date > opts.endDate) continue;
+    const score = scoreGeoConfirmedEvent(ev);
+    if (score < opts.minScore) continue;
+    const key = ev.date.slice(0, 6);
+    const bucket = byMonth.get(key) || [];
+    bucket.push({ ev, score });
+    byMonth.set(key, bucket);
+  }
+
+  const out: WarEvent[] = [];
+  for (const bucket of byMonth.values()) {
+    bucket.sort((a, b) => b.score - a.score || a.ev.date.localeCompare(b.ev.date));
+    // Intra-month dedup: skip events whose first 60 chars of cleaned label
+    // overlap with one we've already kept, or whose coords are within ~5km
+    // on the same day. GeoConfirmed often files multiple verification angles
+    // of the same incident.
+    const kept: GeoConfirmedEvent[] = [];
+    for (const { ev } of bucket) {
+      const clean = ev.description.toLowerCase().slice(0, 80);
+      const isDup = kept.some((k) => {
+        const kClean = k.description.toLowerCase().slice(0, 80);
+        if (clean === kClean) return true;
+        if (k.date === ev.date) {
+          const dKm = haversineKm(k.latitude, k.longitude, ev.latitude, ev.longitude);
+          if (
+            dKm < 5 &&
+            (clean.includes(kClean.slice(0, 30)) || kClean.includes(clean.slice(0, 30)))
+          ) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (isDup) continue;
+      kept.push(ev);
+      if (kept.length >= opts.perMonthCap) break;
+    }
+    for (const ev of kept) out.push(geoConfirmedToWarEvent(ev));
+  }
+  return out;
+}
+
+function geoConfirmedToWarEvent(ev: GeoConfirmedEvent): WarEvent {
+  const desc = ev.description;
+  // Build a concise label from the first sentence/clause
+  let label = desc
+    .replace(/^\d+:\d+[-–]\d*:?\d*\s*[-–—]\s*/, "") // strip leading "0:48-end -"
+    .replace(/\s*Source\(s\):.*$/i, "")
+    .replace(/\s*Geolocation\(s\):.*$/i, "")
+    .replace(/\s*More information.*$/i, "")
+    .trim();
+  // Take first sentence (up to 120 chars)
+  const sentenceEnd = label.search(/[.!?](?:\s|$)/);
+  if (sentenceEnd > 20 && sentenceEnd < 140) label = label.slice(0, sentenceEnd);
+  if (label.length > 140) label = `${label.slice(0, 137)}...`;
+  if (!label) label = "GeoConfirmed event";
+
+  const cleanDesc = desc.length > 280 ? `${desc.slice(0, 277)}...` : desc;
+
+  return {
+    date: ev.date,
+    label,
+    description: cleanDesc,
+    lat: Math.round(ev.latitude * 100000) / 100000,
+    lng: Math.round(ev.longitude * 100000) / 100000,
+  };
+}
+
 async function main() {
   const token = await getAcledToken();
 
@@ -480,24 +656,57 @@ async function main() {
     ...acledMissileEvents,
   ]);
 
+  // 3. Fill the post-ACLED gap with GeoConfirmed (OSINT-verified events)
+  // ACLED's free tier is ~12 months delayed, so anything after the cutoff
+  // comes from GeoConfirmed (https://geoconfirmed.org), an open-data OSINT
+  // project that verifies each event against photo/video evidence.
+  const acledCutoff = new Date();
+  acledCutoff.setFullYear(acledCutoff.getFullYear() - 1);
+  const gapStartStr = acledCutoff.toISOString().slice(0, 10).replace(/-/g, "");
+  const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+  console.log(`  Fetching GeoConfirmed events for gap fill (${gapStartStr}+)...`);
+  let geoConfirmedSelected: WarEvent[] = [];
+  try {
+    const rawGc = await fetchGeoConfirmedEvents();
+    geoConfirmedSelected = selectGeoConfirmedEvents(rawGc, {
+      startDate: gapStartStr,
+      endDate: todayStr,
+      perMonthCap: 30,
+      minScore: 3,
+    });
+    console.log(
+      `  ${geoConfirmedSelected.length} GeoConfirmed events selected (top ~30/month, score >= 3)`,
+    );
+  } catch (err) {
+    console.warn(
+      `  ⚠ GeoConfirmed fetch failed (continuing without it): ${err instanceof Error ? err.message : err}`,
+    );
+  }
+
+  // Merge GeoConfirmed into the existing set with the same dedup logic
+  const mergedWithGc = mergeEvents([], merged, geoConfirmedSelected);
+
   // Apply highlight flags from KEY_EVENTS
   const highlightDates = new Set(
     (KEY_EVENTS as WarEvent[]).filter((e) => e.highlight).map((e) => e.date),
   );
-  for (const event of merged) {
+  for (const event of mergedWithGc) {
     if (highlightDates.has(event.date)) event.highlight = true;
   }
 
   const eventsPath = join(process.cwd(), "public", "data", "events.json");
-  const eventsJson = JSON.stringify(merged);
+  const eventsJson = JSON.stringify(mergedWithGc);
   writeFileSync(eventsPath, eventsJson);
   const eventsSizeKB = (eventsJson.length / 1024).toFixed(0);
-  console.log(`  → public/data/events.json (${eventsSizeKB} KB, ${merged.length} events)\n`);
+  console.log(`  → public/data/events.json (${eventsSizeKB} KB, ${mergedWithGc.length} events)\n`);
 
   console.log("Done!");
 }
 
-main().catch((err) => {
-  console.error("Prebuild failed:", err);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error("Prebuild failed:", err);
+    process.exit(1);
+  });
+}

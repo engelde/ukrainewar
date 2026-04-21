@@ -99,6 +99,16 @@ const PIPELINES: PipelineConfig[] = [
     type: "static",
   },
   {
+    id: "geoconfirmed",
+    name: "GeoConfirmed",
+    category: "Events",
+    cacheKey: null,
+    ttl: 0,
+    url: "https://geoconfirmed.org",
+    description: "OSINT photo/video-verified events (post-ACLED gap)",
+    type: "static",
+  },
+  {
     id: "acled",
     name: "ACLED",
     category: "Events",

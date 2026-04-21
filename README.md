@@ -61,7 +61,7 @@ The entire interface is built around an explorable map rendered in muted dark to
 
 - Scrubable timeline spanning **February 24, 2022 to present**
 - **Playback controls** with adjustable speed (0.25x to 8x)
-- **Dynamic key events** from Wikidata, ACLED, and curated editorial sources
+- **Dynamic key events** from Wikidata, ACLED, GeoConfirmed (post-ACLED period), and curated editorial sources
 - **Waveform visualization** showing daily Russian loss intensity
 - Calendar picker for jumping to specific dates
 - URL state persistence — shareable timeline positions
@@ -206,6 +206,7 @@ This project aggregates data from the following authoritative sources. All data 
 | **DeepState Map** | Territory control and frontline GeoJSON data | [deepstatemap.live](https://deepstatemap.live) |
 | **ACLED** | Armed conflict event data — battles, civilian targeting, protests | [acleddata.com](https://acleddata.com) |
 | **Wikidata** | Structured data on named events, battles, and offensives (via SPARQL) | [wikidata.org](https://www.wikidata.org) |
+| **GeoConfirmed** | OSINT photo/video-verified geolocated events (used to fill the post-ACLED gap) | [geoconfirmed.org](https://geoconfirmed.org) |
 | **HDX / OCHA** | Humanitarian response data, funding status | [data.humdata.org](https://data.humdata.org) |
 | **OHCHR** | UN-verified civilian casualty statistics | [ohchr.org](https://www.ohchr.org) |
 | **UNHCR** | Refugee and internally displaced persons statistics | [data.unhcr.org](https://data.unhcr.org) |
@@ -230,6 +231,7 @@ All API responses use a multi-layer persistent caching system (file-based in dev
 | Casualty reports | 4 hours | Daily |
 | Territory control | 12 hours | Daily |
 | Conflict events (ACLED) | 24 hours | Daily |
+| GeoConfirmed events | 24 hours | Daily (post-ACLED gap fill) |
 | NASA FIRMS thermal anomalies | 3 hours | Near-real-time |
 | Electricity generation (ENTSO-E) | 6 hours | Hourly |
 | Gas transit (ENTSOG) | 12 hours | Daily |

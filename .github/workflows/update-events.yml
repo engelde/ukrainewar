@@ -1,0 +1,47 @@
+name: Update Events Data
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # Daily 7 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Update events data (GeoConfirmed gap-fill)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run data:events
+
+      - name: Create PR if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/events.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          BRANCH="chore/update-events-$(date +%Y%m%d)"
+          git checkout -b "$BRANCH"
+          git commit -m "chore: update events with latest GeoConfirmed data"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore: update events with latest GeoConfirmed data" \
+            --body "Automated daily update of war events from GeoConfirmed (https://geoconfirmed.org), filling the post-ACLED timeline gap." \
+            --base main \
+            --head "$BRANCH"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

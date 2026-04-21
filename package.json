@@ -18,6 +18,7 @@
     "data:acled": "node scripts/process-acled-hdx.mjs",
     "data:viina": "node scripts/process-viina.mjs",
     "data:update": "node scripts/process-kiel.mjs && node scripts/process-acled-hdx.mjs && node scripts/process-viina.mjs",
+    "data:events": "npx tsx scripts/update-events-gc.ts",
     "cache:warm": "node scripts/warm-cache.mjs",
     "prepare": "husky"
   },
