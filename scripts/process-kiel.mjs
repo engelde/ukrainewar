@@ -17,8 +17,33 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT = join(__dirname, "..", "public", "data", "kiel-spending.json");
 
-const KIEL_XLSX_URL =
-  "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/62a94ad1-2d28-401e-afd0-8a8089b48f2a-Ukraine_Support_Tracker_Release_27.xlsx";
+const KIEL_PAGE_URL = "https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/";
+
+// Fallback if page scraping fails — update when a new release is confirmed
+const FALLBACK_URL =
+  "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/c80bbebb-b4e7-4581-8f32-e32a1da7ecfa-Ukraine_Support_Tracker_Release_28.xlsx";
+const FALLBACK_RELEASE = 28;
+
+async function discoverLatestRelease() {
+  try {
+    const res = await fetch(KIEL_PAGE_URL);
+    if (res.ok) {
+      const html = await res.text();
+      const match = html.match(
+        /(fileadmin\/Dateiverwaltung\/IfW-Publications\/fis-import\/[^"]*-Ukraine_Support_Tracker_Release_(\d+)\.xlsx)/,
+      );
+      if (match) {
+        return {
+          release: parseInt(match[2], 10),
+          url: `https://www.kielinstitut.de/${match[1]}`,
+        };
+      }
+    }
+  } catch {
+    // fall through to fallback
+  }
+  return { release: FALLBACK_RELEASE, url: FALLBACK_URL };
+}
 
 const _MONTH_NAMES = [
   "January",
@@ -35,6 +60,33 @@ const _MONTH_NAMES = [
   "December",
 ];
 
+/**
+ * Extracts a plain string from an ExcelJS cell value.
+ * Cells can be plain strings, numbers, rich-text objects ({richText: [...]}),
+ * or formula-result objects ({formula: "...", result: value}).
+ */
+function cellStr(val) {
+  if (val == null) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "number") return String(val);
+  if (val.richText && Array.isArray(val.richText)) {
+    return val.richText.map((r) => r.text || "").join("");
+  }
+  if (val.result != null) return cellStr(val.result);
+  return String(val);
+}
+
+/**
+ * Extracts a plain number from an ExcelJS cell value.
+ * Handles plain numbers and formula-result objects ({formula: "...", result: number}).
+ */
+function cellNum(val) {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  if (val.result != null) return cellNum(val.result);
+  return 0;
+}
+
 /** Read a named worksheet as array-of-objects (keyed by first row headers). */
 function sheetToJson(wb, sheetName) {
   const ws = wb.getWorksheet(sheetName);
@@ -44,7 +96,7 @@ function sheetToJson(wb, sheetName) {
   ws.eachRow((row, idx) => {
     const vals = row.values.slice(1);
     if (idx === 1) {
-      for (const v of vals) headers.push(v);
+      for (const v of vals) headers.push(cellStr(v));
       return;
     }
     const obj = {};
@@ -68,8 +120,12 @@ function sheetToArrays(wb, sheetName) {
 }
 
 async function main() {
+  console.log("Discovering latest Kiel Institute release...");
+  const { release, url } = await discoverLatestRelease();
+  console.log(`Found Release ${release}: ${url}`);
+
   console.log("Downloading Kiel Institute XLSX...");
-  const res = await fetch(KIEL_XLSX_URL);
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed: ${res.status}`);
   const buf = await res.arrayBuffer();
 
@@ -82,37 +138,77 @@ async function main() {
 
   // --- Country Summary ---
   const summarySheet = sheetToArrays(wb, "Country Summary (€)");
-  // Find header row (contains "Country")
-  const headerIdx = summarySheet.findIndex((r) => r && r[0] === "Country");
-  const _summaryHeaders = summarySheet[headerIdx];
+  // Find header row: "Country" may be in col[0] (old) or col[1] (Release 28+, added blank col A)
+  const headerIdx = summarySheet.findIndex(
+    (r) => r && (cellStr(r[0]) === "Country" || cellStr(r[1]) === "Country"),
+  );
+  const headerRow = summarySheet[headerIdx] ?? [];
+  // Detect which column holds "Country" to derive all other column offsets
+  const countryCol = cellStr(headerRow[0]) === "Country" ? 0 : 1;
+  const euMemberCol = countryCol + 1;
+  // Skip any inserted columns between EU member and Financial by scanning header
+  const financialCol = headerRow.findIndex(
+    (v, i) => i > euMemberCol && /financial/i.test(cellStr(v)),
+  );
+  const humanitarianCol = financialCol >= 0 ? financialCol + 1 : countryCol + 4;
+  const militaryCol = financialCol >= 0 ? financialCol + 2 : countryCol + 5;
+  const totalCol = financialCol >= 0 ? financialCol + 3 : countryCol + 6;
 
   const byCountry = [];
   for (let i = headerIdx + 2; i < summarySheet.length; i++) {
     const row = summarySheet[i];
-    if (!row || !row[0] || row[0] === "Total") break;
+    const countryName = row && cellStr(row[countryCol]);
+    if (!countryName || countryName === "Total") break;
     byCountry.push({
-      country: row[0],
-      euMember: row[1] === 1,
-      financial: round(row[3]),
-      humanitarian: round(row[4]),
-      military: round(row[5]),
-      total: round(row[6]),
+      country: countryName,
+      euMember: cellNum(row[euMemberCol]) === 1,
+      financial: round(cellNum(row[financialCol])),
+      humanitarian: round(cellNum(row[humanitarianCol])),
+      military: round(cellNum(row[militaryCol])),
+      total: round(cellNum(row[totalCol])),
     });
   }
   byCountry.sort((a, b) => b.total - a.total);
 
   // --- Monthly allocations ---
   const allocSheet = sheetToArrays(wb, "Allocations by type and month");
+  // Find header row: look for "Month" in any column
+  const allocHeaderIdx = allocSheet.findIndex(
+    (r) => r && r.some((v) => cellStr(v).trim() === "Month"),
+  );
+  const allocHeader = allocSheet[allocHeaderIdx] ?? [];
+  // Detect column indices from header (robust against future reordering)
+  const allocMonthCol = allocHeader.findIndex((v) => cellStr(v).trim() === "Month");
+  const allocFinCol = allocHeader.findIndex((v) => /financial/i.test(cellStr(v)));
+  const allocHumCol = allocHeader.findIndex((v) => /humanitarian/i.test(cellStr(v)));
+  const allocMilCol = allocHeader.findIndex((v) => /military/i.test(cellStr(v)));
+  const allocTotalCol = allocHeader.findIndex((v) => /^total/i.test(cellStr(v).trim()));
+
   const byMonth = [];
-  for (const row of allocSheet) {
-    if (!row || typeof row[1] !== "number" || row[1] < 40000) continue;
-    const date = excelDateToISO(row[1]);
+  for (let i = allocHeaderIdx + 1; i < allocSheet.length; i++) {
+    const row = allocSheet[i];
+    if (!row) continue;
+    const rawDate = row[allocMonthCol >= 0 ? allocMonthCol : 1];
+    let date;
+    if (rawDate instanceof Date) {
+      const y = rawDate.getFullYear();
+      const m = String(rawDate.getMonth() + 1).padStart(2, "0");
+      date = `${y}-${m}`;
+    } else if (typeof rawDate === "number" && rawDate > 40000) {
+      date = excelDateToISO(rawDate);
+    } else {
+      continue;
+    }
+    const financial = cellNum(row[allocFinCol >= 0 ? allocFinCol : 4]);
+    const humanitarian = cellNum(row[allocHumCol >= 0 ? allocHumCol : 3]);
+    const military = cellNum(row[allocMilCol >= 0 ? allocMilCol : 2]);
+    const total = cellNum(row[allocTotalCol >= 0 ? allocTotalCol : 5]);
     byMonth.push({
       date,
-      military: round(row[2]),
-      humanitarian: round(row[3]),
-      financial: round(row[4]),
-      total: round(row[5]),
+      military: round(military),
+      humanitarian: round(humanitarian),
+      financial: round(financial),
+      total: round(total),
     });
   }
 
@@ -121,8 +217,8 @@ async function main() {
     totalFinancial = 0,
     totalHumanitarian = 0;
   for (const r of mainData) {
-    const val = r.tot_sub_activity_value_EUR || 0;
-    const type = (r.aid_type_general || "").trim();
+    const val = cellNum(r.tot_sub_activity_value_EUR);
+    const type = cellStr(r.aid_type_general).trim();
     if (type === "Military") totalMilitary += val;
     else if (type === "Financial") totalFinancial += val;
     else if (type === "Humanitarian") totalHumanitarian += val;
@@ -143,17 +239,17 @@ async function main() {
     missile: "Missiles",
   };
   function normalizeCategory(raw) {
-    return CATEGORY_MAP[(raw || "").trim().toLowerCase()] || null;
+    return CATEGORY_MAP[cellStr(raw).trim().toLowerCase()] || null;
   }
 
-  const milRows = mainData.filter((r) => (r.aid_type_general || "").trim() === "Military");
+  const milRows = mainData.filter((r) => cellStr(r.aid_type_general).trim() === "Military");
 
   const catBuckets = {};
   for (const r of milRows) {
     const cat = normalizeCategory(r.item_type);
     if (!cat) continue;
     if (!catBuckets[cat]) catBuckets[cat] = { valueEUR: 0, records: 0 };
-    catBuckets[cat].valueEUR += Number(r.tot_sub_activity_value_EUR) || 0;
+    catBuckets[cat].valueEUR += cellNum(r.tot_sub_activity_value_EUR);
     catBuckets[cat].records++;
   }
   const weaponsByCategory = Object.entries(catBuckets)
@@ -162,27 +258,27 @@ async function main() {
 
   // --- Notable weapon systems (case-normalized grouping) ---
   const hwRows = milRows.filter((r) => {
-    const t = (r.item_type || "").trim().toLowerCase();
+    const t = cellStr(r.item_type).trim().toLowerCase();
     return t.includes("heavy weapon") || t.includes("aviation") || t.includes("portable defence");
   });
   const systemBuckets = {};
   const systemDisplayNames = {};
   for (const r of hwRows) {
-    const item = (r.item || "").trim();
+    const item = cellStr(r.item).trim();
     if (!item || item === ".") continue;
     const key = item.toLowerCase();
-    const val = Number(r.tot_sub_activity_value_EUR) || 0;
-    const deliv = Number(r.item_numb_deliv);
-    const pledged = Number(r.item_numb);
-    const donor = (r.donor || "").trim();
+    const val = cellNum(r.tot_sub_activity_value_EUR);
+    const deliv = cellNum(r.item_numb_deliv);
+    const pledged = cellNum(r.item_numb);
+    const donor = cellStr(r.donor).trim();
     if (!systemBuckets[key]) {
       systemBuckets[key] = { valueEUR: 0, delivered: 0, pledged: 0, donors: [], nameVotes: {} };
     }
     systemBuckets[key].valueEUR += val;
     // Track which casing appears most often to pick a display name
     systemBuckets[key].nameVotes[item] = (systemBuckets[key].nameVotes[item] || 0) + 1;
-    if (!Number.isNaN(deliv) && deliv > 0) systemBuckets[key].delivered += deliv;
-    if (!Number.isNaN(pledged) && pledged > 0) systemBuckets[key].pledged += pledged;
+    if (deliv > 0) systemBuckets[key].delivered += deliv;
+    if (pledged > 0) systemBuckets[key].pledged += pledged;
     if (!systemBuckets[key].donors.includes(donor)) systemBuckets[key].donors.push(donor);
   }
   const notableWeapons = Object.entries(systemBuckets)
@@ -204,9 +300,9 @@ async function main() {
   // --- Weapons by donor (top 10 military donors) ---
   const donorWeaponBuckets = {};
   for (const r of milRows) {
-    const donor = (r.donor || "").trim();
+    const donor = cellStr(r.donor).trim();
     const cat = normalizeCategory(r.item_type);
-    const val = Number(r.tot_sub_activity_value_EUR) || 0;
+    const val = cellNum(r.tot_sub_activity_value_EUR);
     if (!donorWeaponBuckets[donor]) donorWeaponBuckets[donor] = { total: 0, categories: {} };
     donorWeaponBuckets[donor].total += val;
     if (cat)
@@ -249,8 +345,8 @@ async function main() {
   }
 
   const output = {
-    lastUpdated: "2025-12-31",
-    release: 27,
+    lastUpdated: new Date().toISOString().split("T")[0],
+    release,
     currency: "EUR",
     unit: "billions",
     donors: byCountry.length,
@@ -276,7 +372,7 @@ async function main() {
     source: {
       name: "Kiel Institute Ukraine Support Tracker",
       url: "https://www.kielinstitut.de/topics/war-against-ukraine/ukraine-support-tracker/",
-      release: "Release 27 (Dec 2025)",
+      release: `Release ${release}`,
     },
   };
 
