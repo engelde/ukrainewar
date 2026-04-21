@@ -5,12 +5,17 @@ import { GiExplosiveMaterials, GiSubmarine } from "react-icons/gi";
 import {
   TbArrowBarRight,
   TbBomb,
+  TbDrone,
   TbFilter,
   TbFlag,
   TbFlame,
+  TbHeartHandshake,
+  TbPlane,
+  TbRocket,
   TbSearch,
   TbShieldCheckered,
   TbSword,
+  TbTank,
   TbUsers,
   TbX,
 } from "react-icons/tb";
@@ -80,8 +85,8 @@ export const EVENT_CATEGORIES: EventCategoryInfo[] = [
   {
     id: "humanitarian",
     label: "events.categories.humanitarian",
-    icon: <TbBomb className="h-3.5 w-3.5" />,
-    color: "text-destruction",
+    icon: <TbHeartHandshake className="h-3.5 w-3.5" />,
+    color: "text-ua-yellow",
   },
   {
     id: "milestone",
@@ -93,67 +98,275 @@ export const EVENT_CATEGORIES: EventCategoryInfo[] = [
 
 export function getEventCategory(label: string): EventCategory {
   const lower = label.toLowerCase();
-  if (lower.includes("offensive") || lower.includes("battle") || lower.includes("siege"))
+
+  // Humanitarian: civilian harm, mass casualties, infrastructure destruction targeting civilians
+  if (
+    lower.includes("massacre") ||
+    lower.includes("civilian bus") ||
+    lower.includes("hospital") ||
+    lower.includes("school") ||
+    lower.includes("residential") ||
+    lower.includes("evacuation") ||
+    lower.includes("refugee") ||
+    /\bcivilians?\b.*(killed|wounded|injured|dead)/.test(lower) ||
+    /\b(killed|wounded|injured)\b.*civilian/.test(lower) ||
+    lower.includes("kakhovka dam") ||
+    lower.includes("dam destroyed") ||
+    lower.includes("war crime")
+  )
+    return "humanitarian";
+
+  // Battles & offensives
+  if (
+    lower.includes("offensive") ||
+    lower.includes("battle of") ||
+    lower.includes("battle for") ||
+    lower.includes("siege") ||
+    lower.includes("incursion") ||
+    lower.includes("counteroffensive")
+  )
     return "battle";
-  // ACLED conflict events (clashes, strikes, shelling, civilian attacks)
+
+  // Conflict events: strikes, attacks, shelling, drone activity (the bulk of GeoConfirmed events)
   if (
     lower.includes("major clash:") ||
     lower.includes("armed clash:") ||
     lower.includes("air/drone strike:") ||
     lower.includes("shelling/artillery:") ||
-    lower.includes("civilian attack:")
+    lower.includes("civilian attack:") ||
+    lower.includes("airstrike") ||
+    lower.includes("air strike") ||
+    lower.includes("drone strike") ||
+    lower.includes("drone attack") ||
+    lower.includes("fpv") ||
+    lower.includes("shahed") ||
+    lower.includes("shelling") ||
+    lower.includes("mlrs") ||
+    lower.includes("artillery") ||
+    lower.includes("missile strike") ||
+    lower.includes("missile attack") ||
+    lower.includes("strikes on") ||
+    lower.includes("strike on") ||
+    lower.includes("strike against") ||
+    lower.includes("strike in") ||
+    lower.includes("attacks") ||
+    lower.includes("explosion") ||
+    lower.includes("fire in") ||
+    lower.includes("hit by") ||
+    lower.includes("hit with") ||
+    lower.includes("hits ") ||
+    lower.includes("impact") ||
+    lower.includes("attacked") ||
+    lower.includes("damage") ||
+    lower.includes("damaged") ||
+    lower.includes("burning") ||
+    lower.includes("fire at") ||
+    lower.includes("fires ") ||
+    lower.includes("smoke") ||
+    lower.includes("aerial attack") ||
+    lower.includes("oil depot") ||
+    lower.includes("oil refinery") ||
+    lower.includes("refinery")
   )
     return "conflict";
+
+  // Military: equipment losses, downings, named platforms, named operations
+  if (
+    lower.includes("destroyed") ||
+    lower.includes("burns") ||
+    lower.includes("downed") ||
+    lower.includes("shot down") ||
+    lower.includes("intercepted") ||
+    lower.includes("wreck") ||
+    lower.includes("command post") ||
+    lower.includes("air defense") ||
+    lower.includes("pantsir") ||
+    lower.includes("buk ") ||
+    lower.includes("s-300") ||
+    lower.includes("s-400") ||
+    lower.includes("tochka") ||
+    lower.includes("iskander") ||
+    lower.includes("kinzhal") ||
+    lower.includes("kalibr") ||
+    lower.includes("atacms") ||
+    lower.includes("storm shadow") ||
+    lower.includes("himars") ||
+    lower.includes("tomahawk") ||
+    lower.includes("tank ") ||
+    lower.includes("btr-") ||
+    lower.includes("bmp-") ||
+    lower.includes("mig-") ||
+    lower.includes("su-") ||
+    lower.includes("mi-") ||
+    lower.includes("ka-") ||
+    lower.includes("tu-") ||
+    lower.includes("a-50") ||
+    lower.includes("sanctions") ||
+    lower.includes("pledged") ||
+    lower.includes("dprk") ||
+    lower.includes("deployed") ||
+    lower.includes("spider") ||
+    lower.includes("saboteur") ||
+    lower.includes("casualties") ||
+    lower.includes("kuznetsov")
+  )
+    return "military";
+
+  // Territorial control changes
   if (
     lower.includes("falls") ||
     lower.includes("captured") ||
     lower.includes("occupied") ||
     lower.includes("recaptured") ||
     lower.includes("liberated") ||
+    lower.includes("withdrawn") ||
+    lower.includes("withdrew") ||
     lower.includes("territory transfer:")
   )
     return "territorial";
+
+  // Political / diplomatic
   if (
     lower.includes("summit") ||
     lower.includes("election") ||
     lower.includes("inaugurated") ||
     lower.includes("ceasefire") ||
-    lower.includes("agreement:")
+    lower.includes("agreement:") ||
+    lower.includes("treaty") ||
+    lower.includes("nato") ||
+    lower.includes("eu accession")
   )
     return "political";
-  if (
-    lower.includes("massacre") ||
-    lower.includes("strikes") ||
-    lower.includes("dam") ||
-    lower.includes("sinks") ||
-    lower.includes("moskva") ||
-    lower.includes("bridge")
-  )
-    return "humanitarian";
-  if (
-    lower.includes("sanctions") ||
-    lower.includes("pledged") ||
-    lower.includes("spider") ||
-    lower.includes("dprk") ||
-    lower.includes("deployed")
-  )
+
+  // Naval (Moskva, ships) → military
+  if (lower.includes("sinks") || lower.includes("moskva") || lower.includes("vessel"))
     return "military";
+
   return "milestone";
 }
 
 export function getEventIcon(label: string) {
   const lower = label.toLowerCase();
-  if (lower.includes("offensive") || lower.includes("battle") || lower.includes("siege"))
+
+  // Humanitarian first (highest priority for civilian harm)
+  if (
+    lower.includes("massacre") ||
+    lower.includes("civilian bus") ||
+    lower.includes("hospital") ||
+    lower.includes("school") ||
+    lower.includes("residential") ||
+    lower.includes("evacuation") ||
+    lower.includes("refugee") ||
+    /\bcivilians?\b.*(killed|wounded|injured|dead)/.test(lower) ||
+    /\b(killed|wounded|injured)\b.*civilian/.test(lower) ||
+    lower.includes("war crime") ||
+    lower.includes("kakhovka dam") ||
+    lower.includes("dam destroyed")
+  )
+    return <TbHeartHandshake className="h-4 w-4 text-ua-yellow" />;
+
+  if (
+    lower.includes("offensive") ||
+    lower.includes("battle of") ||
+    lower.includes("battle for") ||
+    lower.includes("siege") ||
+    lower.includes("incursion")
+  )
     return <TbSword className="h-4 w-4 text-destruction" />;
+
+  // Naval
+  if (lower.includes("sinks") || lower.includes("moskva") || lower.includes("vessel"))
+    return <GiSubmarine className="h-4 w-4 text-ua-blue-light" />;
+
+  // Aviation losses (downed aircraft, named jets/helis)
+  if (
+    /\b(su-\d|mig-\d|tu-\d|a-50)\b/.test(lower) ||
+    (lower.includes("downed") && (lower.includes("jet") || lower.includes("aircraft"))) ||
+    (lower.includes("shot down") && (lower.includes("jet") || lower.includes("aircraft")))
+  )
+    return <TbPlane className="h-4 w-4 text-capture" />;
+
+  // Drones (FPV, Shahed, drone strikes)
+  if (
+    lower.includes("fpv") ||
+    lower.includes("shahed") ||
+    lower.includes("drone strike") ||
+    lower.includes("drone attack") ||
+    (lower.includes("drone") && (lower.includes("hit") || lower.includes("struck")))
+  )
+    return <TbDrone className="h-4 w-4 text-damage" />;
+
+  // Missiles / long-range strikes
+  if (
+    lower.includes("iskander") ||
+    lower.includes("kinzhal") ||
+    lower.includes("kalibr") ||
+    lower.includes("atacms") ||
+    lower.includes("storm shadow") ||
+    lower.includes("himars") ||
+    lower.includes("tomahawk") ||
+    lower.includes("missile strike") ||
+    lower.includes("missile attack") ||
+    lower.includes("ballistic missile")
+  )
+    return <TbRocket className="h-4 w-4 text-damage" />;
+
+  // Tanks & armor
+  if (
+    /\btank\b/.test(lower) ||
+    /\bbtr-\d/.test(lower) ||
+    /\bbmp-\d/.test(lower) ||
+    lower.includes("armored")
+  )
+    return <TbTank className="h-4 w-4 text-capture" />;
+
+  // Air defense systems
+  if (
+    lower.includes("pantsir") ||
+    lower.includes("buk ") ||
+    lower.includes("s-300") ||
+    lower.includes("s-400") ||
+    lower.includes("air defense")
+  )
+    return <TbShieldCheckered className="h-4 w-4 text-capture" />;
+
   // ACLED conflict events
   if (
     lower.includes("major clash:") ||
     lower.includes("armed clash:") ||
     lower.includes("air/drone strike:") ||
     lower.includes("shelling/artillery:") ||
-    lower.includes("civilian attack:")
+    lower.includes("civilian attack:") ||
+    lower.includes("airstrike") ||
+    lower.includes("air strike") ||
+    lower.includes("shelling") ||
+    lower.includes("mlrs") ||
+    lower.includes("artillery")
   )
     return <TbFlame className="h-4 w-4 text-damage" />;
+
+  // Generic strikes / explosions / hits / damage / fires
+  if (
+    lower.includes("strike") ||
+    lower.includes("attacks") ||
+    lower.includes("attacked") ||
+    lower.includes("explosion") ||
+    lower.includes("fire in") ||
+    lower.includes("fire at") ||
+    lower.includes("fires ") ||
+    lower.includes("hit ") ||
+    lower.includes("hits ") ||
+    lower.includes("destroyed") ||
+    lower.includes("burns") ||
+    lower.includes("burning") ||
+    lower.includes("damage") ||
+    lower.includes("damaged") ||
+    lower.includes("smoke") ||
+    lower.includes("oil depot") ||
+    lower.includes("refinery")
+  )
+    return <TbBomb className="h-4 w-4 text-destruction" />;
+
   if (lower.includes("territory transfer:")) return <TbFlag className="h-4 w-4 text-capture" />;
   if (lower.includes("agreement:")) return <TbUsers className="h-4 w-4 text-ua-yellow" />;
   if (
@@ -163,23 +376,22 @@ export function getEventIcon(label: string) {
     lower.includes("recaptured")
   )
     return <TbFlag className="h-4 w-4 text-damage" />;
-  if (lower.includes("massacre") || lower.includes("strikes") || lower.includes("dam"))
-    return <TbBomb className="h-4 w-4 text-destruction" />;
-  if (lower.includes("sinks") || lower.includes("moskva"))
-    return <GiSubmarine className="h-4 w-4 text-ua-blue-light" />;
+  if (lower.includes("liberated") || lower.includes("withdrawn") || lower.includes("withdrew"))
+    return <TbFlag className="h-4 w-4 text-capture" />;
   if (lower.includes("bridge")) return <GiExplosiveMaterials className="h-4 w-4 text-damage" />;
   if (
     lower.includes("summit") ||
     lower.includes("election") ||
     lower.includes("inaugurated") ||
-    lower.includes("ceasefire")
+    lower.includes("ceasefire") ||
+    lower.includes("treaty")
   )
     return <TbUsers className="h-4 w-4 text-ua-yellow" />;
   if (lower.includes("sanctions") || lower.includes("pledged") || lower.includes("spider"))
     return <TbShieldCheckered className="h-4 w-4 text-capture" />;
   if (lower.includes("dprk") || lower.includes("deployed"))
     return <TbArrowBarRight className="h-4 w-4 text-abandoned" />;
-  if (lower.includes("liberated")) return <TbFlag className="h-4 w-4 text-capture" />;
+
   return <TbFlag className="h-4 w-4 text-muted-foreground" />;
 }
 

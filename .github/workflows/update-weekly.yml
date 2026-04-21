@@ -1,8 +1,8 @@
-name: Update Events Data
+name: Update Weekly Data
 
 on:
   schedule:
-    - cron: "0 7 * * *" # Daily 7 AM UTC
+    - cron: "0 6 * * 1" # Monday 6 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   update:
-    name: Update events data (GeoConfirmed gap-fill)
+    name: Update Kiel spending + GeoConfirmed events
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,24 +23,28 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run data:events
+      - name: Refresh Kiel spending
+        run: npx tsx scripts/prebuild-spending.ts
+
+      - name: Refresh GeoConfirmed events (post-ACLED gap fill)
+        run: npm run data:events
 
       - name: Create PR if data changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/events.json
+          git add public/data/kiel-spending.json public/data/events.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          BRANCH="chore/update-events-$(date +%Y%m%d)"
+          BRANCH="chore/weekly-data-$(date +%Y%m%d)"
           git checkout -b "$BRANCH"
-          git commit -m "chore: update events with latest GeoConfirmed data"
+          git commit -m "chore: weekly data update (Kiel + GeoConfirmed)"
           git push origin "$BRANCH"
           gh pr create \
-            --title "chore: update events with latest GeoConfirmed data" \
-            --body "Automated daily update of war events from GeoConfirmed (https://geoconfirmed.org), filling the post-ACLED timeline gap." \
+            --title "chore: weekly data update (Kiel + GeoConfirmed)" \
+            --body "Automated weekly update of Kiel Institute bilateral aid data and GeoConfirmed events (post-ACLED timeline gap fill)." \
             --base main \
             --head "$BRANCH"
         env:

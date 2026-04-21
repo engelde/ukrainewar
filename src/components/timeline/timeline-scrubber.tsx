@@ -378,8 +378,12 @@ export default function TimelineScrubber({
     const viewWidth = container.clientWidth;
 
     if (isInitialScroll.current) {
-      // Place the playhead at the right edge so today is fully visible
-      container.scrollLeft = pos - viewWidth + 40;
+      // Center the playhead, clamping to the available scroll range.
+      // Naturally degrades to left edge near war start and right edge near today.
+      const totalWidth = container.scrollWidth;
+      const ideal = pos - viewWidth / 2;
+      const maxScroll = Math.max(0, totalWidth - viewWidth);
+      container.scrollLeft = Math.min(Math.max(0, ideal), maxScroll);
       isInitialScroll.current = false;
       return;
     }
