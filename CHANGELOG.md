@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.5](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.4...ukrainewar-v1.2.5) (2026-04-21)
+
+
+### Bug Fixes
+
+* **spending:** version cache key by release to prevent stale KV hits ([900fd25](https://github.com/engelde/ukrainewar/commit/900fd2594dd126572e555e4b20b0d6772ac32b71))
+
 ## [1.2.4](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.3...ukrainewar-v1.2.4) (2026-04-21)
 
 
