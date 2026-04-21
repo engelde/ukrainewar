@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.4](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.3...ukrainewar-v1.2.4) (2026-04-21)
+
+
+### Bug Fixes
+
+* **spending:** clean up lint warnings in process-kiel.mjs ([aabad4d](https://github.com/engelde/ukrainewar/commit/aabad4d787027067a67d289263c81777fa1730ca))
+* **spending:** fix Bilateral Aid panel showing no data ([4890433](https://github.com/engelde/ukrainewar/commit/4890433d8da768da9f4737b115521ac0613f0d58))
+
 ## [1.2.3](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.2...ukrainewar-v1.2.3) (2026-03-31)
 
 
