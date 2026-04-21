@@ -9,9 +9,12 @@ import prebuildData from "../../../../public/data/kiel-spending.json";
  * The XLSX processing happens offline via `scripts/prebuild-spending.ts`
  * (run weekly by the update-spending GitHub Action), producing
  * `public/data/kiel-spending.json` which is bundled at build time.
+ *
+ * The cache key is versioned by release number so deploying new data
+ * automatically bypasses any stale KV entries from prior releases.
  */
 
-const CACHE_KEY = "spending-kiel";
+const CACHE_KEY = `spending-kiel-r${(prebuildData as { release?: number }).release ?? 0}`;
 const TTL = 604800; // 7 days
 
 export async function GET() {
