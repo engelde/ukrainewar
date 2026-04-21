@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.3.0...ukrainewar-v1.4.0) (2026-04-21)
+
+
+### Features
+
+* weekly data cadence + event icon and timeline polish ([8a3c741](https://github.com/engelde/ukrainewar/commit/8a3c741c2a4ed8972dd65a05c704249e686b6b38))
+
 ## [1.3.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.2.5...ukrainewar-v1.3.0) (2026-04-21)
 
 
