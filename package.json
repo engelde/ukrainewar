@@ -40,10 +40,10 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.13",
-    "@commitlint/cli": "^20.5.2",
-    "@commitlint/config-conventional": "^20.5.0",
-    "@opennextjs/cloudflare": "1.19.4",
+    "@biomejs/biome": "2.4.14",
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@opennextjs/cloudflare": "1.19.6",
     "@tailwindcss/postcss": "4.2.4",
     "@turf/turf": "^7.3.5",
     "@types/node": "^25",
@@ -56,7 +56,7 @@
     "topojson-client": "^3.1.0",
     "typescript": "^6",
     "world-atlas": "^2.0.2",
-    "wrangler": "4.85.0"
+    "wrangler": "4.87.0"
   },
   "license": "AGPL-3.0-or-later",
   "author": "David Engel (https://github.com/engelde)",
