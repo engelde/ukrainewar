@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { cacheGet, cacheSet, isFresh } from "@/lib/cache";
+import {
+  isValidSpendingData,
+  type SpendingData,
+  spendingDataFingerprint,
+} from "@/lib/spending-data";
 import prebuildData from "../../../../public/data/kiel-spending.json";
 
 /**
@@ -10,18 +15,18 @@ import prebuildData from "../../../../public/data/kiel-spending.json";
  * (run weekly by the update-spending GitHub Action), producing
  * `public/data/kiel-spending.json` which is bundled at build time.
  *
- * The cache key is versioned by release number so deploying new data
- * automatically bypasses any stale KV entries from prior releases.
+ * The cache key is versioned by a content fingerprint so deploying corrected
+ * data for the same Kiel release bypasses stale KV entries.
  */
 
-const CACHE_KEY = `spending-kiel-r${(prebuildData as { release?: number }).release ?? 0}`;
+const CACHE_KEY = `spending-kiel-${spendingDataFingerprint(prebuildData)}`;
 const TTL = 604800; // 7 days
 
 export async function GET() {
   try {
     // Try KV cache first (may have fresher data from weekly rebuild)
-    const cached = await cacheGet<Record<string, unknown>>(CACHE_KEY);
-    if (cached && isFresh(cached)) {
+    const cached = await cacheGet<unknown>(CACHE_KEY);
+    if (cached && isFresh(cached) && isValidSpendingData(cached.data)) {
       return NextResponse.json(cached.data, {
         headers: {
           "Cache-Control": "public, s-maxage=604800, stale-while-revalidate=86400",
@@ -32,7 +37,10 @@ export async function GET() {
     }
 
     // Serve bundled prebuild data
-    const data = prebuildData as Record<string, unknown>;
+    if (!isValidSpendingData(prebuildData)) {
+      throw new Error("Bundled Kiel spending data failed validation");
+    }
+    const data = prebuildData as SpendingData;
     await cacheSet(CACHE_KEY, data, TTL).catch(() => {});
 
     return NextResponse.json(data, {
@@ -47,12 +55,26 @@ export async function GET() {
     console.error("Kiel spending error:", message);
 
     // Serve bundled data as ultimate fallback
-    return NextResponse.json(prebuildData, {
-      headers: {
-        "Cache-Control": "public, s-maxage=3600",
-        "X-Cache": "ERROR-FALLBACK",
-        "X-Error": message,
+    if (isValidSpendingData(prebuildData)) {
+      return NextResponse.json(prebuildData, {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600",
+          "X-Cache": "ERROR-FALLBACK",
+          "X-Error": message,
+        },
+      });
+    }
+
+    return NextResponse.json(
+      { error: message },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          "X-Cache": "ERROR-FALLBACK",
+          "X-Error": message,
+        },
+        status: 500,
       },
-    });
+    );
   }
 }
