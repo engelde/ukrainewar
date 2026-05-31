@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.4.0...ukrainewar-v1.4.1) (2026-05-31)
+
+
+### Bug Fixes
+
+* restore bilateral aid timeline data ([#71](https://github.com/engelde/ukrainewar/issues/71)) ([79a9a5c](https://github.com/engelde/ukrainewar/commit/79a9a5cbd01a9e23d4fe8638173385fdf683ccbd))
+
 ## [1.4.0](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.3.0...ukrainewar-v1.4.0) (2026-04-21)
 
 
