@@ -76,6 +76,16 @@ export default function TimelineScrubber({
   // Throttle data-heavy onDateChange during playback
   const dateChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingDateRef = useRef<string | null>(null);
+  const lastEmittedDateRef = useRef<string | null>(null);
+
+  const emitDateChange = useCallback(
+    (date: string) => {
+      if (lastEmittedDateRef.current === date) return;
+      lastEmittedDateRef.current = date;
+      onDateChange(date);
+    },
+    [onDateChange],
+  );
 
   // Fetch daily losses for waveform visualization
   useEffect(() => {
@@ -117,27 +127,27 @@ export default function TimelineScrubber({
         dateChangeTimerRef.current = null;
       }
       pendingDateRef.current = null;
-      onDateChange(date);
+      emitDateChange(date);
       return;
     }
 
     // During playback — throttle to max ~8 updates/sec
     pendingDateRef.current = date;
     if (!dateChangeTimerRef.current) {
-      onDateChange(date); // Fire immediately on first tick
+      emitDateChange(date); // Fire immediately on first tick
       dateChangeTimerRef.current = setTimeout(() => {
         dateChangeTimerRef.current = null;
         if (pendingDateRef.current) {
-          onDateChange(pendingDateRef.current);
+          emitDateChange(pendingDateRef.current);
         }
       }, 120);
     }
-  }, [currentIndex, dates, onDateChange, isPlaying]);
+  }, [currentIndex, dates, emitDateChange, isPlaying]);
 
   // Flush pending date when playback stops
   useEffect(() => {
     if (!isPlaying && pendingDateRef.current) {
-      onDateChange(pendingDateRef.current);
+      emitDateChange(pendingDateRef.current);
       pendingDateRef.current = null;
     }
     return () => {
@@ -146,7 +156,7 @@ export default function TimelineScrubber({
         dateChangeTimerRef.current = null;
       }
     };
-  }, [isPlaying, onDateChange]);
+  }, [isPlaying, emitDateChange]);
 
   // Play/pause — if at the end, restart from beginning
   const togglePlay = useCallback(() => {
@@ -168,7 +178,7 @@ export default function TimelineScrubber({
       }
       return false;
     });
-  }, [dates.length, showPlayHint]);
+  }, [dates.length, showPlayHint, warStartIndex]);
 
   // Jump to start of war
   const jumpToStart = useCallback(() => {
@@ -249,7 +259,7 @@ export default function TimelineScrubber({
         playIntervalRef.current = null;
       }
     };
-  }, [isPlaying, dates.length, speedIndex]);
+  }, [isPlaying, dates.length, speedIndex, warStartIndex]);
 
   const handleTimelineClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -415,7 +425,6 @@ export default function TimelineScrubber({
   }, [externalDate, dates, isPlaying, currentIndex]);
 
   // Clear dismissed event when nearest event changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: clear dismissal when a new event comes in range
   useEffect(() => {
     if (!dismissedEventDate || dates.length === 0) return;
     // Recompute which event is nearest (within 5 days)
@@ -596,11 +605,12 @@ export default function TimelineScrubber({
             )}
 
             {/* Event marker dots */}
-            {eventPositionsPx.map((event, i) => (
-              <Tooltip key={`${event.date}-${i}`}>
+            {eventPositionsPx.map((event) => (
+              <Tooltip key={`${event.date}-${event.label}-${event.px}`}>
                 <TooltipTrigger
                   render={
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleJumpToEvent(event.date);

@@ -13,66 +13,8 @@ import {
 import { AnimatedCounter } from "@/components/stats/animated-counter";
 import { PanelSkeleton } from "@/components/ui/panel-skeleton";
 import { t } from "@/i18n";
+import { type NotableWeapon, type SpendingData, selectSpendingSnapshot } from "@/lib/spending-data";
 import { cn } from "@/lib/utils";
-
-interface WeaponCategory {
-  name: string;
-  valueEUR: number;
-  records: number;
-}
-
-interface NotableWeapon {
-  name: string;
-  valueEUR: number;
-  delivered: number;
-  pledged: number;
-  donors: string[];
-}
-
-interface SpendingData {
-  lastUpdated: string;
-  release: number;
-  currency: string;
-  unit: string;
-  donors: number;
-  totals: {
-    military: number;
-    financial: number;
-    humanitarian: number;
-    total: number;
-  };
-  byCountry: {
-    country: string;
-    euMember: boolean;
-    financial: number;
-    humanitarian: number;
-    military: number;
-    total: number;
-  }[];
-  byMonth: {
-    date: string;
-    military: number;
-    humanitarian: number;
-    financial: number;
-    total: number;
-  }[];
-  cumulative: {
-    date: string;
-    military: number;
-    financial: number;
-    humanitarian: number;
-    total: number;
-  }[];
-  topWeapons: { name: string; count: number }[];
-  weaponsByCategory?: WeaponCategory[];
-  notableWeapons?: NotableWeapon[];
-  weaponsByDonor?: {
-    donor: string;
-    totalEUR: number;
-    categories: { name: string; valueEUR: number }[];
-  }[];
-  source: { name: string; url: string; release: string };
-}
 
 function formatEUR(n: number): string {
   if (n >= 100) return `€${n.toFixed(0)}B`;
@@ -112,37 +54,14 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
     return () => controller.abort();
   }, []);
 
-  const timelineTotals = useMemo(() => {
-    if (!data || !timelineDate) return null;
-    // No bilateral aid data before the war
-    if (timelineDate < "20220224") return null;
-    const norm =
-      timelineDate.length === 8
-        ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}`
-        : timelineDate.slice(0, 7);
-
-    let found = null;
-    for (const c of data.cumulative) {
-      if (c.date <= norm) found = c;
-      else break;
-    }
-    return found;
-  }, [data, timelineDate]);
-
-  // Filter monthly bar chart data to timeline position
-  const displayMonths = useMemo(() => {
-    if (!data?.byMonth) return [];
-    if (!timelineDate) return data.byMonth;
-    // No bilateral aid data before the war
-    if (timelineDate < "20220224") return [];
-    const norm =
-      timelineDate.length === 8
-        ? `${timelineDate.slice(0, 4)}-${timelineDate.slice(4, 6)}`
-        : timelineDate.slice(0, 7);
-    return data.byMonth.filter((m) => m.date <= norm);
-  }, [data?.byMonth, timelineDate]);
-
-  const displayTotals = timelineTotals || data?.totals;
+  const snapshot = useMemo(
+    () => (data ? selectSpendingSnapshot(data, timelineDate) : null),
+    [data, timelineDate],
+  );
+  const displayTotals = snapshot?.totals;
+  const displayMonths = snapshot?.byMonth ?? [];
+  const displayCountries = snapshot?.byCountry ?? [];
+  const maxDonorTotal = displayCountries[0]?.total ?? 1;
 
   if (!isOpen) {
     return (
@@ -203,14 +122,16 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
         </button>
       </div>
 
-      {loading || !data ? (
+      {loading || !data || !snapshot ? (
         <PanelSkeleton rows={3} />
       ) : (
         <div className="p-2.5 space-y-2.5">
           {/* Total Aid */}
           <div className="text-center pb-1.5 border-b border-border/20">
             <div className="text-[0.5625rem] text-muted-foreground uppercase tracking-wider mb-0.5">
-              {timelineTotals ? t("spending.cumulativeAid") : t("spending.totalBilateralAid")}
+              {snapshot.isTimelineScoped
+                ? t("spending.cumulativeAid")
+                : t("spending.totalBilateralAid")}
             </div>
             <div className="text-xl font-bold text-ua-yellow font-mono tabular-nums">
               €
@@ -222,7 +143,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
               B
             </div>
             <div className="text-[0.5rem] text-muted-foreground mt-0.5">
-              {t("spending.donorCountries", { count: data.donors })} · {data.source.release}
+              {t("spending.donorCountries", { count: snapshot.donorCount })} · {data.source.release}
             </div>
           </div>
 
@@ -269,7 +190,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
             </button>
             {expandedSection === "donors" && (
               <div className="mt-1.5 space-y-1">
-                {data.byCountry.slice(0, 10).map((c) => (
+                {displayCountries.slice(0, 10).map((c) => (
                   <div key={c.country} className="flex items-center gap-2">
                     <span className="text-[0.5625rem] text-muted-foreground w-20 truncate text-right">
                       {c.country}
@@ -278,7 +199,7 @@ function SpendingPanelInner({ isOpen, onToggle, timelineDate }: SpendingPanelPro
                       <div
                         className="h-full bg-ua-yellow/40 rounded-sm"
                         style={{
-                          width: `${(c.total / data.byCountry[0].total) * 100}%`,
+                          width: `${maxDonorTotal > 0 ? (c.total / maxDonorTotal) * 100 : 0}%`,
                         }}
                       />
                     </div>

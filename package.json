@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npx tsx scripts/prebuild-viina.ts && npx tsx scripts/prebuild-alliance.ts && npx tsx scripts/prebuild-territory-dates.ts && next build --webpack",
+    "build": "tsx scripts/prebuild-viina.ts && tsx scripts/prebuild-alliance.ts && tsx scripts/prebuild-territory-dates.ts && next build --webpack",
     "start": "next start",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -14,11 +14,12 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "deploy:cron": "cd workers/data-refresh && npx wrangler deploy --config wrangler.toml",
-    "data:kiel": "node scripts/process-kiel.mjs",
+    "data:kiel": "tsx scripts/prebuild-spending.ts",
+    "data:validate": "tsx scripts/validate-spending-data.ts",
     "data:acled": "node scripts/process-acled-hdx.mjs",
     "data:viina": "node scripts/process-viina.mjs",
-    "data:update": "node scripts/process-kiel.mjs && node scripts/process-acled-hdx.mjs && node scripts/process-viina.mjs",
-    "data:events": "npx tsx scripts/update-events-gc.ts",
+    "data:update": "npm run data:kiel && node scripts/process-acled-hdx.mjs && node scripts/process-viina.mjs",
+    "data:events": "tsx scripts/update-events-gc.ts",
     "cache:warm": "node scripts/warm-cache.mjs",
     "prepare": "husky"
   },
@@ -54,6 +55,7 @@
     "husky": "^9.1.7",
     "tailwindcss": "4.3.0",
     "topojson-client": "^3.1.0",
+    "tsx": "^4.22.4",
     "typescript": "^6",
     "world-atlas": "^2.0.2",
     "wrangler": "4.94.0"
