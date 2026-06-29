@@ -58,7 +58,7 @@
     "tsx": "^4.22.4",
     "typescript": "^6",
     "world-atlas": "^2.0.2",
-    "wrangler": "4.100.0"
+    "wrangler": "4.103.0"
   },
   "license": "AGPL-3.0-or-later",
   "author": "David Engel (https://github.com/engelde)",
