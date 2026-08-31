@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.4.1...ukrainewar-v1.4.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* repair type errors from maplibre-gl v6 and react-day-picker v10 upgrades ([#126](https://github.com/engelde/ukrainewar/issues/126)) ([d600dca](https://github.com/engelde/ukrainewar/commit/d600dca6739e36dc001e75ef18237b9e71be6170))
+
 ## [1.4.1](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.4.0...ukrainewar-v1.4.1) (2026-05-31)
 
 
