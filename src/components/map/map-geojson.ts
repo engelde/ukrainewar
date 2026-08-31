@@ -1,4 +1,4 @@
-import type maplibregl from "maplibre-gl";
+import type * as maplibregl from "maplibre-gl";
 import type { Battle } from "@/data/battles";
 import type { MilitaryOperation } from "@/data/operations";
 import { formatDateRange } from "@/lib/utils";

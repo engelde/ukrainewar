@@ -1,6 +1,6 @@
 "use client";
 
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Battle } from "@/data/battles";
@@ -2673,6 +2673,11 @@ export default function MapView({
   // Initialize map (runs once on mount)
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
+
+    // maplibre-gl v6 no longer inlines its web worker; without this the map
+    // stalls silently (style loads, no tiles, no "load" event). The worker
+    // files are copied to public/maplibre by scripts/copy-maplibre-worker.mjs.
+    maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
