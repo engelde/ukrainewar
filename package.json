@@ -41,17 +41,17 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.13",
+    "@biomejs/biome": "2.5.14",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.0.2",
     "@opennextjs/cloudflare": "1.20.6",
     "@tailwindcss/postcss": "4.3.3",
     "@turf/turf": "^7.4.0",
     "@types/geojson": "^7946.0.16",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.0",
     "exceljs": "^4.4.0",
     "husky": "^9.1.7",
     "tailwindcss": "4.3.3",
@@ -59,7 +59,7 @@
     "tsx": "^4.23.13",
     "typescript": "^7",
     "world-atlas": "^2.0.2",
-    "wrangler": "4.131.1"
+    "wrangler": "4.135.0"
   },
   "license": "AGPL-3.0-or-later",
   "author": "David Engel (https://github.com/engelde)",
