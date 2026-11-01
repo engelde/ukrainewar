@@ -13,12 +13,16 @@ const GITHUB_API = "https://api.github.com/repos/cyterat/deepstate-map-data/cont
 
 async function main() {
   console.log("Fetching territory dates from GitHub API...");
-  const res = await fetch(GITHUB_API, {
-    headers: {
-      Accept: "application/vnd.github.v3+json",
-      "User-Agent": "UkraineWarTracker/1.0",
-    },
-  });
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "UkraineWarTracker/1.0",
+  };
+  // Unauthenticated requests share a 60/hour limit per IP, which GitHub
+  // Actions runners regularly exhaust (HTTP 403). Use a token when available.
+  const token = process.env.GITHUB_TOKEN;
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(GITHUB_API, { headers });
 
   if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
 

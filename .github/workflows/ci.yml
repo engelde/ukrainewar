@@ -34,6 +34,8 @@ jobs:
       - run: npm ci
       - name: Generate prebuild data (needed for type-checking JSON imports)
         run: npx tsx scripts/prebuild-alliance.ts && npx tsx scripts/prebuild-territory-dates.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - run: npm run typecheck
 
   build:
@@ -48,3 +50,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

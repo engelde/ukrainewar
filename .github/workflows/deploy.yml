@@ -33,6 +33,7 @@ jobs:
         env:
           NODE_ENV: production
           CF_WEB_ANALYTICS_TOKEN: ${{ vars.CF_WEB_ANALYTICS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Deploy main worker
         run: npx wrangler deploy
         env:
