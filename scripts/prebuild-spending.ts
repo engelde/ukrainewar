@@ -47,15 +47,17 @@ function round(n: number): number {
   return Math.round((n || 0) * 1000) / 1000;
 }
 
+// exceljs yields date cells as UTC-midnight Dates, so all month math uses UTC
+// getters; local getters shift every month back by one west of Greenwich.
 function excelDateToISO(serial: number): string {
-  const epoch = new Date(1899, 11, 30);
-  const date = new Date(epoch.getTime() + serial * 86400000);
+  const epoch = Date.UTC(1899, 11, 30);
+  const date = new Date(epoch + serial * 86400000);
   return dateToMonth(date);
 }
 
 function dateToMonth(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
 }
 

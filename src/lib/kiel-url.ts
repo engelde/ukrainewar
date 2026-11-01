@@ -1,9 +1,10 @@
-const KIEL_PAGE_URL = "https://www.ifw-kiel.de/topics/war-against-ukraine/ukraine-support-tracker/";
+const KIEL_PAGE_URL =
+  "https://www.kielinstitut.de/research/topics/war-against-ukraine/ukraine-support-tracker/";
 
 // Fallback URL if page scraping fails — update when a new release is confirmed
 const FALLBACK_URL =
-  "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/c80bbebb-b4e7-4581-8f32-e32a1da7ecfa-Ukraine_Support_Tracker_Release_28.xlsx";
-const FALLBACK_RELEASE = 28;
+  "https://www.kielinstitut.de/fileadmin/Dateiverwaltung/IfW-Publications/fis-import/bc5059ba-ef38-4f08-988a-746a03905a6c-Ukraine_Support_Tracker__Release_31.xlsx";
+const FALLBACK_RELEASE = 31;
 
 const DISCOVERY_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -25,9 +26,10 @@ export async function discoverLatestRelease(): Promise<{ release: number; url: s
     const res = await fetch(KIEL_PAGE_URL);
     if (res.ok) {
       const html = await res.text();
-      // Extract the XLSX path — UUID prefix changes per major release
+      // Extract the XLSX path — UUID prefix changes per major release, and the
+      // separator before "Release" has varied between "_" and "__".
       const match = html.match(
-        /(fileadmin\/Dateiverwaltung\/IfW-Publications\/fis-import\/[^"]*-Ukraine_Support_Tracker_Release_(\d+)\.xlsx)/,
+        /(fileadmin\/Dateiverwaltung\/IfW-Publications\/fis-import\/[^"]*-Ukraine_Support_Tracker_+Release_(\d+)\.xlsx)/,
       );
       if (match) {
         const release = parseInt(match[2], 10);
@@ -42,5 +44,9 @@ export async function discoverLatestRelease(): Promise<{ release: number; url: s
     // network error — fall through to fallback
   }
 
+  console.warn(
+    `Kiel release discovery failed; using fallback Release ${FALLBACK_RELEASE}. ` +
+      "Check the tracker page markup and update FALLBACK_URL in src/lib/kiel-url.ts.",
+  );
   return { release: FALLBACK_RELEASE, url: FALLBACK_URL };
 }
