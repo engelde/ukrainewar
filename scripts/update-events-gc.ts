@@ -6,8 +6,8 @@
  * does NOT require ACLED credentials — it loads the existing committed
  * events.json as the base and only adds GeoConfirmed events for the gap.
  *
- * Run locally:  npx tsx scripts/update-events-gc.ts
- * Run in CI:    daily via .github/workflows/update-events.yml
+ * Run locally:  npm run data:events
+ * Run in CI:    weekly (Mondays) via .github/workflows/update-weekly.yml
  *
  * Source: GeoConfirmed (https://geoconfirmed.org) — open OSINT-verified data
  * License: Open data with attribution
