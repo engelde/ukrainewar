@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.3](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.4.2...ukrainewar-v1.4.3) (2026-11-01)
+
+
+### Bug Fixes
+
+* **data:** repair Kiel release discovery in weekly data update ([52626a0](https://github.com/engelde/ukrainewar/commit/52626a0c3a8957e619897e441e1e1c1fd6af062e))
+* **deps:** update dependencies to resolve security advisories ([ab130ac](https://github.com/engelde/ukrainewar/commit/ab130ac32950aba9888638ff64f36c3cf1eeaa69))
+
 ## [1.4.2](https://github.com/engelde/ukrainewar/compare/ukrainewar-v1.4.1...ukrainewar-v1.4.2) (2026-08-31)
 
 
