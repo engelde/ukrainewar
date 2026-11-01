@@ -8,7 +8,8 @@ import type { AcledEvent } from "@/lib/types";
  * POST /api/cache/refresh
  *
  * Pre-warms the persistent cache for slow data sources (ACLED map data).
- * Called by the Cloudflare cron worker daily. Can also be triggered manually.
+ * Called by the Cloudflare cron worker every 6 hours and by the warm-cache
+ * workflow after each deploy. Can also be triggered manually.
  *
  * Protected by a simple shared secret in the Authorization header.
  */

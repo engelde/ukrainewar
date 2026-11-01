@@ -9,9 +9,9 @@
  *   - public/data/acled-map.json (~2MB)  — ACLED conflict GeoJSON for map
  *
  * These snapshots are committed to the repo and imported at bundle time,
- * giving users instant data on page load. The cron worker refreshes KV
- * cache periodically for freshness, but the bundled data ensures there
- * is never a 30+ second cold start.
+ * giving users instant data on page load. The cron worker refreshes the
+ * ACLED map data in KV every 6 hours; events.json only changes when this
+ * script is re-run or the weekly workflow appends GeoConfirmed events.
  */
 
 import { writeFileSync } from "node:fs";

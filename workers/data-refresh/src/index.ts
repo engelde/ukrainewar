@@ -187,7 +187,7 @@ export default {
     return new Response(
       JSON.stringify({
         name: "ukrainewar-data-refresh",
-        description: "Daily cron worker for warming data caches",
+        description: "Cron worker (every 6 hours) for warming data caches",
         endpoints: ["/api/cache/refresh (POST)", "/api/cache/refresh-firms (POST)", ...GET_ENDPOINTS, "...date-parameterized losses"],
         schedule: "0 */6 * * * (every 6 hours)",
       }),

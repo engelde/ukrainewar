@@ -220,8 +220,8 @@ const PIPELINES: PipelineConfig[] = [
     category: "International",
     cacheKey: null,
     ttl: 0,
-    url: "https://www.un.org/en/",
-    description: "Country alignment based on UN votes (prebuild)",
+    url: "https://www.kielinstitut.de/research/topics/war-against-ukraine/ukraine-support-tracker/",
+    description: "Country alignment from Kiel Institute and government sources (prebuild)",
     type: "static",
   },
 ];

@@ -15,7 +15,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60;
 
 export async function GET() {
   try {
-    // Check KV cache first (may have fresher data from weekly rebuild)
+    // Check KV cache first
     const cached = await cacheGet<Record<string, unknown>>(CACHE_KEY);
     if (cached && isFresh(cached)) {
       return NextResponse.json(cached.data, {
