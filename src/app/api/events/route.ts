@@ -11,15 +11,16 @@ const CACHE_KEY = `events-v${(prebuildEvents as unknown as WarEvent[]).length}`;
 /**
  * GET /api/events
  *
- * Returns merged war events (Wikidata + ACLED + curated seed + missile attacks).
+ * Returns merged war events (Wikidata + ACLED + curated seed + missile attacks,
+ * plus GeoConfirmed events appended by the weekly data workflow).
  *
- * Serves pre-built data from `public/data/events.json` (bundled at build time)
- * for instant response. KV cache may contain fresher data from cron worker
- * background refresh.
+ * Serves pre-built data from `public/data/events.json` (bundled at build time).
+ * Responses are cached in KV under a key versioned by event count, so a
+ * regenerated events.json invalidates older cache entries.
  */
 export async function GET() {
   try {
-    // Check KV cache first (may have fresher data from background refresh)
+    // Check KV cache first
     const cached = await cacheGet<WarEvent[]>(CACHE_KEY);
     if (cached && isFresh(cached)) {
       return NextResponse.json(cached.data, {
