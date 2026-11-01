@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { type DayButton, DayPicker, getDefaultClassNames, type Locale } from "react-day-picker";
+import {
+  type CustomComponents,
+  type DayButton,
+  DayPicker,
+  getDefaultClassNames,
+  type Locale,
+} from "react-day-picker";
 import { TbChevronDown, TbChevronLeft, TbChevronRight } from "react-icons/tb";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,7 +27,7 @@ function Calendar({
 }) {
   const defaultClassNames = getDefaultClassNames();
 
-  return (
+  const picker = (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
@@ -112,34 +118,62 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }) => {
-          return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
-        },
-        Chevron: ({ className, orientation, ...props }) => {
-          if (orientation === "left") {
-            return <TbChevronLeft className={cn("size-4", className)} {...props} />;
-          }
-
-          if (orientation === "right") {
-            return <TbChevronRight className={cn("size-4", className)} {...props} />;
-          }
-
-          return <TbChevronDown className={cn("size-4", className)} {...props} />;
-        },
-        DayButton: ({ ...props }) => <CalendarDayButton locale={locale} {...props} />,
-        WeekNumber: ({ children, ...props }) => {
-          return (
-            <td {...props}>
-              <div className="flex size-(--cell-size) items-center justify-center text-center">
-                {children}
-              </div>
-            </td>
-          );
-        },
+        Root: CalendarRoot,
+        Chevron: CalendarChevron,
+        DayButton: CalendarLocaleDayButton,
+        WeekNumber: CalendarWeekNumber,
         ...components,
       }}
       {...props}
     />
+  );
+
+  return <CalendarLocaleContext.Provider value={locale}>{picker}</CalendarLocaleContext.Provider>;
+}
+
+// Slot components live at module scope so their identity is stable across
+// renders; defining them inline in `components` remounts every day cell.
+const CalendarLocaleContext = React.createContext<Partial<Locale> | undefined>(undefined);
+
+function CalendarRoot({
+  className,
+  rootRef,
+  ...props
+}: React.ComponentProps<CustomComponents["Root"]>) {
+  return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
+}
+
+function CalendarChevron({
+  className,
+  orientation,
+  ...props
+}: React.ComponentProps<CustomComponents["Chevron"]>) {
+  if (orientation === "left") {
+    return <TbChevronLeft className={cn("size-4", className)} {...props} />;
+  }
+
+  if (orientation === "right") {
+    return <TbChevronRight className={cn("size-4", className)} {...props} />;
+  }
+
+  return <TbChevronDown className={cn("size-4", className)} {...props} />;
+}
+
+function CalendarLocaleDayButton(props: React.ComponentProps<typeof DayButton>) {
+  const locale = React.useContext(CalendarLocaleContext);
+  return <CalendarDayButton locale={locale} {...props} />;
+}
+
+function CalendarWeekNumber({
+  children,
+  ...props
+}: React.ComponentProps<CustomComponents["WeekNumber"]>) {
+  return (
+    <td {...props}>
+      <div className="flex size-(--cell-size) items-center justify-center text-center">
+        {children}
+      </div>
+    </td>
   );
 }
 
